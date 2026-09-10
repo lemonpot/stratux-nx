@@ -11,7 +11,7 @@ jobs:
       - name: Checkout custom project
         uses: actions/checkout@v4
         with:
-          ref: feature/data-monitor
+          ref: ${{ github.sha }}
           path: custom
 
       - name: Checkout latest Stratux master
@@ -62,3 +62,4 @@ jobs:
           path: stratux/image_build/pi-gen/deploy/*
           compression-level: 0
           if-no-files-found: error
+
