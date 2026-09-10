@@ -62,6 +62,17 @@ elif "mySituation.AHRSAlgorithm = s.AlgorithmName()" not in s:
     raise SystemExit("Could not publish AHRS algorithm diagnostics")
 p.write_text(s)
 
+# Preserve V2 across temporary invalidity; Reset is reserved for explicit cage.
+p = root / "main/sensors.go"
+s = p.read_text()
+old = "\t\t\t\tmySituation.AHRSLastAttitudeTime = time.Time{}\n\t\t\t\ts.Reset()"
+new = "\t\t\t\tmySituation.AHRSLastAttitudeTime = time.Time{}\n\t\t\t\ts.ResetInvalid()"
+if old in s:
+    s = s.replace(old, new, 1)
+elif "s.ResetInvalid()" not in s:
+    raise SystemExit("Could not preserve adaptive state on invalid samples")
+p.write_text(s)
+
 # ---------------------------------------------------------------------------
 # Settings controller: load selector state and save mode immediately. The
 # setSettings helper has already been upgraded by patch-ux-audit.py.
@@ -118,7 +129,7 @@ selector_html = '''                <div class="panel-heading">AHRS</div>
                             </button>
                             <button type="button" class="sx-ahrs-mode sx-ahrs-mode-v2" ng-class="{'is-selected': AHRSV2_Enabled}" ng-click="selectAHRSAlgorithm(true)">
                                 <span class="sx-ahrs-mode-radio"><i class="fa" ng-class="AHRSV2_Enabled ? 'fa-dot-circle-o' : 'fa-circle-o'"></i></span>
-                                <span><strong>Adaptive AHRS v2 <em>Beta</em></strong><small>Adaptive accelerometer trust, stationary gyro-bias learning, bounded corrections, recovery and confidence gating.</small></span>
+                                <span><strong>Adaptive AHRS v2 <em>Beta</em></strong><small>Adaptive accelerometer trust, stationary gyro-bias learning, quaternion corrections, guarded alignment and quality diagnostics.</small></span>
                             </button>
                         </div>
                         <div class="sx-ahrs-mode-note" ng-show="AHRSV2_Enabled"><i class="fa fa-info-circle"></i> V2 is experimental. Validate attitude against a known reference before relying on it in flight. Both algorithms use the same sensor orientation and calibration.</div>
@@ -137,7 +148,7 @@ s = p.read_text()
 old = '''\t\t\t\t<span ng-hide="ConnectState == 'Connected'" class="label label-danger">{{ConnectState}}</span>'''
 new = '''\t\t\t\t<span ng-hide="ConnectState == 'Connected'" class="label label-danger">{{ConnectState}}</span>
                 <span class="sx-ahrs-active-mode" ng-if="ahrs_algorithm">{{ahrs_algorithm}}</span>
-                <span class="sx-ahrs-confidence" ng-if="ahrs_algorithm && AHRSV2_Enabled">{{ahrs_confidence}}% confidence<span ng-if="ahrs_stationary"> · stationary</span></span>'''
+                <span class="sx-ahrs-confidence" ng-if="ahrs_algorithm && AHRSV2_Enabled">Quality {{ahrs_confidence}}/100<span ng-if="ahrs_stationary"> · stationary</span></span>'''
 if old in s:
     s = s.replace(old, new, 1)
 elif "sx-ahrs-active-mode" not in s:
@@ -173,7 +184,7 @@ s = p.read_text()
 old = '''    <h4>AHRS</h4>
     <p><strong>Calibrate AHRS Sensors</strong> guides initial setup of the AHRS function,'''
 new = '''    <h4>AHRS</h4>
-    <p><strong>Attitude algorithm</strong> offers two implementations. <strong>Old Stratux AHRS</strong> is the unchanged upstream SimpleAHRS compatibility mode. <strong>Adaptive AHRS v2 (Beta)</strong> adds adaptive accelerometer weighting, stationary gyro-bias learning, bounded correction, automatic recovery from implausible stationary attitudes, and a confidence gate. The selected solution is the one published to the Stratux display and AHRS-capable GDL90 clients such as ForeFlight. V2 is experimental and is not a certified flight instrument.</p>
+    <p><strong>Attitude algorithm</strong> offers two implementations. <strong>Old Stratux AHRS</strong> is the unchanged upstream SimpleAHRS compatibility mode. <strong>Adaptive AHRS v2 (Beta)</strong> adds adaptive accelerometer weighting, stationary gyro-bias learning, bounded correction, GPS acceleration compensation, guarded initialization, and quality diagnostics. The selected solution is the one published to the Stratux display and AHRS-capable GDL90 clients such as ForeFlight. V2 is experimental and is not a certified flight instrument.</p>
     <p><strong>Calibrate AHRS Sensors</strong> guides initial setup of the AHRS function,'''
 if old in s:
     s = s.replace(old, new, 1)
@@ -217,3 +228,4 @@ if ".sx-ahrs-selector{" not in s:
 p.write_text(s)
 
 print("Selectable Old Stratux AHRS / Adaptive AHRS v2 beta wired successfully")
+
