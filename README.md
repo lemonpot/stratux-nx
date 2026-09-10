@@ -22,7 +22,9 @@ Automatically captures flight activity and creates a useful record of each fligh
 
 ### Internet Data Management
 
-Provides tools for managing internet-connected data alongside the Stratux experience, with controls designed for practical use in the aircraft.
+Turn an onboard internet connection into a resource you can actually monitor and control. Stratux NX shows how much data connected devices are consuming and lets you apply usage limits, helping prevent background updates, cloud synchronization, or passenger devices from unexpectedly exhausting a metered plan.
+
+For example, when flying with Starlink, you can see how much of your data allowance is being used through Stratux NX and keep that consumption under control, instead of discovering after the flight that a tablet, phone, or laptop consumed a significant portion of the plan.
 
 ### Modern UI
 
