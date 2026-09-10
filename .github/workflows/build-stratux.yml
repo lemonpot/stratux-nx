@@ -1,4 +1,4 @@
-name: Build Custom Stratux
+name: Build Stratux NX Full Image
 
 on:
   workflow_dispatch:
@@ -31,23 +31,65 @@ jobs:
 
       - name: Apply our custom changes
         run: |
-          echo "Applying custom overlay..."
+          set -euo pipefail
+          echo "Applying Stratux NX custom overlay..."
           rsync -av custom/overlay/ stratux/
           chmod +x custom/apply-custom.sh
           custom/apply-custom.sh stratux
 
-      - name: Verify custom files
+      - name: Verify complete Stratux NX source
         run: |
-          test -f stratux/main/datausage.go
-          test -f stratux/web/plates/datausage.html
-          test -f stratux/web/plates/js/datausage.js
-          test -f stratux/web/css/datausage.css
-          grep -q "datausage" stratux/web/js/main.js
-          grep -q "Internet Data" stratux/web/index.html
-          echo "Internet Data dashboard files OK"
+          set -euo pipefail
 
-      - name: Build Stratux image
+          test -f stratux/main/datausage.go
+          test -f stratux/main/flightlog.go
+          test -f stratux/main/ahrs_v2.go
+
+          test -f stratux/web/plates/datausage.html
+          test -f stratux/web/plates/flightlog.html
+          test -f stratux/web/plates/js/datausage.js
+          test -f stratux/web/plates/js/flightlog.js
+          test -f stratux/web/css/datausage.css
+
+          grep -q "Internet Data" stratux/web/index.html
+          grep -q "Flight Log" stratux/web/index.html
+          grep -q "Adaptive AHRS v2" stratux/web/plates/settings.html
+          grep -q "ResetInvalid" stratux/main/sensors.go
+
+          echo "Complete Stratux NX source verified"
+
+      - name: Commit customizations for pi-gen
         run: |
+          set -euo pipefail
+
+          cd stratux
+
+          git config user.email "build@local"
+          git config user.name "Stratux NX Build"
+
+          git switch -c stratux-nx-build
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "ERROR: no custom changes were staged"
+            exit 1
+          fi
+
+          git commit -m "Build complete Stratux NX customization"
+
+          git show HEAD:main/ahrs_v2.go >/dev/null
+          git show HEAD:main/datausage.go >/dev/null
+          git show HEAD:main/flightlog.go >/dev/null
+          git show HEAD:web/plates/settings.html | grep -q "Adaptive AHRS v2"
+          git show HEAD:web/index.html | grep -q "Internet Data"
+          git show HEAD:web/index.html | grep -q "Flight Log"
+
+          echo "Committed source used by pi-gen:"
+          git log -1 --oneline
+
+      - name: Build Stratux NX image
+        run: |
+          set -euo pipefail
           cd stratux/image_build
           ./build.sh
 
@@ -55,11 +97,10 @@ jobs:
         run: |
           find stratux/image_build/pi-gen/deploy -maxdepth 1 -type f -ls
 
-      - name: Upload image
+      - name: Upload Stratux NX image
         uses: actions/upload-artifact@v4
         with:
-          name: stratux-data-monitor-image
+          name: stratux-nx-full-image
           path: stratux/image_build/pi-gen/deploy/*
           compression-level: 0
           if-no-files-found: error
-
