@@ -1,0 +1,249 @@
+<div ui-content-for="title"><span>Flight Log</span></div>
+
+<div class="flightlog-page" ng-cloak>
+  <div class="flightlog-hero">
+    <div>
+      <div class="flightlog-eyebrow">AUTOMATIC GPS FLIGHT LOGGER</div>
+      <h2>Flight Log</h2>
+      <p>Stratux watches GPS movement, detects taxi, takeoff and landing, stores the route, and resolves nearby airports locally without needing Internet.</p>
+    </div>
+    <div class="flightlog-pill" ng-class="{'ok': data.GPS.Valid, 'bad': !data.GPS.Valid}">
+      <span class="flightlog-dot"></span>
+      {{data.GPS.Valid ? 'GPS tracking' : 'Waiting for GPS'}}
+    </div>
+  </div>
+
+  <div class="flightlog-error" ng-if="errorMessage"><i class="fa fa-exclamation-triangle"></i> {{errorMessage}}</div>
+
+  <div class="flightlog-grid flightlog-grid-4">
+    <div class="flightlog-stat flightlog-stat-primary">
+      <span>FLIGHT PHASE</span>
+      <strong>{{phaseLabel(data.Phase)}}</strong>
+      <small>{{phaseHint(data.Phase)}}</small>
+    </div>
+    <div class="flightlog-stat">
+      <span>CURRENT AIRPORT</span>
+      <strong>{{airportCode(data.CurrentAirport)}}</strong>
+      <small>{{airportName(data.CurrentAirport)}}</small>
+    </div>
+    <div class="flightlog-stat">
+      <span>ZULU TIME</span>
+      <strong>{{formatZuluClock(data.GPS.TimeUTC)}}</strong>
+      <small>{{formatZuluDate(data.GPS.TimeUTC)}}</small>
+    </div>
+    <div class="flightlog-stat">
+      <span>LOCAL TIME</span>
+      <strong>{{formatLocalClock(data.GPS.TimeUTC)}}</strong>
+      <small>{{settings.Timezone || 'UTC'}}</small>
+    </div>
+  </div>
+
+  <div class="flightlog-panel flightlog-telemetry-panel">
+    <div class="flightlog-panel-header">
+      <div>
+        <h3>Live telemetry</h3>
+        <div class="flightlog-muted">Raw flight data from the Stratux GPS, refreshed every second. GPS altitude is MSL and vertical speed is converted to feet per minute.</div>
+      </div>
+      <span class="flightlog-live-badge" ng-class="{'online': data.GPS.Valid}"><span></span>{{data.GPS.Valid ? 'LIVE · 1 SEC' : 'NO GPS FIX'}}</span>
+    </div>
+
+    <div class="flightlog-telemetry-body">
+      <div class="flightlog-telemetry-primary">
+        <div class="flightlog-gauge-card speed">
+          <div class="flightlog-gauge-icon"><i class="fa fa-tachometer"></i></div>
+          <div class="flightlog-gauge-copy">
+            <span>GROUND SPEED</span>
+            <strong>{{data.GPS.Valid ? formatNumber(data.GPS.GroundSpeedKt, 1) : '--'}}</strong>
+            <small>KNOTS</small>
+          </div>
+        </div>
+        <div class="flightlog-gauge-card altitude">
+          <div class="flightlog-gauge-icon"><i class="fa fa-arrows-v"></i></div>
+          <div class="flightlog-gauge-copy">
+            <span>GPS ALTITUDE MSL</span>
+            <strong>{{data.GPS.Valid ? formatInteger(data.GPS.AltitudeFt) : '--'}}</strong>
+            <small>FEET</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="flightlog-telemetry-grid">
+        <div class="flightlog-telemetry-item">
+          <span>VERTICAL SPEED</span>
+          <strong ng-class="verticalSpeedClass(data.GPS.VerticalSpeedFps)">{{data.GPS.Valid ? formatVerticalSpeed(data.GPS.VerticalSpeedFps) : '--'}}</strong>
+          <small>{{verticalSpeedHint(data.GPS.VerticalSpeedFps)}}</small>
+        </div>
+        <div class="flightlog-telemetry-item">
+          <span>TRUE TRACK</span>
+          <strong>{{data.GPS.Valid ? formatCourse(data.GPS.CourseDeg) : '---°'}}</strong>
+          <small>{{data.GPS.Valid ? cardinalCourse(data.GPS.CourseDeg) : 'Waiting for track'}}</small>
+        </div>
+        <div class="flightlog-telemetry-item">
+          <span>GPS ACCURACY</span>
+          <strong ng-class="accuracyClass(data.GPS.HorizontalAccuracyM)">{{data.GPS.Valid ? formatAccuracy(data.GPS.HorizontalAccuracyM) : '--'}}</strong>
+          <small>{{accuracyHint(data.GPS.HorizontalAccuracyM)}}</small>
+        </div>
+        <div class="flightlog-telemetry-item">
+          <span>NEAREST AIRPORT</span>
+          <strong>{{airportCode(data.CurrentAirport)}}</strong>
+          <small>{{airportDistance(data.CurrentAirport)}}</small>
+        </div>
+      </div>
+
+      <div class="flightlog-position-strip">
+        <div>
+          <span>LATITUDE</span>
+          <strong>{{data.GPS.Valid ? formatCoordinate(data.GPS.Latitude, 'lat') : '--'}}</strong>
+        </div>
+        <div>
+          <span>LONGITUDE</span>
+          <strong>{{data.GPS.Valid ? formatCoordinate(data.GPS.Longitude, 'lon') : '--'}}</strong>
+        </div>
+        <div>
+          <span>GPS TIME ZULU</span>
+          <strong>{{formatZuluClock(data.GPS.TimeUTC)}}</strong>
+        </div>
+        <div>
+          <span>LOCAL TIME</span>
+          <strong>{{formatLocalClock(data.GPS.TimeUTC)}}</strong>
+        </div>
+      </div>
+
+      <div class="flightlog-detection-strip">
+        <div class="flightlog-detection-state" ng-class="phaseClass(data.Phase)">
+          <i class="fa" ng-class="data.Phase === 'AIRBORNE' ? 'fa-plane' : (data.Phase === 'PARKED' ? 'fa-pause-circle' : 'fa-road')"></i>
+          <div><span>AUTOMATIC DETECTION</span><strong>{{phaseLabel(data.Phase)}}</strong><small>{{phaseHint(data.Phase)}}</small></div>
+        </div>
+        <div class="flightlog-detection-note"><i class="fa fa-info-circle"></i> These are the same live GPS values used by the automatic flight detector and saved into the flight track.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flightlog-panel">
+    <div class="flightlog-panel-header">
+      <div>
+        <h3>Live flight</h3>
+        <div class="flightlog-muted">Automatic detection uses sustained GPS speed, climb/descent and nearby-airport context so short GPS spikes do not create flights.</div>
+      </div>
+      <span class="flightlog-phase-badge" ng-class="phaseClass(data.Phase)">{{phaseLabel(data.Phase)}}</span>
+    </div>
+
+    <div class="flightlog-empty" ng-if="!data.Current">
+      <i class="fa fa-plane"></i>
+      <strong>No flight in progress</strong>
+      <span>Move above taxi speed for a few seconds and Stratux will start a new flight automatically.</span>
+    </div>
+
+    <div ng-if="data.Current" class="flightlog-live-body">
+      <div class="flightlog-route-title">
+        <div class="flightlog-airport-block">
+          <span>FROM</span><strong>{{airportCode(data.Current.DepartureAirport)}}</strong><small>{{airportName(data.Current.DepartureAirport)}}</small>
+        </div>
+        <div class="flightlog-route-arrow"><i class="fa fa-plane"></i></div>
+        <div class="flightlog-airport-block right">
+          <span>TO</span><strong>{{airportCode(data.Current.ArrivalAirport)}}</strong><small>{{airportName(data.Current.ArrivalAirport) || 'Detecting on landing'}}</small>
+        </div>
+      </div>
+
+      <div class="flightlog-grid flightlog-grid-6 flightlog-live-metrics">
+        <div class="flightlog-mini"><span>AIR TIME</span><strong>{{formatDuration(data.Current.AirTimeSeconds)}}</strong></div>
+        <div class="flightlog-mini"><span>BLOCK TIME</span><strong>{{formatDuration(data.Current.BlockTimeSeconds)}}</strong></div>
+        <div class="flightlog-mini"><span>GROUND / TAXI</span><strong>{{formatDuration((data.Current.TaxiOutSeconds || 0) + (data.Current.TaxiInSeconds || 0))}}</strong></div>
+        <div class="flightlog-mini"><span>DISTANCE</span><strong>{{formatNM(data.Current.DistanceNM)}}</strong></div>
+        <div class="flightlog-mini"><span>GROUND SPEED</span><strong>{{formatKt(data.GPS.GroundSpeedKt)}}</strong></div>
+        <div class="flightlog-mini"><span>ALTITUDE</span><strong>{{formatFt(data.GPS.AltitudeFt)}}</strong></div>
+      </div>
+
+      <div class="flightlog-times">
+        <div><span>Off block</span><strong>{{dualTime(data.Current.OffBlockUTC)}}</strong></div>
+        <div><span>Takeoff</span><strong>{{dualTime(data.Current.TakeoffUTC)}}</strong></div>
+        <div><span>Landing</span><strong>{{dualTime(data.Current.LandingUTC)}}</strong></div>
+        <div><span>On block</span><strong>{{dualTime(data.Current.OnBlockUTC)}}</strong></div>
+      </div>
+
+      <div class="flightlog-track-card" ng-if="currentTrackPath">
+        <div class="flightlog-track-head"><strong>Live GPS track</strong><span>{{data.CurrentTrack.length}} displayed points</span></div>
+        <svg class="flightlog-track" viewBox="0 0 1000 360" preserveAspectRatio="none" aria-label="Current flight GPS track">
+          <polyline ng-attr-points="{{currentTrackPath}}" fill="none" vector-effect="non-scaling-stroke"></polyline>
+          <circle ng-if="currentTrackStart" ng-attr-cx="{{currentTrackStart.x}}" ng-attr-cy="{{currentTrackStart.y}}" r="8" class="start"></circle>
+          <circle ng-if="currentTrackEnd" ng-attr-cx="{{currentTrackEnd.x}}" ng-attr-cy="{{currentTrackEnd.y}}" r="8" class="end"></circle>
+        </svg>
+      </div>
+
+      <div class="flightlog-live-actions">
+        <button class="btn btn-default" ng-click="finishFlight()"><i class="fa fa-check"></i> Finish flight manually</button>
+        <button class="btn btn-default flightlog-danger-link" ng-click="discardFlight()"><i class="fa fa-trash"></i> Discard current flight</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="flightlog-panel">
+    <div class="flightlog-panel-header">
+      <div><h3>Time & detection</h3><div class="flightlog-muted">All recorded event times are stored in UTC/Zulu. Local time is only a display preference.</div></div>
+      <label class="flightlog-switch"><span>Automatic flight detection</span><input type="checkbox" ng-model="settings.AutoDetect"></label>
+    </div>
+    <div class="flightlog-settings">
+      <div class="flightlog-field">
+        <label>Local timezone</label>
+        <input type="text" ng-model="settings.Timezone" placeholder="America/Toronto">
+        <small>Use an IANA timezone such as America/Toronto, America/Santiago or UTC. DST is handled automatically.</small>
+      </div>
+      <div class="flightlog-field flightlog-browser-zone" ng-if="browserTimezone">
+        <label>This browser reports</label>
+        <button class="btn btn-default" ng-click="useBrowserTimezone()"><i class="fa fa-clock-o"></i> Use {{browserTimezone}}</button>
+        <small>Useful when you move the aircraft to another region.</small>
+      </div>
+      <div class="flightlog-field flightlog-save-field">
+        <button class="btn btn-primary" ng-click="saveSettings()" ng-disabled="savingSettings"><i class="fa" ng-class="savingSettings ? 'fa-circle-o-notch fa-spin' : 'fa-save'"></i> {{savingSettings ? 'Saving...' : 'Save flight settings'}}</button>
+      </div>
+    </div>
+    <div class="flightlog-db-note" ng-class="{'ok': data.AirportDatabaseReady}"><i class="fa fa-database"></i> {{data.AirportDatabaseReady ? (data.AirportCount + ' airports available offline for departure/arrival detection') : 'Airport database not loaded yet'}}</div>
+  </div>
+
+  <div class="flightlog-panel">
+    <div class="flightlog-panel-header">
+      <div><h3>Flight history</h3><div class="flightlog-muted">Flights are stored persistently on the Stratux boot partition, including GPS route points.</div></div>
+      <button class="btn btn-default" ng-click="refresh()"><i class="fa fa-refresh"></i> Refresh</button>
+    </div>
+
+    <div class="flightlog-empty" ng-if="!data.Flights.length"><i class="fa fa-history"></i><strong>No completed flights yet</strong><span>Your first detected flight will appear here after parking.</span></div>
+
+    <div class="flightlog-history" ng-if="data.Flights.length">
+      <button type="button" class="flightlog-history-row" ng-repeat="flight in data.Flights track by flight.ID" ng-click="selectFlight(flight)">
+        <div class="flightlog-history-route"><strong>{{airportCode(flight.DepartureAirport)}} <i class="fa fa-long-arrow-right"></i> {{airportCode(flight.ArrivalAirport)}}</strong><span>{{formatLocalDate(flight.TakeoffUTC || flight.OffBlockUTC)}}</span></div>
+        <div><span>AIR</span><strong>{{formatDuration(flight.AirTimeSeconds)}}</strong></div>
+        <div><span>BLOCK</span><strong>{{formatDuration(flight.BlockTimeSeconds)}}</strong></div>
+        <div><span>TAXI</span><strong>{{formatDuration((flight.TaxiOutSeconds || 0) + (flight.TaxiInSeconds || 0))}}</strong></div>
+        <div><span>DISTANCE</span><strong>{{formatNM(flight.DistanceNM)}}</strong></div>
+        <div class="flightlog-history-open"><i class="fa fa-chevron-right"></i></div>
+      </button>
+    </div>
+  </div>
+
+  <div class="flightlog-panel" ng-if="selectedFlight">
+    <div class="flightlog-panel-header">
+      <div><h3>{{airportCode(selectedFlight.DepartureAirport)}} → {{airportCode(selectedFlight.ArrivalAirport)}}</h3><div class="flightlog-muted">{{formatLocalDate(selectedFlight.TakeoffUTC || selectedFlight.OffBlockUTC)}} · {{formatNM(selectedFlight.DistanceNM)}} · {{selectedFlight.Track.length}} GPS points</div></div>
+      <button class="btn btn-default" ng-click="closeSelected()"><i class="fa fa-times"></i> Close</button>
+    </div>
+
+    <div class="flightlog-detail">
+      <div class="flightlog-track-card" ng-if="selectedTrackPath">
+        <div class="flightlog-track-head"><strong>Recorded route</strong><span>Start <b>{{airportCode(selectedFlight.DepartureAirport)}}</b> · End <b>{{airportCode(selectedFlight.ArrivalAirport)}}</b></span></div>
+        <svg class="flightlog-track large" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-label="Recorded GPS flight track">
+          <polyline ng-attr-points="{{selectedTrackPath}}" fill="none" vector-effect="non-scaling-stroke"></polyline>
+          <circle ng-if="selectedTrackStart" ng-attr-cx="{{selectedTrackStart.x}}" ng-attr-cy="{{selectedTrackStart.y}}" r="8" class="start"></circle>
+          <circle ng-if="selectedTrackEnd" ng-attr-cx="{{selectedTrackEnd.x}}" ng-attr-cy="{{selectedTrackEnd.y}}" r="8" class="end"></circle>
+        </svg>
+      </div>
+
+      <div class="flightlog-grid flightlog-grid-4 flightlog-detail-metrics">
+        <div class="flightlog-mini"><span>TAKEOFF Z</span><strong>{{formatZulu(selectedFlight.TakeoffUTC)}}</strong><small>{{formatLocal(selectedFlight.TakeoffUTC)}}</small></div>
+        <div class="flightlog-mini"><span>LANDING Z</span><strong>{{formatZulu(selectedFlight.LandingUTC)}}</strong><small>{{formatLocal(selectedFlight.LandingUTC)}}</small></div>
+        <div class="flightlog-mini"><span>MAX GROUND SPEED</span><strong>{{formatKt(selectedFlight.MaxGroundSpeedKt)}}</strong></div>
+        <div class="flightlog-mini"><span>MAX GPS ALTITUDE</span><strong>{{formatFt(selectedFlight.MaxAltitudeFt)}}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flightlog-storage">Storage: {{data.StoragePath || 'initializing...'}}</div>
+</div>

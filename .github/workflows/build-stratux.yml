@@ -1,0 +1,64 @@
+name: Build Custom Stratux
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_image:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout custom project
+        uses: actions/checkout@v4
+        with:
+          ref: feature/data-monitor
+          path: custom
+
+      - name: Checkout latest Stratux master
+        uses: actions/checkout@v4
+        with:
+          repository: stratux/stratux
+          ref: master
+          fetch-depth: 0
+          submodules: recursive
+          path: stratux
+
+      - name: Show upstream version
+        run: |
+          cd stratux
+          echo "Building Stratux upstream commit:"
+          git log -1 --oneline
+
+      - name: Apply our custom changes
+        run: |
+          echo "Applying custom overlay..."
+          rsync -av custom/overlay/ stratux/
+          chmod +x custom/apply-custom.sh
+          custom/apply-custom.sh stratux
+
+      - name: Verify custom files
+        run: |
+          test -f stratux/main/datausage.go
+          test -f stratux/web/plates/datausage.html
+          test -f stratux/web/plates/js/datausage.js
+          test -f stratux/web/css/datausage.css
+          grep -q "datausage" stratux/web/js/main.js
+          grep -q "Internet Data" stratux/web/index.html
+          echo "Internet Data dashboard files OK"
+
+      - name: Build Stratux image
+        run: |
+          cd stratux/image_build
+          ./build.sh
+
+      - name: Show generated files
+        run: |
+          find stratux/image_build/pi-gen/deploy -maxdepth 1 -type f -ls
+
+      - name: Upload image
+        uses: actions/upload-artifact@v4
+        with:
+          name: stratux-data-monitor-image
+          path: stratux/image_build/pi-gen/deploy/*
+          compression-level: 0
+          if-no-files-found: error

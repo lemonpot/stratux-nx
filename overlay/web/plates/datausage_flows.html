@@ -1,0 +1,154 @@
+<div class="data-panel data-flow-panel" data-flow-monitor>
+  <div class="data-panel-header data-flow-header">
+    <div>
+      <h3>Internet usage by service</h3>
+      <div class="data-muted">Find the biggest data consumers first. Totals are ranked by MB/GB used during this Internet Data session.</div>
+    </div>
+    <div class="data-flow-health">
+      <span class="data-flow-health-pill" ng-class="{'ok': flowData.ConntrackAccounting}">
+        <i class="fa fa-tachometer"></i> {{flowData.ConntrackAccounting ? 'Per-connection bytes' : 'Waiting for counters'}}
+      </span>
+      <span class="data-flow-health-pill" ng-class="{'ok': flowData.PacketInspection}">
+        <i class="fa fa-eye"></i> {{flowData.PacketInspection ? 'DNS / TLS detection on' : 'Metadata detection starting'}}
+      </span>
+    </div>
+  </div>
+
+  <div class="data-flow-explainer">
+    <i class="fa fa-info-circle"></i>
+    <span><strong>Highest usage is shown first.</strong> Numbers update every 2 seconds, but the ranking only reshuffles every 10 seconds so the screen stays readable. HTTPS content remains encrypted.</span>
+  </div>
+
+  <div class="data-flow-error" ng-if="flowError">
+    <i class="fa fa-exclamation-triangle"></i> {{flowError}}
+  </div>
+
+  <div class="data-consumer-overview" ng-if="serviceGroups.length">
+    <div class="data-consumer-stat">
+      <span>TRACKED THIS SESSION</span>
+      <strong>{{formatBytes(flowData.TrackedBytes)}}</strong>
+      <small>Across identified and unknown Internet services</small>
+    </div>
+    <div class="data-consumer-stat data-consumer-stat-primary">
+      <span>TOP CONSUMER</span>
+      <strong>{{topConsumer.Service}}</strong>
+      <small>{{formatBytes(topConsumer.TotalBytes)}} used</small>
+    </div>
+    <div class="data-consumer-stat">
+      <span>LIVE RATE</span>
+      <strong>{{formatRate(totalLiveBps)}}</strong>
+      <small>Combined traffic right now</small>
+    </div>
+    <div class="data-consumer-stat">
+      <span>CONNECTIONS</span>
+      <strong>{{flowData.ActiveConnections || 0}}</strong>
+      <small>{{flowData.IdentifiedConnections || 0}} identified</small>
+    </div>
+  </div>
+
+  <div class="data-consumer-toolbar">
+    <div class="data-consumer-toolbar-copy">
+      <strong>Top data consumers</strong>
+      <span>Sorted by total session usage, not by momentary speed.</span>
+    </div>
+    <div class="data-flow-search">
+      <i class="fa fa-search"></i>
+      <input type="text" ng-model="flowSearch" placeholder="Filter YouTube, Apple, host, IP...">
+    </div>
+    <button class="btn btn-default data-btn-small" ng-click="refreshFlows(true)">
+      <i class="fa fa-refresh"></i> Update ranking
+    </button>
+  </div>
+
+  <div class="data-flow-empty" ng-if="!serviceGroups.length && !flowError">
+    <i class="fa fa-random"></i>
+    <strong>No Internet usage detected yet</strong>
+    <span>Open an app or webpage on a device connected to Stratux.</span>
+  </div>
+
+  <div class="data-consumer-list" ng-if="serviceGroups.length">
+    <div class="data-consumer-row"
+         ng-repeat="group in serviceGroups | filter:groupMatchesSearch | limitTo:displayLimit() track by group.Key">
+      <div class="data-consumer-row-main">
+        <div class="data-consumer-rank">#{{group.Rank}}</div>
+
+        <div class="data-consumer-icon">
+          <i class="fa" ng-class="groupIconClass(group)"></i>
+        </div>
+
+        <div class="data-consumer-name">
+          <div class="data-consumer-title">{{group.Service}}</div>
+          <div class="data-consumer-category">{{group.Category || 'Internet service'}}</div>
+          <div class="data-consumer-hosts" title="{{group.HostSummary}}">{{group.HostSummary}}</div>
+        </div>
+
+        <div class="data-consumer-total">
+          <span>TOTAL USED</span>
+          <strong>{{formatBytes(group.TotalBytes)}}</strong>
+          <small>{{group.SharePercent | number:1}}% of tracked traffic</small>
+        </div>
+
+        <div class="data-consumer-now">
+          <span>NOW</span>
+          <strong>{{formatRate(group.CurrentBps)}}</strong>
+          <small>{{group.ActiveConnections}} active connection{{group.ActiveConnections === 1 ? '' : 's'}}</small>
+        </div>
+
+        <button class="btn btn-default data-consumer-details-btn" ng-click="toggleGroup(group)">
+          <i class="fa" ng-class="expandedGroups[group.Key] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+          {{expandedGroups[group.Key] ? 'Hide' : 'Details'}}
+        </button>
+      </div>
+
+      <div class="data-consumer-progress-wrap">
+        <div class="data-consumer-progress-head">
+          <span>{{formatBytes(group.DownloadBytes)}} down · {{formatBytes(group.UploadBytes)}} up</span>
+          <span>Relative to highest consumer</span>
+        </div>
+        <div class="data-consumer-progress">
+          <div class="data-consumer-progress-fill" ng-style="{'width': group.UsagePercent + '%'}"></div>
+        </div>
+      </div>
+
+      <div class="data-consumer-flow-details" ng-if="expandedGroups[group.Key]">
+        <div class="data-consumer-flow-empty" ng-if="!group.Flows.length">
+          No currently active connection for this service. Its session usage is kept in the ranking.
+        </div>
+
+        <div class="data-consumer-flow-row" ng-repeat="flow in group.Flows track by flow.ID" ng-class="{'is-killed': flow.RecentlyKilled}">
+          <div class="data-consumer-flow-endpoint">
+            <div>
+              <strong>{{flow.Hostname || flow.RemoteIP}}</strong>
+              <span class="data-flow-source" ng-if="flow.HostnameSource">{{flow.HostnameSource}}</span>
+            </div>
+            <small>{{connectionLabel(flow)}}</small>
+            <small>{{flow.ConnectionType}} · {{flow.State}}</small>
+          </div>
+
+          <div class="data-consumer-flow-number">
+            <span>TOTAL</span>
+            <strong>{{formatBytes(flow.TotalBytes)}}</strong>
+          </div>
+
+          <div class="data-consumer-flow-number">
+            <span>NOW</span>
+            <strong>{{formatRate(flow.CurrentBps)}}</strong>
+          </div>
+
+          <button class="btn btn-danger data-flow-kill"
+                  ng-click="killFlow(flow)"
+                  ng-disabled="flow.actionPending || flow.RecentlyKilled">
+            <i class="fa" ng-class="flow.RecentlyKilled ? 'fa-check' : 'fa-times-circle'"></i>
+            {{flow.actionPending ? 'KILLING...' : (flow.RecentlyKilled ? 'KILLED' : 'KILL')}}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="data-consumer-more" ng-if="!flowSearch && serviceGroups.length > 12">
+    <button class="btn btn-default" ng-click="showAllGroups = !showAllGroups">
+      {{showAllGroups ? 'Show top 12 only' : 'Show all ' + serviceGroups.length + ' services'}}
+    </button>
+  </div>
+</div>

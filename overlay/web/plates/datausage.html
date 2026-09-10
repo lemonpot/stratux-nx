@@ -1,0 +1,177 @@
+<div ui-content-for="title">
+  <span>Internet Data</span>
+</div>
+
+<div class="data-usage-page" ng-cloak>
+  <div class="data-hero">
+    <div>
+      <div class="data-eyebrow">STARLINK / INTERNET MONITOR</div>
+      <h2>Session Data Usage</h2>
+      <p>Only forwarded Internet traffic is counted. ADS-B, GPS, AHRS and local ForeFlight traffic are not included.</p>
+    </div>
+    <div class="data-connection-pill" ng-class="{'is-online': data.WANOnline, 'is-offline': !data.WANOnline}">
+      <span class="data-dot"></span>
+      {{ data.WANOnline ? 'Internet connected' : 'Internet offline' }}
+    </div>
+  </div>
+
+  <div class="data-alert data-alert-danger" ng-if="data.SessionLimitReached">
+    <i class="fa fa-ban"></i>
+    <strong>Session hard limit reached.</strong> Internet access has been blocked for connected clients.
+  </div>
+
+  <div class="data-error" ng-if="errorMessage">
+    <i class="fa fa-exclamation-triangle"></i> {{errorMessage}}
+  </div>
+
+  <div class="data-summary-grid">
+    <div class="data-stat-card data-stat-primary">
+      <div class="data-stat-label">SESSION TOTAL</div>
+      <div class="data-stat-value">{{formatBytes(data.TotalBytes)}}</div>
+      <div class="data-stat-sub">Since {{formatTime(data.SessionStart)}}</div>
+    </div>
+    <div class="data-stat-card">
+      <div class="data-stat-label"><i class="fa fa-arrow-down"></i> DOWNLOAD</div>
+      <div class="data-stat-value">{{formatBytes(data.DownloadBytes)}}</div>
+      <div class="data-stat-sub">{{formatRate(data.DownloadBps)}} now</div>
+    </div>
+    <div class="data-stat-card">
+      <div class="data-stat-label"><i class="fa fa-arrow-up"></i> UPLOAD</div>
+      <div class="data-stat-value">{{formatBytes(data.UploadBytes)}}</div>
+      <div class="data-stat-sub">{{formatRate(data.UploadBps)}} now</div>
+    </div>
+    <div class="data-stat-card">
+      <div class="data-stat-label">SESSION TIME</div>
+      <div class="data-stat-value data-stat-time">{{formatDuration(data.SessionSeconds)}}</div>
+      <div class="data-stat-sub">Monitoring {{data.MonitoringActive ? 'active' : 'inactive'}}</div>
+    </div>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div>
+        <h3>Safety limits</h3>
+        <div class="data-muted">Automatic protection against unexpected large downloads.</div>
+      </div>
+      <label class="data-switch-row">
+        <span>Automatic protection</span>
+        <input type="checkbox" ng-model="settings.AutoBlockEnabled">
+      </label>
+    </div>
+
+    <div class="data-limit-progress-wrap">
+      <div class="data-limit-head">
+        <span>Session usage</span>
+        <strong>{{formatBytes(data.TotalBytes)}} / {{settings.SessionLimitMB}} MB</strong>
+      </div>
+      <div class="data-progress-track">
+        <div class="data-progress-bar" ng-class="limitProgressClass()" ng-style="{'width': sessionPercent() + '%'}"></div>
+      </div>
+    </div>
+
+    <div class="data-settings-grid">
+      <div class="data-field">
+        <label>Warning per device</label>
+        <div class="data-input-group"><input type="number" min="1" ng-model="settings.WarningMB"><span>MB</span></div>
+      </div>
+      <div class="data-field">
+        <label>Auto-block per device</label>
+        <div class="data-input-group"><input type="number" min="1" ng-model="settings.AutoBlockMB"><span>MB</span></div>
+      </div>
+      <div class="data-field">
+        <label>Hard session limit</label>
+        <div class="data-input-group"><input type="number" min="1" ng-model="settings.SessionLimitMB"><span>MB</span></div>
+      </div>
+      <div class="data-field data-field-actions">
+        <button class="btn btn-primary data-btn" ng-click="saveSettings()" ng-disabled="savingSettings">
+          <i class="fa fa-shield"></i> {{savingSettings ? 'Saving...' : 'Save protection'}}
+        </button>
+      </div>
+    </div>
+    <div class="data-limit-note">
+      Default protection: warning at 250 MB/device, block at 500 MB/device, and block all Internet at 1 GB/session.
+    </div>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div>
+        <h3>Connected devices</h3>
+        <div class="data-muted">Block only Internet. Access to Stratux itself remains available.</div>
+      </div>
+      <button class="btn btn-default data-btn-small" ng-click="refresh()"><i class="fa fa-refresh"></i> Refresh</button>
+    </div>
+
+    <div class="data-empty" ng-if="!data.Clients || data.Clients.length === 0">
+      <i class="fa fa-wifi"></i>
+      <strong>No clients detected yet</strong>
+      <span>Connect an iPad or phone to the Stratux Wi-Fi.</span>
+    </div>
+
+    <div class="data-device-list" ng-if="data.Clients.length">
+      <div class="data-device-card" ng-repeat="client in data.Clients | orderBy:['!Connected','-TotalBytes']" ng-class="{'is-blocked': client.Blocked}">
+        <div class="data-device-main">
+          <div class="data-device-icon"><i class="fa fa-tablet"></i></div>
+          <div class="data-device-name-wrap">
+            <div class="data-device-name">{{client.Hostname || 'Unknown device'}}</div>
+            <div class="data-device-meta">
+              <span class="data-status-badge" ng-class="{'online': client.Connected, 'offline': !client.Connected}">{{client.Connected ? 'CONNECTED' : 'SEEN EARLIER'}}</span>
+              <span>{{client.IP}}</span>
+              <span ng-if="client.MAC">{{client.MAC}}</span>
+            </div>
+          </div>
+          <button class="btn data-block-btn" ng-class="client.Blocked ? 'btn-success' : 'btn-danger'" ng-click="toggleBlock(client)" ng-disabled="client.actionPending">
+            <i class="fa" ng-class="client.Blocked ? 'fa-unlock' : 'fa-ban'"></i>
+            {{client.actionPending ? 'Working...' : (client.Blocked ? 'RESTORE INTERNET' : 'BLOCK INTERNET')}}
+          </button>
+        </div>
+
+        <div class="data-device-metrics">
+          <div><span>Total</span><strong>{{formatBytes(client.TotalBytes)}}</strong></div>
+          <div><span>Download</span><strong>{{formatBytes(client.DownloadBytes)}}</strong></div>
+          <div><span>Upload</span><strong>{{formatBytes(client.UploadBytes)}}</strong></div>
+          <div><span>Now</span><strong>{{formatRate(client.DownloadBps + client.UploadBps)}}</strong></div>
+        </div>
+
+        <div class="data-device-progress">
+          <div class="data-progress-track">
+            <div class="data-progress-bar" ng-class="deviceProgressClass(client)" ng-style="{'width': devicePercent(client) + '%'}"></div>
+          </div>
+          <div class="data-device-progress-label">
+            <span ng-if="!client.Blocked && client.TotalBytes < mb(settings.WarningMB)">Normal usage</span>
+            <span ng-if="!client.Blocked && client.TotalBytes >= mb(settings.WarningMB) && client.TotalBytes < mb(settings.AutoBlockMB)">Warning threshold reached</span>
+            <span ng-if="client.Blocked">Internet blocked</span>
+            <span>{{Math.min(100, devicePercent(client)) | number:0}}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="data-panel">
+    <div class="data-panel-header">
+      <div>
+        <h3>Activity log</h3>
+        <div class="data-muted">Connection, warnings, blocks and periodic usage snapshots are written persistently.</div>
+      </div>
+      <button class="btn btn-default data-btn-small" ng-click="resetSession()"><i class="fa fa-undo"></i> New session</button>
+    </div>
+
+    <div class="data-log-path">Log: {{data.PersistentLogPath || 'initializing...'}}</div>
+    <div class="data-log-list">
+      <div class="data-log-row" ng-repeat="event in data.RecentEvents">
+        <div class="data-log-icon" ng-class="eventClass(event)"><i class="fa" ng-class="eventIcon(event)"></i></div>
+        <div class="data-log-body">
+          <div class="data-log-message">{{event.Message}}</div>
+          <div class="data-log-meta">
+            {{formatTime(event.Time)}}
+            <span ng-if="event.Hostname"> · {{event.Hostname}}</span>
+            <span ng-if="event.IP"> · {{event.IP}}</span>
+            <span ng-if="event.Bytes"> · {{formatBytes(event.Bytes)}}</span>
+          </div>
+        </div>
+      </div>
+      <div class="data-empty-inline" ng-if="!data.RecentEvents.length">No events logged yet.</div>
+    </div>
+  </div>
+</div>
