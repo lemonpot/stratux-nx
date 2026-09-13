@@ -32,7 +32,7 @@ p.write_text(s)
 # --- AppCache: register new assets ---
 p = root / "web/stratux.appcache"
 s = p.read_text()
-entries = ['/css/map-nx.css', '/css/pages-nx.css', '/js/map-nx.js']
+entries = ['/css/map-nx.css', '/css/pages-nx.css', '/js/map-nx.js', '/img/logo-nx.png']
 if any(e not in s for e in entries):
     marker = '\nNETWORK:\n'
     if marker not in s:

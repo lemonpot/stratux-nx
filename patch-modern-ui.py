@@ -63,7 +63,7 @@ set_settings_replacement = r'''\tfunction setSettings(msg, options) {
 \t\t}, function (response) {
 \t\t\t$scope.rawSettings = "error setting settings";
 \t\t\tif (!options.silent && window.StratuxUI) {
-\t\t\t\twindow.StratuxUI.toast(options.errorMessage || "Stratux could not save this setting", "error", 4200);
+\t\t\t\twindow.StratuxUI.toast(options.errorMessage || "Stratux NX could not save this setting", "error", 4200);
 \t\t\t}
 \t\t\treturn Promise.reject(response);
 \t\t});
@@ -174,7 +174,7 @@ wifi_replacement = r'''\tvar wifiApplyTimer = null;
 \t\t}, function (response) {
 \t\t\t$scope.wifiApplying = false;
 \t\t\t$scope.wifiApplyState = "error";
-\t\t\t$scope.wifiApplyError = (response && response.data) ? String(response.data) : "Stratux did not confirm the WiFi settings change.";
+\t\t\t$scope.wifiApplyError = (response && response.data) ? String(response.data) : "Stratux NX did not confirm the WiFi settings change.";
 \t\t});
 \t};
 
@@ -195,7 +195,7 @@ reboot_pattern = re.compile(
 )
 reboot_replacement = r'''\t$scope.postReboot = function () {
 \t\tif (window.StratuxUI) {
-\t\t\twindow.StratuxUI.showBusy("Rebooting Stratux", "The receiver will disappear for a short time. Reconnect to Stratux WiFi when it comes back.");
+\t\t\twindow.StratuxUI.showBusy("Rebooting Stratux NX", "The receiver will disappear for a short time. Reconnect to Stratux NX WiFi when it comes back.");
 \t\t}
 \t\t$http.post(URL_REBOOT).finally(function () {
 \t\t\t$window.setTimeout(function () { $window.location.href = "/"; }, 1400);
@@ -203,7 +203,7 @@ reboot_replacement = r'''\t$scope.postReboot = function () {
 \t};'''
 if reboot_pattern.search(s):
     s = reboot_pattern.sub(reboot_replacement, s, count=1)
-elif 'window.StratuxUI.showBusy("Rebooting Stratux"' not in s:
+elif 'window.StratuxUI.showBusy("Rebooting Stratux NX"' not in s:
     raise SystemExit('Could not patch postReboot in settings.js')
 
 shutdown_pattern = re.compile(
@@ -212,7 +212,7 @@ shutdown_pattern = re.compile(
 )
 shutdown_replacement = r'''\t$scope.postShutdown = function () {
 \t\tif (window.StratuxUI) {
-\t\t\twindow.StratuxUI.showBusy("Shutting down Stratux", "Wait for the shutdown to complete before removing power.");
+\t\t\twindow.StratuxUI.showBusy("Shutting down Stratux NX", "Wait for the shutdown to complete before removing power.");
 \t\t}
 \t\t$http.post(URL_SHUTDOWN).finally(function () {
 \t\t\t$window.setTimeout(function () { $window.location.href = "/"; }, 1400);
@@ -220,7 +220,7 @@ shutdown_replacement = r'''\t$scope.postShutdown = function () {
 \t};'''
 if shutdown_pattern.search(s):
     s = shutdown_pattern.sub(shutdown_replacement, s, count=1)
-elif 'window.StratuxUI.showBusy("Shutting down Stratux"' not in s:
+elif 'window.StratuxUI.showBusy("Shutting down Stratux NX"' not in s:
     raise SystemExit('Could not patch postShutdown in settings.js')
 
 p.write_text(s)
@@ -266,12 +266,12 @@ wifi_modal_replacement = '''    <!-- WiFi Apply / Restart Modal -->
                             <div class="sx-wifi-status-icon error" ng-if="wifiApplyState=='error'"><i class="fa fa-exclamation-triangle"></i></div>
                             <div class="sx-wifi-status-copy">
                                 <h4 ng-if="wifiApplyState=='saving'">Saving your configuration...</h4>
-                                <p ng-if="wifiApplyState=='saving'">Stratux is writing the new WiFi configuration. Do not close this window yet.</p>
+                                <p ng-if="wifiApplyState=='saving'">Stratux NX is writing the new WiFi configuration. Do not close this window yet.</p>
                                 <h4 ng-if="wifiApplyState=='restarting'">The configuration was accepted.</h4>
                                 <p ng-if="wifiApplyState=='restarting'">Network services are restarting. Your browser may temporarily lose connection. About {{wifiApplySeconds}} seconds remaining.</p>
                                 <h4 ng-if="wifiApplyState=='done'">Restart window complete.</h4>
-                                <p ng-if="wifiApplyState=='done'">If the SSID changed, reconnect your device to the new Stratux WiFi network. Otherwise you can continue normally.</p>
-                                <h4 ng-if="wifiApplyState=='error'">Stratux did not return a successful save response.</h4>
+                                <p ng-if="wifiApplyState=='done'">If the SSID changed, reconnect your device to the new Stratux NX WiFi network. Otherwise you can continue normally.</p>
+                                <h4 ng-if="wifiApplyState=='error'">Stratux NX did not return a successful save response.</h4>
                                 <p ng-if="wifiApplyState=='error'">{{wifiApplyError}}</p>
                             </div>
                         </div>
@@ -288,9 +288,9 @@ wifi_modal_replacement = '''    <!-- WiFi Apply / Restart Modal -->
 
                         <div class="sx-wifi-summary" ng-if="wifiApplyState!='error'">
                             <div><span>Mode</span><strong>{{wifiModeStr()}}</strong></div>
-                            <div><span>Stratux SSID</span><strong>{{WiFiSSID}}</strong></div>
+                            <div><span>Stratux NX SSID</span><strong>{{WiFiSSID}}</strong></div>
                             <div><span>Security</span><strong>{{WiFiSecurityEnabled ? 'Password protected' : 'Open network'}}</strong></div>
-                            <div><span>Stratux IP</span><strong>{{WiFiIPAddress}}</strong></div>
+                            <div><span>Stratux NX IP</span><strong>{{WiFiIPAddress}}</strong></div>
                         </div>
                     </div>
                     <div class="modal-footer">

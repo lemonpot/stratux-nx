@@ -18,6 +18,14 @@ if old in s:
     s = s.replace(old, new, 1)
 elif new not in s:
     raise SystemExit('Could not find Stratux navbar brand container')
+# Replace the brand text and add the NX logo.
+brand_link = re.search(r'(<a\s+href="#/">\s*)Stratux(\s*</a>)', s)
+if brand_link:
+    s = s.replace(brand_link.group(0),
+        brand_link.group(1) +
+        '<img src="img/logo-nx.png" alt="" style="height:26px;width:26px;vertical-align:middle;margin:-2px 7px 0 0;border-radius:5px;"> '
+        'Stratux NX' +
+        brand_link.group(2), 1)
 p.write_text(s)
 
 # Remove our custom page title publishers as well. They are no longer needed
@@ -48,4 +56,4 @@ for rel in ("web/plates/datausage.html", "web/plates/flightlog.html"):
     if p.exists() and 'ui-content-for="title"' in p.read_text():
         raise SystemExit(rel + ' still publishes a sticky navbar title')
 
-print('Navbar brand locked to Stratux; page titles remain inside page content.')
+print('Navbar brand set to Stratux NX with logo; page titles remain inside page content.')

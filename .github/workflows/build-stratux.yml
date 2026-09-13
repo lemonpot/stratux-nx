@@ -57,6 +57,7 @@ jobs:
           test -f stratux/web/plates/update.html
           test -f stratux/web/plates/js/update.js
           test -f stratux/main/updater.go
+          test -f stratux/web/img/logo-nx.png
 
           grep -q "Internet Data" stratux/web/index.html
           grep -q "Flight Log" stratux/web/index.html

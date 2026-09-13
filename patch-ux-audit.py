@@ -21,7 +21,7 @@ old = '''\t\t}, function (response) {
 new = '''\t\t}, function (response) {
 \t\t\t$scope.rawSettings = "error getting settings";
 \t\t\tif (window.StratuxUI) {
-\t\t\t\twindow.StratuxUI.toast("Could not load Stratux settings. Existing values were left unchanged.", "error", 5000);
+\t\t\t\twindow.StratuxUI.toast("Could not load Stratux NX settings. Existing values were left unchanged.", "error", 5000);
 \t\t\t}
 \t\t});
 \t}'''
@@ -45,7 +45,7 @@ old = '''\t\t}).success(function (data) {
 new = '''\t\t}).success(function (data) {
 \t\t\t$scope.uploading_update = false;
 \t\t\tif (window.StratuxUI) {
-\t\t\t\twindow.StratuxUI.toast("Update uploaded. Stratux is installing it now; wait about 5 minutes, reconnect if needed, then refresh Status to verify the version.", "success", 9000, "Update accepted");
+\t\t\t\twindow.StratuxUI.toast("Update uploaded. Stratux NX is installing it now; wait about 5 minutes, reconnect if needed, then refresh Status to verify the version.", "success", 9000, "Update accepted");
 \t\t\t} else {
 \t\t\t\talert("Update uploaded. Wait about 5 minutes, then refresh Status to verify the version.");
 \t\t\t}

@@ -329,7 +329,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
     };
 
     $scope.finishFlight = function() {
-        if (!window.confirm('Finish the current flight now? Stratux will use the current GPS time as the end of the flight.')) return;
+        if (!window.confirm('Finish the current flight now? Stratux NX will use the current GPS time as the end of the flight.')) return;
         $http.post('/flightLog/action', {action:'finish'}).then(function(){
             if (window.StratuxUI) window.StratuxUI.toast('Flight saved','success',1800);
             $scope.refresh();
