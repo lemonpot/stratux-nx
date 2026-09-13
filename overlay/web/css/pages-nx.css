@@ -1,47 +1,161 @@
 /* ============================================================
    STRATUX NX -- Upstream Page Enhancements
-   Status, Traffic, Settings, GPS/AHRS
+   Consistent styling across ALL pages
    ============================================================ */
+
+
+/* === GLOBAL PAGE LAYOUT ========================================== */
+
+/* All pages: consistent max-width and centering */
+div[ui-view] > .col-sm-12,
+div[ui-view] > div > .col-sm-12 {
+  max-width: 960px;
+  margin: 0 auto;
+  float: none !important;
+}
+
+/* Main content container */
+div[ui-view] {
+  animation: sxPageIn .2s ease;
+}
+
+@keyframes sxPageIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Panel cleanup: consistent radius and spacing */
+div[ui-view] .panel {
+  border-radius: var(--sx-radius) !important;
+  overflow: hidden;
+  box-shadow: var(--sx-shadow);
+  margin-bottom: 14px;
+}
+
+div[ui-view] .panel .panel-heading {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  padding: 13px 18px;
+}
+
+div[ui-view] .panel .panel-body {
+  padding: 16px 18px;
+}
+
+/* Row value labels: consistent sizing */
+div[ui-view] .panel-body .control-label,
+div[ui-view] .panel-body label.col-xs-5,
+div[ui-view] .panel-body label.col-xs-6 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sx-text-2);
+}
+
+/* Tabular numbers everywhere relevant */
+div[ui-view] .panel-body .text-right,
+div[ui-view] .panel-body .pull-right,
+div[ui-view] .panel-body [ng-bind*="Speed"],
+div[ui-view] .panel-body [ng-bind*="Alt"],
+div[ui-view] .panel-body [ng-bind*="Lat"],
+div[ui-view] .panel-body [ng-bind*="Lng"],
+div[ui-view] .panel-body [ng-bind*="Lon"],
+div[ui-view] .panel-body [ng-bind*="Accuracy"],
+div[ui-view] .panel-body [ng-bind*="Count"],
+div[ui-view] .panel-body [ng-bind*="Rate"],
+div[ui-view] .panel-body [ng-bind*="Msgs"] {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
 
 
 /* === STATUS PAGE (HOME) ========================================== */
 
-/* Status indicators: green/red dots */
-.status-page .label,
+/* Version display */
+div[ui-view] .col-sm-12 > p.text-center {
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--sx-muted);
+  padding: 8px 16px;
+  margin: 6px auto 10px;
+  max-width: 400px;
+  background: var(--sx-card-soft);
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius-full);
+  text-align: center;
+}
+
+/* Status Connected/Disconnected badge */
 div[ui-view] .label {
   font-size: 10px !important;
   padding: 4px 10px !important;
+  border-radius: var(--sx-radius-full) !important;
+  font-weight: 700 !important;
+  letter-spacing: .02em;
 }
 
-/* System status cards */
-.panel-body .col-xs-6,
-.panel-body .col-sm-6 {
+/* Status rows: clean spacing */
+div[ui-view] .panel-body .row {
   margin-bottom: 2px;
 }
 
-/* Value formatting in status rows */
-.panel-body .text-right,
-.panel-body .pull-right {
-  font-variant-numeric: tabular-nums;
+/* Messages progress bars */
+div[ui-view] .panel-body .progress {
+  height: 8px;
+  border-radius: var(--sx-radius-full);
+  background: var(--sx-card-soft);
+  box-shadow: inset 0 0 0 1px var(--sx-border);
+  overflow: hidden;
+  margin-bottom: 8px;
 }
 
+div[ui-view] .panel-body .progress-bar {
+  border-radius: var(--sx-radius-full);
+  transition: width 300ms ease;
+}
 
-/* === TRAFFIC PAGE ================================================ */
+div[ui-view] .panel-body .progress-bar-success { background: var(--sx-success) !important; }
+div[ui-view] .panel-body .progress-bar-warning { background: var(--sx-warning) !important; }
+div[ui-view] .panel-body .progress-bar-danger { background: var(--sx-danger) !important; }
 
-/* Traffic table: monospace callsigns, clean layout */
-.traffic-table,
+/* UAT Statistics table */
+div[ui-view] .table {
+  margin-bottom: 0;
+}
+
+div[ui-view] .table > thead > tr > th {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--sx-muted-2);
+  border-bottom-width: 1px !important;
+  padding: 10px 14px;
+}
+
+div[ui-view] .table > tbody > tr > td {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  padding: 10px 14px;
+  vertical-align: middle;
+}
+
 div[ui-view] .table-responsive {
   border-radius: var(--sx-radius) !important;
   overflow: hidden;
   border: 1px solid var(--sx-border);
 }
 
-div[ui-view] .table-responsive .table {
-  margin-bottom: 0;
+/* System info row (Uptime, CPU Temp, Free Storage) */
+div[ui-view] .panel-body .col-xs-4,
+div[ui-view] .panel-body .col-xs-6 {
+  margin-bottom: 2px;
 }
 
-/* Aircraft type icon in traffic */
-.traffic-table img,
+
+/* === TRAFFIC PAGE ================================================ */
+
+/* Aircraft type icon */
 div[ui-view] .table img[src*="actype"] {
   width: 22px;
   height: 22px;
@@ -53,15 +167,13 @@ body.stratux-dark div[ui-view] .table img[src*="actype"] {
   filter: invert(1) brightness(1.8);
 }
 
-/* Speed/Alt/Dist columns: tabular figures */
-.traffic-table td:nth-child(n+3),
+/* Speed/Alt/Dist columns */
 div[ui-view] .table td {
   font-variant-numeric: tabular-nums;
   font-size: 13px;
 }
 
 /* Callsign column */
-.traffic-table td:first-child,
 div[ui-view] .table td:first-child {
   font-weight: 700;
   font-family: "SF Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
@@ -82,22 +194,19 @@ div[ui-view] .alert-info {
 
 /* === SETTINGS PAGE =============================================== */
 
-/* Section dividers in settings panels */
-.panel-body > .separator,
-.panel-body > hr {
-  margin: 16px -16px !important;
+/* Section dividers */
+div[ui-view] .panel-body > .separator,
+div[ui-view] .panel-body > hr {
+  margin: 16px -18px !important;
   background: var(--sx-border);
   border: 0;
   height: 1px;
 }
 
 /* Toggle/checkbox rows */
-.panel-body .checkbox,
-.panel-body .form-group .checkbox {
-  margin: 0;
-}
+div[ui-view] .panel-body .checkbox { margin: 0; }
 
-.panel-body .checkbox label {
+div[ui-view] .panel-body .checkbox label {
   padding-left: 22px;
   font-weight: 600;
   color: var(--sx-text-2);
@@ -105,25 +214,21 @@ div[ui-view] .alert-info {
   line-height: 1.4;
 }
 
-.panel-body .checkbox input[type="checkbox"] {
+div[ui-view] .panel-body .checkbox input[type="checkbox"] {
   margin-top: 3px;
   accent-color: var(--sx-primary);
 }
 
 /* Setting description text */
-.panel-body small,
-.panel-body .help-block {
+div[ui-view] .panel-body small,
+div[ui-view] .panel-body .help-block {
   font-size: 12px !important;
   color: var(--sx-muted) !important;
   line-height: 1.5;
 }
 
-/* Settings section headers */
-.panel-heading {
-  position: relative;
-}
-
-.panel-heading .badge {
+/* Settings section header badges */
+div[ui-view] .panel-heading .badge {
   background: var(--sx-primary-soft) !important;
   color: var(--sx-primary) !important;
   font-weight: 700;
@@ -180,40 +285,18 @@ input[type="file"]::file-selector-button:hover {
 }
 
 /* GPS accuracy indicators */
-.panel-body .progress {
-  height: 8px;
-  border-radius: var(--sx-radius-full);
-  background: var(--sx-card-soft);
-  box-shadow: inset 0 0 0 1px var(--sx-border);
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.panel-body .progress-bar {
-  border-radius: var(--sx-radius-full);
-  transition: width 300ms ease;
-}
-
-.panel-body .progress-bar-success {
-  background: var(--sx-success) !important;
-}
-
-.panel-body .progress-bar-warning {
-  background: var(--sx-warning) !important;
-}
-
-.panel-body .progress-bar-danger {
-  background: var(--sx-danger) !important;
-}
+div[ui-view] .panel-body .progress-bar-success { background: var(--sx-success) !important; }
+div[ui-view] .panel-body .progress-bar-warning { background: var(--sx-warning) !important; }
+div[ui-view] .panel-body .progress-bar-danger { background: var(--sx-danger) !important; }
 
 /* GPS coordinates display */
-.panel-body .text-center > strong,
-.panel-body td > strong {
+div[ui-view] .panel-body .text-center > strong,
+div[ui-view] .panel-body td > strong {
   font-variant-numeric: tabular-nums;
 }
 
 /* Satellite count badges */
-.panel-body .label[class*="label-"] {
+div[ui-view] .panel-body .label[class*="label-"] {
   font-size: 11px !important;
   padding: 4px 8px !important;
   border-radius: var(--sx-radius-full) !important;
@@ -223,39 +306,32 @@ input[type="file"]::file-selector-button:hover {
 
 /* === TOWERS PAGE ================================================= */
 
-/* Tower list */
-.panel-body .list-group {
-  margin: -16px !important;
+div[ui-view] .panel-body .list-group {
+  margin: -16px -18px !important;
   border-radius: 0 !important;
 }
 
-.panel-body .list-group .list-group-item {
+div[ui-view] .panel-body .list-group .list-group-item {
   border-radius: 0 !important;
   border-left: 0 !important;
   border-right: 0 !important;
-  padding: 12px 16px !important;
+  padding: 12px 18px !important;
   font-size: 13px;
   transition: background var(--sx-transition);
 }
 
-.panel-body .list-group .list-group-item:hover {
+div[ui-view] .panel-body .list-group .list-group-item:hover {
   background: var(--sx-card-hover) !important;
 }
 
-.panel-body .list-group .list-group-item:first-child {
-  border-top: 0 !important;
-}
-
-.panel-body .list-group .list-group-item:last-child {
-  border-bottom: 0 !important;
-}
+div[ui-view] .panel-body .list-group .list-group-item:first-child { border-top: 0 !important; }
+div[ui-view] .panel-body .list-group .list-group-item:last-child { border-bottom: 0 !important; }
 
 
 /* === WEATHER PAGE ================================================ */
 
-/* Weather text products */
-.panel-body pre,
-.panel-body .well {
+div[ui-view] .panel-body pre,
+div[ui-view] .panel-body .well {
   background: var(--sx-card-soft) !important;
   border: 1px solid var(--sx-border) !important;
   border-radius: var(--sx-radius-sm) !important;
@@ -269,9 +345,8 @@ input[type="file"]::file-selector-button:hover {
 
 /* === LOGS PAGE =================================================== */
 
-/* Log links */
-.panel-body a[href*="downloadlog"],
-.panel-body a[href*="downloaddb"] {
+div[ui-view] .panel-body a[href*="downloadlog"],
+div[ui-view] .panel-body a[href*="downloaddb"] {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -286,8 +361,8 @@ input[type="file"]::file-selector-button:hover {
   transition: all var(--sx-transition);
 }
 
-.panel-body a[href*="downloadlog"]:hover,
-.panel-body a[href*="downloaddb"]:hover {
+div[ui-view] .panel-body a[href*="downloadlog"]:hover,
+div[ui-view] .panel-body a[href*="downloaddb"]:hover {
   background: var(--sx-primary-soft);
   border-color: var(--sx-primary);
 }
@@ -304,21 +379,13 @@ input[type="file"]::file-selector-button:hover {
   background: #0c1018 !important;
 }
 
-/* Radar range rings */
-.radar-ring {
-  stroke: rgba(77, 159, 255, .15);
-  stroke-width: 1;
-}
-
-/* Radar aircraft blips */
-.radar-blip {
-  filter: drop-shadow(0 0 4px rgba(77, 159, 255, .3));
-}
+.radar-ring { stroke: rgba(77, 159, 255, .15); stroke-width: 1; }
+.radar-blip { filter: drop-shadow(0 0 4px rgba(77, 159, 255, .3)); }
 
 
 /* === DEVELOPER PAGE ============================================== */
 
-.panel-body textarea {
+div[ui-view] .panel-body textarea {
   font-family: "SF Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace !important;
   font-size: 12px !important;
   line-height: 1.6 !important;
@@ -330,9 +397,8 @@ input[type="file"]::file-selector-button:hover {
 }
 
 
-/* === MISC SHARED ================================================= */
+/* === ALERT BOXES ================================================= */
 
-/* Alert boxes */
 .alert {
   border-radius: var(--sx-radius-sm) !important;
   border-width: 1px !important;
@@ -356,28 +422,4 @@ input[type="file"]::file-selector-button:hover {
   background: var(--sx-warning-soft) !important;
   border-color: var(--sx-warning) !important;
   color: var(--sx-warning-text) !important;
-}
-
-/* Tabular numbers everywhere relevant */
-.panel-body [ng-bind*="Speed"],
-.panel-body [ng-bind*="Alt"],
-.panel-body [ng-bind*="Lat"],
-.panel-body [ng-bind*="Lng"],
-.panel-body [ng-bind*="Lon"],
-.panel-body [ng-bind*="Accuracy"],
-.panel-body [ng-bind*="Count"],
-.panel-body [ng-bind*="Rate"],
-.panel-body [ng-bind*="Msgs"] {
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-}
-
-/* Smooth page transitions */
-div[ui-view] {
-  animation: sxPageIn .2s ease;
-}
-
-@keyframes sxPageIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: none; }
 }
