@@ -98,8 +98,9 @@ python3 "$SCRIPT_DIR/patch-flow-backend.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-data-policies.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-data-policy-style.py" "$TARGET"
 
-# Shared Stratux UX modernization and settings workflow fixes.
+# Shared Stratux UX modernization, map enhancements and settings workflow fixes.
 python3 "$SCRIPT_DIR/patch-modern-ui.py" "$TARGET"
+python3 "$SCRIPT_DIR/patch-map-ui.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-ux-audit.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-navbar-brand.py" "$TARGET"
 
