@@ -50,6 +50,9 @@ jobs:
           test -f stratux/web/plates/js/datausage.js
           test -f stratux/web/plates/js/flightlog.js
           test -f stratux/web/css/datausage.css
+          test -f stratux/web/css/map-nx.css
+          test -f stratux/web/css/pages-nx.css
+          test -f stratux/web/js/map-nx.js
 
           grep -q "Internet Data" stratux/web/index.html
           grep -q "Flight Log" stratux/web/index.html
@@ -93,6 +96,16 @@ jobs:
           cd stratux/image_build
           ./build.sh
 
+      - name: Extract OTA update package
+        run: |
+          set -euo pipefail
+          mkdir -p ota-update
+          find stratux/ -maxdepth 2 -name '*.deb' -exec cp {} ota-update/ \;
+          ls -lh ota-update/
+          if [ -z "$(ls ota-update/*.deb 2>/dev/null)" ]; then
+            echo "WARNING: no .deb found, OTA package not available"
+          fi
+
       - name: Show generated files
         run: |
           find stratux/image_build/pi-gen/deploy -maxdepth 1 -type f -ls
@@ -104,3 +117,12 @@ jobs:
           path: stratux/image_build/pi-gen/deploy/*
           compression-level: 0
           if-no-files-found: error
+
+      - name: Upload OTA update package
+        uses: actions/upload-artifact@v4
+        if: hashFiles('ota-update/*.deb') != ''
+        with:
+          name: stratux-nx-ota-update
+          path: ota-update/*.deb
+          compression-level: 0
+          if-no-files-found: warn
