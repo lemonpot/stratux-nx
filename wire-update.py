@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Wire Stratux NX OTA update page into upstream."""
 import pathlib
+import re
 import sys
 
 root = pathlib.Path(sys.argv[1])
@@ -22,11 +23,12 @@ if 'plates/js/update.js' not in s:
     s = s.replace(marker, '<script src="plates/js/update.js"></script>\n\t' + marker, 1)
 
 if 'href="#/update"' not in s:
-    marker = '<a class="list-group-item" href="#/settings"><i class="fa fa-cog"></i> Settings     <i class="fa fa-chevron-right pull-right"></i></a>'
-    if marker not in s:
+    m = re.search(r'(<a\s+class="list-group-item"\s+href="#/settings">.*?</a>)', s)
+    if not m:
         raise SystemExit('Could not find Settings menu marker in web/index.html')
-    addition = marker + '\n\t\t\t\t\t<a class="list-group-item" href="#/update"><i class="fa fa-cloud-download"></i> Update <i class="fa fa-chevron-right pull-right"></i></a>'
-    s = s.replace(marker, addition, 1)
+    marker = m.group(1)
+    update_entry = '\n\t\t\t\t\t<a class="list-group-item" href="#/update"><i class="fa fa-cloud-download"></i> Update <i class="fa fa-chevron-right pull-right"></i></a>'
+    s = s.replace(marker, marker + update_entry, 1)
 
 p.write_text(s)
 
