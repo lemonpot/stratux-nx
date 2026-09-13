@@ -103,7 +103,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p ota-update
-          find stratux/ -maxdepth 2 -name '*.deb' -exec cp {} ota-update/ \;
+          echo "Searching for .deb files..."
+          find stratux/ -name '*.deb' -ls || true
+          find stratux/ -name '*.deb' -exec cp {} ota-update/ \;
           ls -lh ota-update/
           if [ -z "$(ls ota-update/*.deb 2>/dev/null)" ]; then
             echo "WARNING: no .deb found, OTA package not available"
