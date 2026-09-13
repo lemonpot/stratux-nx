@@ -303,7 +303,7 @@ func handleUpdateInstall(w http.ResponseWriter, r *http.Request) {
 		// Trigger reboot after staging.
 		log.Println("UPDATER: update staged, rebooting in 3 seconds...")
 		time.Sleep(3 * time.Second)
-		reboot()
+		doReboot()
 	}()
 
 	w.Header().Set("Content-Type", "application/json")
