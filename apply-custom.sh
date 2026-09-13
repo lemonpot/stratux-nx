@@ -43,15 +43,18 @@ if ".state('datausage'" not in s:
     s = s.replace(marker, route + marker, 1)
 p.write_text(s)
 
-# datausage.html: place live connection inspector before activity log.
+# datausage.html: ensure live connection inspector is included.
+# (The overlay datausage.html already contains the ng-include; this is
+# a fallback for when running against bare upstream.)
 p = root / "web/plates/datausage.html"
 s = p.read_text()
-include = "  <div ng-include=\"'plates/datausage_flows.html'\"></div>\n\n"
 if 'datausage_flows.html' not in s:
+    include = "  <div ng-include=\"'plates/datausage_flows.html'\"></div>\n\n"
     marker = '  <div class="data-panel">\n    <div class="data-panel-header">\n      <div>\n        <h3>Activity log</h3>'
-    if marker not in s:
-        raise SystemExit('Could not find Activity log panel marker in web/plates/datausage.html')
-    s = s.replace(marker, include + marker, 1)
+    if marker in s:
+        s = s.replace(marker, include + marker, 1)
+    else:
+        print("Note: Activity log marker not found, but datausage_flows include may already be in overlay.")
 p.write_text(s)
 
 # AppCache: Internet Data and modern shared assets.
@@ -121,6 +124,10 @@ python3 "$SCRIPT_DIR/patch-flightlog-timezone-compilefix.py" "$TARGET"
 # OTA update page and Go backend handlers.
 python3 "$SCRIPT_DIR/wire-update.py" "$TARGET"
 
+# Embed Software Update panel into Settings and improve Settings UX.
+python3 "$SCRIPT_DIR/patch-settings-update.py" "$TARGET"
+python3 "$SCRIPT_DIR/patch-settings-ux-v2.py" "$TARGET"
+
 # Run navbar-brand cleanup after Flight Log wiring too, so no custom page can
 # publish a sticky value into Mobile Angular UI's title yield.
 python3 "$SCRIPT_DIR/patch-navbar-brand.py" "$TARGET"
@@ -128,8 +135,16 @@ python3 "$SCRIPT_DIR/patch-navbar-brand.py" "$TARGET"
 # Stratux still uses the legacy HTML AppCache. Make the manifest change whenever
 # this customization branch changes so browsers cannot keep older UI assets.
 CACHE_VERSION="$(git -C "$SCRIPT_DIR" rev-parse --short=12 HEAD 2>/dev/null || date +%s)"
-sed -i '/^# Internet Data build:/d' "$TARGET/web/stratux.appcache"
+if [[ "$OSTYPE" == darwin* ]]; then
+  sed -i '' '/^# Internet Data build:/d' "$TARGET/web/stratux.appcache"
+else
+  sed -i '/^# Internet Data build:/d' "$TARGET/web/stratux.appcache"
+fi
 printf '\n# Internet Data build: %s\n' "$CACHE_VERSION" >> "$TARGET/web/stratux.appcache"
+
+# Kill HTML5 AppCache and add cache-busting to all web assets.
+# This MUST run LAST so other patches can still find clean src/href markers.
+python3 "$SCRIPT_DIR/patch-kill-cache.py" "$TARGET"
 
 if command -v gofmt >/dev/null 2>&1; then
   gofmt -w "$TARGET/main/datausage.go" "$TARGET/main/datausage_wire.go" "$TARGET/main/datausage_flows.go" "$TARGET/main/flightlog.go" "$TARGET/main/ahrs_v2.go"

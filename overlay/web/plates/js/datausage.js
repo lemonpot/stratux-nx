@@ -175,6 +175,73 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
         });
     };
 
+    // --- Saved devices (localStorage) ---
+    var SAVED_KEY = 'stratux_nx_saved_devices';
+
+    function loadSavedDevices() {
+        try {
+            return JSON.parse(localStorage.getItem(SAVED_KEY)) || {};
+        } catch (e) { return {}; }
+    }
+
+    function persistSavedDevices() {
+        localStorage.setItem(SAVED_KEY, JSON.stringify($scope.savedDevices));
+    }
+
+    $scope.savedDevices = loadSavedDevices();
+
+    $scope.isDeviceSaved = function(mac) {
+        return mac && $scope.savedDevices[mac];
+    };
+
+    $scope.saveDevice = function(client) {
+        if (!client.MAC) return;
+        $scope.savedDevices[client.MAC] = {
+            name: client.Hostname || 'Unknown device',
+            mac: client.MAC,
+            ip: client.IP,
+            lastSeen: new Date().toISOString(),
+            totalBytes: client.TotalBytes || 0
+        };
+        persistSavedDevices();
+    };
+
+    $scope.removeDevice = function(mac) {
+        delete $scope.savedDevices[mac];
+        persistSavedDevices();
+    };
+
+    $scope.renameDevice = function(mac) {
+        var dev = $scope.savedDevices[mac];
+        if (!dev) return;
+        var name = window.prompt('Device name:', dev.name);
+        if (name !== null && name.trim()) {
+            dev.name = name.trim();
+            persistSavedDevices();
+        }
+    };
+
+    $scope.savedDeviceList = function() {
+        var list = [];
+        var saved = $scope.savedDevices;
+        for (var mac in saved) {
+            if (saved.hasOwnProperty(mac)) {
+                var d = angular.copy(saved[mac]);
+                d.isOnline = false;
+                for (var i = 0; i < $scope.data.Clients.length; i++) {
+                    if ($scope.data.Clients[i].MAC === mac && $scope.data.Clients[i].Connected) {
+                        d.isOnline = true;
+                        d.ip = $scope.data.Clients[i].IP;
+                        d.totalBytes = $scope.data.Clients[i].TotalBytes;
+                        break;
+                    }
+                }
+                list.push(d);
+            }
+        }
+        return list;
+    };
+
     $scope.refresh();
     var timer = $interval($scope.refresh, 2000);
     $scope.$on('$destroy', function() {

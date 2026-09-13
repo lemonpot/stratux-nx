@@ -9,9 +9,12 @@
       <h2>Session Data Usage</h2>
       <p>Only forwarded Internet traffic is counted. ADS-B, GPS, AHRS and local ForeFlight traffic are not included.</p>
     </div>
-    <div class="data-connection-pill" ng-class="{'is-online': data.WANOnline, 'is-offline': !data.WANOnline}">
-      <span class="data-dot"></span>
-      {{ data.WANOnline ? 'Internet connected' : 'Internet offline' }}
+    <div class="data-hero-actions">
+      <button class="btn btn-default data-btn-small" ng-click="resetSession()" title="Reset counters"><i class="fa fa-undo"></i> New session</button>
+      <div class="data-connection-pill" ng-class="{'is-online': data.WANOnline, 'is-offline': !data.WANOnline}">
+        <span class="data-dot"></span>
+        {{ data.WANOnline ? 'Internet connected' : 'Internet offline' }}
+      </div>
     </div>
   </div>
 
@@ -118,12 +121,25 @@
               <span class="data-status-badge" ng-class="{'online': client.Connected, 'offline': !client.Connected}">{{client.Connected ? 'CONNECTED' : 'SEEN EARLIER'}}</span>
               <span>{{client.IP}}</span>
               <span ng-if="client.MAC">{{client.MAC}}</span>
+              <span class="data-status-badge unrestricted" ng-if="client.Exempt"><i class="fa fa-star"></i> UNRESTRICTED</span>
             </div>
           </div>
-          <button class="btn data-block-btn" ng-class="client.Blocked ? 'btn-success' : 'btn-danger'" ng-click="toggleBlock(client)" ng-disabled="client.actionPending">
-            <i class="fa" ng-class="client.Blocked ? 'fa-unlock' : 'fa-ban'"></i>
-            {{client.actionPending ? 'Working...' : (client.Blocked ? 'RESTORE INTERNET' : 'BLOCK INTERNET')}}
-          </button>
+          <div class="data-device-btns">
+            <button class="btn btn-default btn-xs data-save-btn" ng-click="saveDevice(client)" ng-if="!isDeviceSaved(client.MAC)" title="Save device">
+              <i class="fa fa-bookmark-o"></i>
+            </button>
+            <button class="btn btn-default btn-xs data-save-btn saved" ng-if="isDeviceSaved(client.MAC)" title="Device saved" disabled>
+              <i class="fa fa-bookmark"></i>
+            </button>
+            <button class="btn data-policy-btn" ng-class="client.Exempt ? 'is-exempt' : ''" ng-click="toggleExempt(client)" ng-disabled="client.policyPending">
+              <i class="fa" ng-class="client.Exempt ? 'fa-shield' : 'fa-star-o'"></i>
+              {{client.policyPending ? 'Saving...' : (client.Exempt ? 'LIMITS' : 'EXEMPT')}}
+            </button>
+            <button class="btn data-block-btn" ng-class="client.Blocked ? 'btn-success' : 'btn-danger'" ng-click="toggleBlock(client)" ng-disabled="client.actionPending">
+              <i class="fa" ng-class="client.Blocked ? 'fa-unlock' : 'fa-ban'"></i>
+              {{client.actionPending ? 'Working...' : (client.Blocked ? 'RESTORE' : 'BLOCK')}}
+            </button>
+          </div>
         </div>
 
         <div class="data-device-metrics">
@@ -138,9 +154,10 @@
             <div class="data-progress-bar" ng-class="deviceProgressClass(client)" ng-style="{'width': devicePercent(client) + '%'}"></div>
           </div>
           <div class="data-device-progress-label">
-            <span ng-if="!client.Blocked && client.TotalBytes < mb(settings.WarningMB)">Normal usage</span>
-            <span ng-if="!client.Blocked && client.TotalBytes >= mb(settings.WarningMB) && client.TotalBytes < mb(settings.AutoBlockMB)">Warning threshold reached</span>
-            <span ng-if="client.Blocked">Internet blocked</span>
+            <span ng-if="client.Exempt">Unrestricted device</span>
+            <span ng-if="!client.Exempt && !client.Blocked && client.TotalBytes < mb(settings.WarningMB)">Normal usage</span>
+            <span ng-if="!client.Exempt && !client.Blocked && client.TotalBytes >= mb(settings.WarningMB) && client.TotalBytes < mb(settings.AutoBlockMB)">Warning threshold reached</span>
+            <span ng-if="!client.Exempt && client.Blocked">Internet blocked</span>
             <span>{{Math.min(100, devicePercent(client)) | number:0}}%</span>
           </div>
         </div>
@@ -148,30 +165,46 @@
     </div>
   </div>
 
+  <!-- Live connection inspector -->
+  <div ng-include="'plates/datausage_flows.html'"></div>
+
+  <!-- Saved devices section -->
   <div class="data-panel">
     <div class="data-panel-header">
       <div>
-        <h3>Activity log</h3>
-        <div class="data-muted">Connection, warnings, blocks and periodic usage snapshots are written persistently.</div>
+        <h3>Saved devices</h3>
+        <div class="data-muted">Devices you want to keep track of across sessions.</div>
       </div>
-      <button class="btn btn-default data-btn-small" ng-click="resetSession()"><i class="fa fa-undo"></i> New session</button>
     </div>
 
-    <div class="data-log-path">Log: {{data.PersistentLogPath || 'initializing...'}}</div>
-    <div class="data-log-list">
-      <div class="data-log-row" ng-repeat="event in data.RecentEvents">
-        <div class="data-log-icon" ng-class="eventClass(event)"><i class="fa" ng-class="eventIcon(event)"></i></div>
-        <div class="data-log-body">
-          <div class="data-log-message">{{event.Message}}</div>
-          <div class="data-log-meta">
-            {{formatTime(event.Time)}}
-            <span ng-if="event.Hostname"> · {{event.Hostname}}</span>
-            <span ng-if="event.IP"> · {{event.IP}}</span>
-            <span ng-if="event.Bytes"> · {{formatBytes(event.Bytes)}}</span>
+    <div class="data-empty" ng-if="savedDeviceList().length === 0">
+      <i class="fa fa-bookmark-o"></i>
+      <strong>No saved devices yet</strong>
+      <span>Click the <i class="fa fa-bookmark-o"></i> icon on any connected device above to save it.</span>
+    </div>
+
+    <div class="data-device-list" ng-if="savedDeviceList().length">
+      <div class="data-device-card" ng-repeat="dev in savedDeviceList() | orderBy:['-isOnline', 'name']">
+        <div class="data-device-main">
+          <div class="data-device-icon"><i class="fa fa-bookmark"></i></div>
+          <div class="data-device-name-wrap">
+            <div class="data-device-name">{{dev.name}}</div>
+            <div class="data-device-meta">
+              <span class="data-status-badge" ng-class="{'online': dev.isOnline, 'offline': !dev.isOnline}">{{dev.isOnline ? 'ONLINE' : 'OFFLINE'}}</span>
+              <span>{{dev.ip}}</span>
+              <span>{{dev.mac}}</span>
+            </div>
+          </div>
+          <div class="data-saved-actions">
+            <button class="btn btn-default btn-xs" ng-click="renameDevice(dev.mac)" title="Rename"><i class="fa fa-pencil"></i></button>
+            <button class="btn btn-default btn-xs" ng-click="removeDevice(dev.mac)" title="Remove"><i class="fa fa-trash-o"></i></button>
           </div>
         </div>
+        <div class="data-device-metrics">
+          <div><span>Total this session</span><strong>{{formatBytes(dev.totalBytes)}}</strong></div>
+          <div><span>Last seen</span><strong>{{formatTime(dev.lastSeen)}}</strong></div>
+        </div>
       </div>
-      <div class="data-empty-inline" ng-if="!data.RecentEvents.length">No events logged yet.</div>
     </div>
   </div>
 </div>

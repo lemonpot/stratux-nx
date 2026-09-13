@@ -64,15 +64,19 @@ angular.module('appControllers').controller('UpdateCtrl', ['$scope', '$http', '$
     // Initial load.
     loadStatus();
 
-    // Poll while downloading.
+    // Poll status: fast when downloading, slow otherwise.
     var poller = $interval(function() {
       if ($scope.status.downloading) {
         loadStatus();
       }
     }, 2000);
 
+    // Also do a slower background poll to catch new updates.
+    var bgPoller = $interval(loadStatus, 60000);
+
     $scope.$on('$destroy', function() {
       $interval.cancel(poller);
+      $interval.cancel(bgPoller);
     });
   }
 ]);

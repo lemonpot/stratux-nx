@@ -22,13 +22,8 @@ if 'plates/js/update.js' not in s:
         raise SystemExit('Could not find modern-ui.js marker in web/index.html')
     s = s.replace(marker, '<script src="plates/js/update.js"></script>\n\t' + marker, 1)
 
-if 'href="#/update"' not in s:
-    m = re.search(r'(<a\s+class="list-group-item"\s+href="#/settings">.*?</a>)', s)
-    if not m:
-        raise SystemExit('Could not find Settings menu marker in web/index.html')
-    marker = m.group(1)
-    update_entry = '\n\t\t\t\t\t<a class="list-group-item" href="#/update"><i class="fa fa-cloud-download"></i> Update <i class="fa fa-chevron-right pull-right"></i></a>'
-    s = s.replace(marker, marker + update_entry, 1)
+# Update is now embedded in Settings -- no sidebar entry needed.
+# (The Angular route still exists for direct navigation.)
 
 p.write_text(s)
 

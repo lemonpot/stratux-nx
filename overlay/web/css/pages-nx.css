@@ -1,49 +1,104 @@
 /* ============================================================
    STRATUX NX -- Upstream Page Enhancements
-   Consistent styling across ALL pages
+   Consistent styling across ALL pages.
+   Uses var(--sx-*) design tokens from modern-ui.css.
    ============================================================ */
+
+
+/* === PAGE TRANSITIONS ============================================ */
+
+div[ui-view] {
+  animation: sxPageIn .25s ease both;
+}
+
+@keyframes sxPageIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
 
 
 /* === GLOBAL PAGE LAYOUT ========================================== */
 
 /* All pages: consistent max-width and centering */
 div[ui-view] > .col-sm-12,
-div[ui-view] > div > .col-sm-12 {
+div[ui-view] > div > .col-sm-12,
+div[ui-view] > .container-fluid {
   max-width: 960px;
   margin: 0 auto;
   float: none !important;
 }
 
-/* Main content container */
-div[ui-view] {
-  animation: sxPageIn .2s ease;
-}
 
-@keyframes sxPageIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: none; }
-}
+/* === UNIVERSAL PANEL STYLING ===================================== */
 
-/* Panel cleanup: consistent radius and spacing */
 div[ui-view] .panel {
+  border: 1px solid var(--sx-border) !important;
   border-radius: var(--sx-radius) !important;
+  background: var(--sx-card) !important;
+  box-shadow: var(--sx-shadow) !important;
   overflow: hidden;
-  box-shadow: var(--sx-shadow);
   margin-bottom: 14px;
+  transition: box-shadow var(--sx-transition);
+}
+
+div[ui-view] .panel:hover {
+  box-shadow: var(--sx-shadow-md) !important;
 }
 
 div[ui-view] .panel .panel-heading {
   font-size: 14px;
   font-weight: 700;
   letter-spacing: .01em;
-  padding: 13px 18px;
+  padding: 13px 18px !important;
+  background: var(--sx-card) !important;
+  border-bottom: 1px solid var(--sx-border) !important;
 }
 
 div[ui-view] .panel .panel-body {
-  padding: 16px 18px;
+  padding: 16px 18px !important;
+  background: var(--sx-card) !important;
 }
 
-/* Row value labels: consistent sizing */
+
+/* === UNIVERSAL TABLE STYLING ===================================== */
+
+div[ui-view] .table {
+  margin-bottom: 0;
+}
+
+div[ui-view] .table > thead > tr > th {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--sx-muted-2);
+  border-bottom-width: 1px !important;
+  padding: 10px 14px;
+  background: var(--sx-card-soft);
+}
+
+div[ui-view] .table > tbody > tr > td {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  padding: 10px 14px;
+  vertical-align: middle;
+  border-color: var(--sx-border) !important;
+  transition: background var(--sx-transition);
+}
+
+div[ui-view] .table > tbody > tr:hover > td {
+  background: var(--sx-card-hover);
+}
+
+div[ui-view] .table-responsive {
+  border-radius: var(--sx-radius) !important;
+  overflow: hidden;
+  border: 1px solid var(--sx-border);
+}
+
+
+/* === UNIVERSAL LABEL / VALUE STYLING ============================= */
+
 div[ui-view] .panel-body .control-label,
 div[ui-view] .panel-body label.col-xs-5,
 div[ui-view] .panel-body label.col-xs-6 {
@@ -52,7 +107,6 @@ div[ui-view] .panel-body label.col-xs-6 {
   color: var(--sx-text-2);
 }
 
-/* Tabular numbers everywhere relevant */
 div[ui-view] .panel-body .text-right,
 div[ui-view] .panel-body .pull-right,
 div[ui-view] .panel-body [ng-bind*="Speed"],
@@ -68,38 +122,19 @@ div[ui-view] .panel-body [ng-bind*="Msgs"] {
   font-weight: 600;
 }
 
-
-/* === STATUS PAGE (HOME) ========================================== */
-
-/* Version display */
-div[ui-view] .col-sm-12 > p.text-center {
-  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
-  font-size: 12px;
-  color: var(--sx-muted);
-  padding: 8px 16px;
-  margin: 6px auto 10px;
-  max-width: 400px;
-  background: var(--sx-card-soft);
-  border: 1px solid var(--sx-border);
-  border-radius: var(--sx-radius-full);
-  text-align: center;
-}
-
-/* Status Connected/Disconnected badge */
-div[ui-view] .label {
-  font-size: 10px !important;
-  padding: 4px 10px !important;
-  border-radius: var(--sx-radius-full) !important;
-  font-weight: 700 !important;
-  letter-spacing: .02em;
-}
-
 /* Status rows: clean spacing */
 div[ui-view] .panel-body .row {
   margin-bottom: 2px;
 }
 
-/* Messages progress bars */
+div[ui-view] .panel-body .col-xs-4,
+div[ui-view] .panel-body .col-xs-6 {
+  margin-bottom: 2px;
+}
+
+
+/* === UNIVERSAL PROGRESS BARS ===================================== */
+
 div[ui-view] .panel-body .progress {
   height: 8px;
   border-radius: var(--sx-radius-full);
@@ -116,40 +151,45 @@ div[ui-view] .panel-body .progress-bar {
 
 div[ui-view] .panel-body .progress-bar-success { background: var(--sx-success) !important; }
 div[ui-view] .panel-body .progress-bar-warning { background: var(--sx-warning) !important; }
-div[ui-view] .panel-body .progress-bar-danger { background: var(--sx-danger) !important; }
+div[ui-view] .panel-body .progress-bar-danger  { background: var(--sx-danger) !important; }
 
-/* UAT Statistics table */
-div[ui-view] .table {
-  margin-bottom: 0;
+
+/* === UNIVERSAL LABELS / BADGES =================================== */
+
+div[ui-view] .label {
+  font-size: 10px !important;
+  padding: 4px 10px !important;
+  border-radius: var(--sx-radius-full) !important;
+  font-weight: 700 !important;
+  letter-spacing: .02em;
 }
 
-div[ui-view] .table > thead > tr > th {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--sx-muted-2);
-  border-bottom-width: 1px !important;
-  padding: 10px 14px;
+
+/* === UNIVERSAL ALERTS ============================================ */
+
+div[ui-view] .alert-info {
+  background: var(--sx-primary-soft) !important;
+  border: 1px solid var(--sx-primary) !important;
+  border-radius: var(--sx-radius-sm) !important;
+  color: var(--sx-primary-text) !important;
+  font-weight: 600;
 }
 
-div[ui-view] .table > tbody > tr > td {
-  font-variant-numeric: tabular-nums;
-  font-size: 13px;
-  padding: 10px 14px;
-  vertical-align: middle;
-}
 
-div[ui-view] .table-responsive {
-  border-radius: var(--sx-radius) !important;
-  overflow: hidden;
+/* === STATUS PAGE (HOME) ========================================== */
+
+/* Version display — styled as a pill */
+div[ui-view] .col-sm-12 > p.text-center {
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--sx-muted);
+  padding: 8px 16px;
+  margin: 6px auto 10px;
+  max-width: 400px;
+  background: var(--sx-card-soft);
   border: 1px solid var(--sx-border);
-}
-
-/* System info row (Uptime, CPU Temp, Free Storage) */
-div[ui-view] .panel-body .col-xs-4,
-div[ui-view] .panel-body .col-xs-6 {
-  margin-bottom: 2px;
+  border-radius: var(--sx-radius-full);
+  text-align: center;
 }
 
 
@@ -167,12 +207,6 @@ body.stratux-dark div[ui-view] .table img[src*="actype"] {
   filter: invert(1) brightness(1.8);
 }
 
-/* Speed/Alt/Dist columns */
-div[ui-view] .table td {
-  font-variant-numeric: tabular-nums;
-  font-size: 13px;
-}
-
 /* Callsign column */
 div[ui-view] .table td:first-child {
   font-weight: 700;
@@ -180,15 +214,6 @@ div[ui-view] .table td:first-child {
   font-size: 12px;
   color: var(--sx-text);
   letter-spacing: .02em;
-}
-
-/* Empty state */
-div[ui-view] .alert-info {
-  background: var(--sx-primary-soft) !important;
-  border: 1px solid var(--sx-primary) !important;
-  border-radius: var(--sx-radius-sm) !important;
-  color: var(--sx-primary-text) !important;
-  font-weight: 600;
 }
 
 
@@ -237,6 +262,14 @@ div[ui-view] .panel-heading .badge {
   padding: 3px 8px;
 }
 
+/* Consistent form inputs in settings */
+div[ui-view] .panel-body input[type="text"],
+div[ui-view] .panel-body input[type="number"],
+div[ui-view] .panel-body input[type="password"],
+div[ui-view] .panel-body select {
+  font-size: 14px;
+}
+
 /* File upload buttons */
 input[type="file"] {
   padding: 6px !important;
@@ -268,7 +301,7 @@ input[type="file"]::file-selector-button:hover {
 
 /* === GPS / AHRS PAGE ============================================= */
 
-/* Instrument canvas area */
+/* Instrument canvases */
 #attitude_display,
 #heading_display {
   border-radius: var(--sx-radius) !important;
@@ -283,11 +316,6 @@ input[type="file"]::file-selector-button:hover {
   border-radius: var(--sx-radius-full) !important;
   height: 18px;
 }
-
-/* GPS accuracy indicators */
-div[ui-view] .panel-body .progress-bar-success { background: var(--sx-success) !important; }
-div[ui-view] .panel-body .progress-bar-warning { background: var(--sx-warning) !important; }
-div[ui-view] .panel-body .progress-bar-danger { background: var(--sx-danger) !important; }
 
 /* GPS coordinates display */
 div[ui-view] .panel-body .text-center > strong,
@@ -379,8 +407,8 @@ div[ui-view] .panel-body a[href*="downloaddb"]:hover {
   background: #0c1018 !important;
 }
 
-.radar-ring { stroke: rgba(77, 159, 255, .15); stroke-width: 1; }
-.radar-blip { filter: drop-shadow(0 0 4px rgba(77, 159, 255, .3)); }
+.radar-ring  { stroke: rgba(77, 159, 255, .15); stroke-width: 1; }
+.radar-blip  { filter: drop-shadow(0 0 4px rgba(77, 159, 255, .3)); }
 
 
 /* === DEVELOPER PAGE ============================================== */
