@@ -1,0 +1,136 @@
+<div class="update-page" ng-cloak>
+  <div class="update-hero">
+    <div>
+      <div class="update-eyebrow">SYSTEM</div>
+      <h2>Software Update</h2>
+      <p>Keep your Stratux NX up to date. Updates are downloaded from the internet when connected.</p>
+    </div>
+    <div class="update-version-pill">
+      <i class="fa fa-tag"></i>
+      v{{status.current_version || '...'}}
+    </div>
+  </div>
+
+  <!-- Current version info -->
+  <div class="update-panel">
+    <div class="update-panel-header">
+      <div>
+        <h3>Current version</h3>
+        <div class="update-muted">Installed on this Stratux NX device.</div>
+      </div>
+      <button class="btn btn-default update-btn-small" ng-click="checkNow()" ng-disabled="checking">
+        <i class="fa" ng-class="checking ? 'fa-circle-o-notch fa-spin' : 'fa-refresh'"></i>
+        {{checking ? 'Checking...' : 'Check for updates'}}
+      </button>
+    </div>
+
+    <div class="update-version-grid">
+      <div class="update-version-card">
+        <span>VERSION</span>
+        <strong>{{status.current_version || 'Unknown'}}</strong>
+      </div>
+      <div class="update-version-card">
+        <span>LAST CHECKED</span>
+        <strong>{{formatTime(status.last_check)}}</strong>
+      </div>
+      <div class="update-version-card" ng-if="status.check_error">
+        <span>STATUS</span>
+        <strong class="update-text-warning">{{status.check_error}}</strong>
+      </div>
+      <div class="update-version-card" ng-if="!status.check_error && !status.available">
+        <span>STATUS</span>
+        <strong class="update-text-success"><i class="fa fa-check-circle"></i> Up to date</strong>
+      </div>
+      <div class="update-version-card" ng-if="status.available">
+        <span>STATUS</span>
+        <strong class="update-text-primary"><i class="fa fa-arrow-circle-up"></i> Update available</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update available -->
+  <div class="update-panel update-panel-highlight" ng-if="status.available">
+    <div class="update-panel-header">
+      <div>
+        <h3><i class="fa fa-gift"></i> Version {{status.available.version}} available</h3>
+        <div class="update-muted">Published {{status.available.published_at || 'recently'}}. Size: {{formatSize(status.available.size)}}.</div>
+      </div>
+    </div>
+
+    <div class="update-action-body">
+      <!-- Not downloading yet -->
+      <div ng-if="!status.downloading && !status.staged">
+        <p class="update-action-text">
+          <i class="fa fa-info-circle"></i>
+          The update will be downloaded and installed automatically. Your Stratux will reboot to apply the update. All settings and flight data are preserved.
+        </p>
+        <button class="btn btn-primary btn-block update-install-btn" ng-click="installUpdate()" ng-disabled="installing">
+          <i class="fa" ng-class="installing ? 'fa-circle-o-notch fa-spin' : 'fa-download'"></i>
+          {{installing ? 'Starting download...' : 'Download and install update'}}
+        </button>
+      </div>
+
+      <!-- Downloading -->
+      <div ng-if="status.downloading">
+        <div class="update-download-status">
+          <i class="fa fa-circle-o-notch fa-spin"></i>
+          <div>
+            <strong>Downloading update...</strong>
+            <span>{{status.download_percent}}% complete</span>
+          </div>
+        </div>
+        <div class="update-progress-track">
+          <div class="update-progress-bar" ng-style="{'width': status.download_percent + '%'}"></div>
+        </div>
+        <p class="update-muted" style="margin-top:10px;">Do not disconnect from the internet or power off the device.</p>
+      </div>
+
+      <!-- Download error -->
+      <div ng-if="status.download_error && !status.downloading">
+        <div class="update-error">
+          <i class="fa fa-exclamation-triangle"></i>
+          <div>
+            <strong>Download failed</strong>
+            <span>{{status.download_error}}</span>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block update-install-btn" ng-click="installUpdate()" style="margin-top:12px;">
+          <i class="fa fa-refresh"></i> Retry download
+        </button>
+      </div>
+
+      <!-- Staged, rebooting -->
+      <div ng-if="status.staged">
+        <div class="update-success">
+          <i class="fa fa-check-circle"></i>
+          <div>
+            <strong>Update downloaded and verified</strong>
+            <span>Stratux NX will reboot now to apply the update. This takes about 2 minutes.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- No update available -->
+  <div class="update-panel" ng-if="!status.available && !status.check_error && status.last_check">
+    <div class="update-up-to-date">
+      <i class="fa fa-check-circle"></i>
+      <strong>Your Stratux NX is up to date</strong>
+      <span>Automatic checks run every 30 minutes when internet is connected.</span>
+    </div>
+  </div>
+
+  <!-- Manual upload fallback -->
+  <div class="update-panel">
+    <div class="update-panel-header">
+      <div>
+        <h3>Manual update</h3>
+        <div class="update-muted">Upload a .deb update file if you don't have internet on this Stratux.</div>
+      </div>
+    </div>
+    <div class="update-manual-body">
+      <p class="update-muted">Use the built-in Stratux upload in <a href="#/settings">Settings</a> to upload a .deb file manually.</p>
+    </div>
+  </div>
+</div>

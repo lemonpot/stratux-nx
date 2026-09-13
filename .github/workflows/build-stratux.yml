@@ -52,7 +52,11 @@ jobs:
           test -f stratux/web/css/datausage.css
           test -f stratux/web/css/map-nx.css
           test -f stratux/web/css/pages-nx.css
+          test -f stratux/web/css/update.css
           test -f stratux/web/js/map-nx.js
+          test -f stratux/web/plates/update.html
+          test -f stratux/web/plates/js/update.js
+          test -f stratux/main/updater.go
 
           grep -q "Internet Data" stratux/web/index.html
           grep -q "Flight Log" stratux/web/index.html
@@ -126,3 +130,18 @@ jobs:
           path: ota-update/*.deb
           compression-level: 0
           if-no-files-found: warn
+
+      - name: Publish OTA to update server
+        if: hashFiles('ota-update/*.deb') != ''
+        env:
+          NX_UPDATE_API_KEY: ${{ secrets.NX_UPDATE_API_KEY }}
+        run: |
+          set -euo pipefail
+          DEB_FILE=$(ls ota-update/*.deb | head -1)
+          VERSION=$(dpkg-deb -f "$DEB_FILE" Version 2>/dev/null || echo "$(date +%Y%m%d)-${GITHUB_SHA:0:7}")
+          echo "Publishing $DEB_FILE as version $VERSION"
+          curl -sf -X POST \
+            -H "X-API-Key: $NX_UPDATE_API_KEY" \
+            -F "update=@$DEB_FILE" \
+            -F "version=$VERSION" \
+            "https://api.stratuxnx.com/v1/update/publish" || echo "WARNING: Could not publish to update server (server may not be configured yet)"
