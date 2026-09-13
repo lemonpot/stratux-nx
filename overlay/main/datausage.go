@@ -147,7 +147,7 @@ func initializeDataUsage() {
 	loadDeviceManualNames()
 	appendDataUsageLog(dataUsageLogRecord{
 		Time: time.Now().UTC().Format(time.RFC3339), Type: "session_start",
-		Message: "Stratux internet data monitoring session started",
+		Message: "Stratux NX internet data monitoring session started",
 	})
 }
 
@@ -725,7 +725,7 @@ func refreshDataUsage() {
 			dataUsageClients[ip] = c
 			newConnections = append(newConnections, dataUsageLogRecord{
 				Time: now.UTC().Format(time.RFC3339), Type: "client_connected",
-				IP: ip, MAC: identity[0], Hostname: identity[1], Message: "Client connected to Stratux",
+				IP: ip, MAC: identity[0], Hostname: identity[1], Message: "Client connected to Stratux NX",
 			})
 		}
 		c.MAC = identity[0]

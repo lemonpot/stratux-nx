@@ -130,7 +130,7 @@ if AHRS_V2_UI_VISIBLE:
                 <div class="panel-body">
                     <div class="sx-ahrs-selector" ng-show="IMU_Sensor_Enabled">
                         <div class="sx-ahrs-selector-title">
-                            <div><strong>Attitude algorithm</strong><small>Select which AHRS solution Stratux publishes to this page and ForeFlight/GDL90.</small></div>
+                            <div><strong>Attitude algorithm</strong><small>Select which AHRS solution Stratux NX publishes to this page and ForeFlight/GDL90.</small></div>
                             <span class="sx-ahrs-beta" ng-show="AHRSV2_Enabled">BETA</span>
                         </div>
                         <div class="sx-ahrs-mode-grid">
@@ -187,7 +187,7 @@ if AHRS_V2_UI_VISIBLE:
   old = '''    <h4>AHRS</h4>
     <p><strong>Calibrate AHRS Sensors</strong> guides initial setup of the AHRS function,'''
   new = '''    <h4>AHRS</h4>
-    <p><strong>Attitude algorithm</strong> offers two implementations. <strong>Old Stratux AHRS</strong> is the unchanged upstream SimpleAHRS compatibility mode. <strong>Adaptive AHRS v2 (Beta)</strong> adds adaptive accelerometer weighting, stationary gyro-bias learning, bounded correction, GPS acceleration compensation, guarded initialization, and quality diagnostics. The selected solution is the one published to the Stratux display and AHRS-capable GDL90 clients such as ForeFlight. V2 is experimental and is not a certified flight instrument.</p>
+    <p><strong>Attitude algorithm</strong> offers two implementations. <strong>Old Stratux AHRS</strong> is the unchanged upstream SimpleAHRS compatibility mode. <strong>Adaptive AHRS v2 (Beta)</strong> adds adaptive accelerometer weighting, stationary gyro-bias learning, bounded correction, GPS acceleration compensation, guarded initialization, and quality diagnostics. The selected solution is the one published to the Stratux NX display and AHRS-capable GDL90 clients such as ForeFlight. V2 is experimental and is not a certified flight instrument.</p>
     <p><strong>Calibrate AHRS Sensors</strong> guides initial setup of the AHRS function,'''
   if old in s:
       s = s.replace(old, new, 1)

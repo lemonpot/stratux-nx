@@ -5,7 +5,7 @@
     <div>
       <div class="flightlog-eyebrow">AUTOMATIC GPS FLIGHT LOGGER</div>
       <h2>Flight Log</h2>
-      <p>Stratux watches GPS movement, detects taxi, takeoff and landing, stores the route, and resolves nearby airports locally without needing Internet.</p>
+      <p>Stratux NX watches GPS movement, detects taxi, takeoff and landing, stores the route, and resolves nearby airports locally without needing Internet.</p>
     </div>
     <div class="flightlog-pill" ng-class="{'ok': data.GPS.Valid, 'bad': !data.GPS.Valid}">
       <span class="flightlog-dot"></span>
@@ -42,7 +42,7 @@
     <div class="flightlog-panel-header">
       <div>
         <h3>Live telemetry</h3>
-        <div class="flightlog-muted">Raw flight data from the Stratux GPS, refreshed every second. GPS altitude is MSL and vertical speed is converted to feet per minute.</div>
+        <div class="flightlog-muted">Raw flight data from the Stratux NX GPS, refreshed every second. GPS altitude is MSL and vertical speed is converted to feet per minute.</div>
       </div>
       <span class="flightlog-live-badge" ng-class="{'online': data.GPS.Valid}"><span></span>{{data.GPS.Valid ? 'LIVE · 1 SEC' : 'NO GPS FIX'}}</span>
     </div>
@@ -131,7 +131,7 @@
     <div class="flightlog-empty" ng-if="!data.Current">
       <i class="fa fa-plane"></i>
       <strong>No flight in progress</strong>
-      <span>Move above taxi speed for a few seconds and Stratux will start a new flight automatically.</span>
+      <span>Move above taxi speed for a few seconds and Stratux NX will start a new flight automatically.</span>
     </div>
 
     <div ng-if="data.Current" class="flightlog-live-body">
@@ -202,7 +202,7 @@
 
   <div class="flightlog-panel">
     <div class="flightlog-panel-header">
-      <div><h3>Flight history</h3><div class="flightlog-muted">Flights are stored persistently on the Stratux boot partition, including GPS route points.</div></div>
+      <div><h3>Flight history</h3><div class="flightlog-muted">Flights are stored persistently on the Stratux NX boot partition, including GPS route points.</div></div>
       <button class="btn btn-default" ng-click="refresh()"><i class="fa fa-refresh"></i> Refresh</button>
     </div>
 
