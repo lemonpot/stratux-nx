@@ -687,11 +687,15 @@ func handleDeviceRename(w http.ResponseWriter, r *http.Request) {
 }
 
 func isWANOnline() bool {
+	// Check for a default route through any non-AP interface first.
 	out, err := exec.Command("ip", "route", "show", "default").Output()
-	if err != nil {
+	if err != nil || len(out) == 0 {
 		return false
 	}
-	return strings.Contains(string(out), "wlan0")
+	// A default route exists. Verify actual connectivity with a fast DNS probe.
+	// Use a short timeout so the UI doesn't lag.
+	probe := exec.Command("timeout", "2", "ping", "-c", "1", "-W", "1", "1.1.1.1")
+	return probe.Run() == nil
 }
 
 func refreshDataUsage() {

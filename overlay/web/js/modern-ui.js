@@ -150,7 +150,7 @@
 
   function renderPageHeader() {
     var route = currentRoute();
-    if (route === '#/datausage' || route === '#/flightlog') return;
+    if (route === '#/datausage' || route === '#/flightlog' || route === '#/update') return;
     var view = document.querySelector('div[ui-view]');
     if (!view) return;
     var meta = pageMeta[route];
