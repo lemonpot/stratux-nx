@@ -896,6 +896,30 @@ body.stratux-dark .modal-overlay {
 .text-warning { color: var(--sx-warning) !important; }
 
 
+/* === VERSION BADGE & UPDATE DOT =================================== */
+.sx-version-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sx-muted);
+  margin-left: 8px;
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  opacity: .7;
+}
+.sx-update-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sx-warning);
+  margin-left: 6px;
+  animation: sxPulse 2s ease infinite;
+}
+@keyframes sxPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+
 /* === RESPONSIVE ================================================== */
 @media (max-width: 767px) {
   .navbar.navbar-app {

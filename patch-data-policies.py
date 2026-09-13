@@ -168,7 +168,7 @@ old = '''            <span ng-if="!client.Blocked && client.TotalBytes < mb(sett
 new = '''            <span ng-if="client.Exempt">Unrestricted — usage is still counted in the session total</span>\n            <span ng-if="!client.Exempt && !client.Blocked && client.TotalBytes < mb(settings.WarningMB)">Normal usage</span>\n            <span ng-if="!client.Exempt && !client.Blocked && client.TotalBytes >= mb(settings.WarningMB) && client.TotalBytes < mb(settings.AutoBlockMB)">Warning threshold reached</span>\n            <span ng-if="!client.Exempt && client.Blocked">Internet blocked</span>'''
 if old in s:
     s = s.replace(old, new, 1)
-elif 'Unrestricted — usage is still counted' not in s:
+elif 'Unrestricted' not in s and 'client.Exempt' not in s:
     raise SystemExit('Could not add unrestricted device status copy')
 
 p.write_text(s)

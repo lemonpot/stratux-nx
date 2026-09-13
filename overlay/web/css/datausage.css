@@ -503,6 +503,62 @@ body.stratux-dark .data-hero {
   margin-top: 3px;
 }
 
+/* Hero actions row */
+.data-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+/* Save device button */
+.data-device-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.data-save-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: var(--sx-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--sx-muted);
+  transition: all .15s ease;
+}
+.data-save-btn:hover {
+  color: var(--sx-primary);
+  border-color: var(--sx-primary);
+}
+.data-save-btn.saved {
+  color: var(--sx-primary);
+  opacity: .7;
+}
+
+/* Saved devices */
+.data-saved-actions {
+  display: flex;
+  gap: 4px;
+}
+.data-saved-actions .btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--sx-radius-sm);
+  font-size: 12px;
+  color: var(--sx-muted);
+  transition: all .15s ease;
+}
+.data-saved-actions .btn:hover {
+  color: var(--sx-text);
+}
+
 .data-empty-inline {
   padding: 20px;
   text-align: center;

@@ -19,7 +19,7 @@
     '#/datausage': { title: 'Internet Data', subtitle: 'Monitor and control internet data usage.',                  eyebrow: 'CONNECTIVITY', group: 'tools', icon: 'fa-bar-chart' },
     '#/logs':      { title: 'Logs',          subtitle: 'System log files and diagnostic downloads.',                eyebrow: 'DIAGNOSTICS', group: 'system', icon: 'fa-file-text-o' },
     '#/settings':  { title: 'Settings',      subtitle: 'Configure radios, WiFi, ownship, sensors and behavior.',   eyebrow: 'CONFIGURATION', group: 'system', icon: 'fa-cog' },
-    '#/update':    { title: 'Update',         subtitle: 'Check for and install Stratux NX software updates.',       eyebrow: 'SYSTEM', group: 'system', icon: 'fa-cloud-download' },
+    // Update is embedded in Settings -- no hero needed
     '#/developer': { title: 'Developer',     subtitle: 'Advanced diagnostics and developer controls.',              eyebrow: 'ADVANCED', group: 'system', icon: 'fa-code' }
   };
 
@@ -134,6 +134,58 @@
     if (link && link.textContent.trim() === 'Stratux') {
       link.textContent = 'Stratux NX';
     }
+    if (!brand.querySelector('.sx-version-badge')) {
+      initVersionBadge(brand);
+    }
+  }
+
+
+  /* --- Version Badge & Update Dot --------------------------------- */
+
+  function initVersionBadge(brandEl) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/getStatus', true);
+    xhr.timeout = 4000;
+    xhr.onload = function() {
+      if (xhr.status !== 200) return;
+      try {
+        var data = JSON.parse(xhr.responseText);
+        var ver = data.Version || '';
+        if (!ver) return;
+        var badge = document.createElement('span');
+        badge.className = 'sx-version-badge';
+        badge.textContent = ver;
+        brandEl.appendChild(badge);
+      } catch (e) { /* ignore parse errors */ }
+    };
+    xhr.send();
+
+    checkForUpdate();
+  }
+
+  function checkForUpdate() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/update/status', true);
+    xhr.timeout = 4000;
+    xhr.onload = function() {
+      if (xhr.status !== 200) return;
+      try {
+        var data = JSON.parse(xhr.responseText);
+        if (data && data.available && data.available.update_available) {
+          showUpdateDot();
+        }
+      } catch (e) { /* ignore */ }
+    };
+    xhr.send();
+  }
+
+  function showUpdateDot() {
+    var brand = document.querySelector('.navbar-brand.navbar-brand-center');
+    if (!brand || brand.querySelector('.sx-update-dot')) return;
+    var dot = document.createElement('span');
+    dot.className = 'sx-update-dot';
+    dot.title = 'Update available';
+    brand.appendChild(dot);
   }
 
 

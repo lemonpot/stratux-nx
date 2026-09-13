@@ -235,3 +235,168 @@ body.stratux-dark .update-hero {
   .update-panel { border-radius: var(--sx-radius-sm); }
   .update-panel-header { flex-wrap: wrap; padding: 14px; }
 }
+
+/* === Update panel inside Settings === */
+.sx-update-panel .panel-heading { display: flex; justify-content: space-between; align-items: center; }
+.sx-update-status-badge { color: var(--sx-primary); font-size: 12px; font-weight: 700; }
+.sx-update-version-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.sx-update-version-row > div { flex: 1; min-width: 120px; }
+.sx-update-version-row strong { display: block; font-size: 13px; color: var(--sx-text); margin-bottom: 2px; }
+.sx-update-version-row span { font-size: 12px; color: var(--sx-muted); }
+.sx-mono { font-family: "SF Mono", "Fira Code", ui-monospace, monospace; font-size: 12px; }
+.sx-update-available { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--sx-border); }
+.sx-update-info { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+.sx-update-info > i { color: var(--sx-primary); font-size: 18px; margin-top: 2px; }
+.sx-update-info strong { display: block; font-size: 14px; color: var(--sx-text); }
+.sx-update-info span { display: block; font-size: 12px; color: var(--sx-muted); margin-top: 2px; }
+.sx-update-btn { min-height: 42px !important; font-size: 14px !important; font-weight: 700 !important; }
+.sx-update-progress-label { font-size: 13px; font-weight: 600; color: var(--sx-text); margin-bottom: 6px; }
+.sx-update-hint { font-size: 11px; color: var(--sx-muted); margin-top: 6px; }
+.sx-update-uptodate { font-size: 13px; color: var(--sx-text-2); margin-top: 8px; }
+.sx-update-uptodate i { margin-right: 6px; }
+
+
+/* =================================================================
+   Update panel embedded in Settings page
+   ================================================================= */
+.sx-update-panel { overflow: hidden; }
+
+.sx-update-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sx-update-heading > span:first-child { font-weight: 700; }
+.sx-update-heading i.fa-cloud-download { margin-right: 6px; opacity: .7; }
+
+.sx-update-status-badge {
+  color: var(--sx-primary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.sx-update-version-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.sx-update-version-row > div { flex: 1; min-width: 120px; }
+.sx-update-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--sx-muted);
+  margin-bottom: 3px;
+}
+.sx-mono {
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--sx-text);
+}
+.sx-update-check-btn {
+  white-space: nowrap;
+  height: 32px;
+  min-width: 100px;
+}
+
+.sx-update-available {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--sx-border);
+}
+.sx-update-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.sx-update-info > i {
+  color: var(--sx-primary);
+  font-size: 18px;
+  margin-top: 2px;
+}
+.sx-update-info strong {
+  display: block;
+  font-size: 14px;
+  color: var(--sx-text);
+}
+.sx-update-size {
+  font-size: 12px;
+  color: var(--sx-muted);
+}
+.sx-update-btn {
+  min-height: 42px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  border-radius: var(--sx-radius-sm) !important;
+}
+
+.sx-update-progress { height: 8px; border-radius: 4px; overflow: hidden; }
+.sx-update-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .3s ease;
+}
+.sx-update-progress-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sx-text);
+  margin-bottom: 6px;
+}
+.sx-update-hint {
+  font-size: 11px;
+  color: var(--sx-muted);
+  margin-top: 6px;
+}
+.sx-update-hint i { margin-right: 4px; }
+
+.sx-update-staged {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--sx-success-soft, rgba(52, 199, 89, .08));
+  border: 1px solid var(--sx-success);
+  border-radius: var(--sx-radius-sm);
+  font-size: 13px;
+}
+.sx-update-staged > i {
+  color: var(--sx-success);
+  font-size: 16px;
+  margin-top: 1px;
+}
+.sx-update-staged strong { color: var(--sx-text); }
+.sx-update-staged span {
+  display: block;
+  color: var(--sx-muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.sx-update-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--sx-danger-soft, rgba(255, 59, 48, .08));
+  border: 1px solid var(--sx-danger);
+  border-radius: var(--sx-radius-sm);
+  font-size: 13px;
+  color: var(--sx-text);
+  margin-top: 10px;
+}
+.sx-update-error > i { color: var(--sx-danger); }
+
+.sx-update-uptodate {
+  font-size: 13px;
+  color: var(--sx-text-2);
+  margin-top: 8px;
+}
+.sx-update-uptodate i {
+  color: var(--sx-success);
+  margin-right: 6px;
+}
