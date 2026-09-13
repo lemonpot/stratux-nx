@@ -118,6 +118,9 @@ python3 "$SCRIPT_DIR/patch-flightlog-live-timing.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-flightlog-timezone.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-flightlog-timezone-compilefix.py" "$TARGET"
 
+# OTA update page and Go backend handlers.
+python3 "$SCRIPT_DIR/wire-update.py" "$TARGET"
+
 # Run navbar-brand cleanup after Flight Log wiring too, so no custom page can
 # publish a sticky value into Mobile Angular UI's title yield.
 python3 "$SCRIPT_DIR/patch-navbar-brand.py" "$TARGET"

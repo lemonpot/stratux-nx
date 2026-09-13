@@ -19,6 +19,7 @@
     '#/datausage': { title: 'Internet Data', subtitle: 'Monitor and control internet data usage.',                  eyebrow: 'CONNECTIVITY', group: 'tools', icon: 'fa-bar-chart' },
     '#/logs':      { title: 'Logs',          subtitle: 'System log files and diagnostic downloads.',                eyebrow: 'DIAGNOSTICS', group: 'system', icon: 'fa-file-text-o' },
     '#/settings':  { title: 'Settings',      subtitle: 'Configure radios, WiFi, ownship, sensors and behavior.',   eyebrow: 'CONFIGURATION', group: 'system', icon: 'fa-cog' },
+    '#/update':    { title: 'Update',         subtitle: 'Check for and install Stratux NX software updates.',       eyebrow: 'SYSTEM', group: 'system', icon: 'fa-cloud-download' },
     '#/developer': { title: 'Developer',     subtitle: 'Advanced diagnostics and developer controls.',              eyebrow: 'ADVANCED', group: 'system', icon: 'fa-code' }
   };
 
