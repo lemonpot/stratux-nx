@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -101,6 +102,7 @@ func init() {
 	http.HandleFunc("/dataUsage/block", handleDataUsageBlock)
 	http.HandleFunc("/dataUsage/settings", handleDataUsageSettings)
 	http.HandleFunc("/dataUsage/reset", handleDataUsageReset)
+	http.HandleFunc("/dataUsage/rename", handleDeviceRename)
 	go dataUsageMonitorLoop()
 }
 
@@ -142,6 +144,7 @@ func initializeDataUsage() {
 	dataUsageMu.Unlock()
 
 	ensureDataUsageChains()
+	loadDeviceManualNames()
 	appendDataUsageLog(dataUsageLogRecord{
 		Time: time.Now().UTC().Format(time.RFC3339), Type: "session_start",
 		Message: "Stratux internet data monitoring session started",
@@ -261,14 +264,33 @@ func ensureDataUsageChains() {
 	_ = runIptables("-N", dataUsageInChain)
 	_ = runIptables("-N", dataBlockChain)
 
+	// CRITICAL: allow all intra-AP traffic first. Devices on the AP network
+	// must always reach Stratux services (GDL90 port 4000, AHRS, web) and
+	// each other, regardless of internet blocking state. Without this rule,
+	// AP+Client mode can break GDL90/AV-Link/UAVionix communication.
+	if !iptablesRuleExists("-C", "FORWARD", "-i", "ap0", "-o", "ap0", "-j", "ACCEPT") {
+		_ = runIptables("-I", "FORWARD", "1", "-i", "ap0", "-o", "ap0", "-j", "ACCEPT")
+	}
+
+	// Stratux service ports must never be blocked from AP clients. GDL90
+	// uses UDP 4000 (ForeFlight, AV-Link, SkyRadar). Web UI is on TCP 80.
+	for _, port := range []string{"4000", "80"} {
+		if !iptablesRuleExists("-C", "INPUT", "-i", "ap0", "-p", "udp", "--dport", port, "-j", "ACCEPT") {
+			_ = runIptables("-I", "INPUT", "1", "-i", "ap0", "-p", "udp", "--dport", port, "-j", "ACCEPT")
+		}
+		if !iptablesRuleExists("-C", "INPUT", "-i", "ap0", "-p", "tcp", "--dport", port, "-j", "ACCEPT") {
+			_ = runIptables("-I", "INPUT", "1", "-i", "ap0", "-p", "tcp", "--dport", port, "-j", "ACCEPT")
+		}
+	}
+
 	if !iptablesRuleExists("-C", "FORWARD", "-j", dataBlockChain) {
-		_ = runIptables("-I", "FORWARD", "1", "-j", dataBlockChain)
+		_ = runIptables("-I", "FORWARD", "2", "-j", dataBlockChain)
 	}
 	if !iptablesRuleExists("-C", "FORWARD", "-i", "ap0", "-o", "wlan0", "-j", dataUsageOutChain) {
-		_ = runIptables("-I", "FORWARD", "2", "-i", "ap0", "-o", "wlan0", "-j", dataUsageOutChain)
+		_ = runIptables("-I", "FORWARD", "3", "-i", "ap0", "-o", "wlan0", "-j", dataUsageOutChain)
 	}
 	if !iptablesRuleExists("-C", "FORWARD", "-i", "wlan0", "-o", "ap0", "-j", dataUsageInChain) {
-		_ = runIptables("-I", "FORWARD", "2", "-i", "wlan0", "-o", "ap0", "-j", dataUsageInChain)
+		_ = runIptables("-I", "FORWARD", "3", "-i", "wlan0", "-o", "ap0", "-j", dataUsageInChain)
 	}
 }
 
@@ -289,15 +311,31 @@ func setClientBlocked(ip string, blocked bool) error {
 		return fmt.Errorf("invalid IP address")
 	}
 	if blocked {
-		if !iptablesRuleExists("-C", dataBlockChain, "-s", ip, "-j", "DROP") {
-			if err := runIptables("-A", dataBlockChain, "-s", ip, "-j", "DROP"); err != nil {
+		// Only block internet-bound traffic (via wlan0). Local AP traffic
+		// (GDL90, AV-Link, Stratux web) must never be affected.
+		if !iptablesRuleExists("-C", dataBlockChain, "-s", ip, "-o", "wlan0", "-j", "DROP") {
+			if err := runIptables("-A", dataBlockChain, "-s", ip, "-o", "wlan0", "-j", "DROP"); err != nil {
 				return err
 			}
 		}
-		if !iptablesRuleExists("-C", dataBlockChain, "-d", ip, "-j", "DROP") {
-			_ = runIptables("-A", dataBlockChain, "-d", ip, "-j", "DROP")
+		if !iptablesRuleExists("-C", dataBlockChain, "-i", "wlan0", "-d", ip, "-j", "DROP") {
+			_ = runIptables("-A", dataBlockChain, "-i", "wlan0", "-d", ip, "-j", "DROP")
+		}
+		// Clean up any legacy unqualified rules.
+		for iptablesRuleExists("-C", dataBlockChain, "-s", ip, "-j", "DROP") {
+			_ = runIptables("-D", dataBlockChain, "-s", ip, "-j", "DROP")
+		}
+		for iptablesRuleExists("-C", dataBlockChain, "-d", ip, "-j", "DROP") {
+			_ = runIptables("-D", dataBlockChain, "-d", ip, "-j", "DROP")
 		}
 	} else {
+		// Remove all block rules for this IP (both new qualified and legacy).
+		for iptablesRuleExists("-C", dataBlockChain, "-s", ip, "-o", "wlan0", "-j", "DROP") {
+			_ = runIptables("-D", dataBlockChain, "-s", ip, "-o", "wlan0", "-j", "DROP")
+		}
+		for iptablesRuleExists("-C", dataBlockChain, "-i", "wlan0", "-d", ip, "-j", "DROP") {
+			_ = runIptables("-D", dataBlockChain, "-i", "wlan0", "-d", ip, "-j", "DROP")
+		}
 		for iptablesRuleExists("-C", dataBlockChain, "-s", ip, "-j", "DROP") {
 			_ = runIptables("-D", dataBlockChain, "-s", ip, "-j", "DROP")
 		}
@@ -325,7 +363,7 @@ func currentBlockedIPs() map[string]bool {
 		}
 		fields := strings.Fields(line)
 		for i, f := range fields {
-			if (f == "-s" || f == "-d") && i+1 < len(fields) {
+			if f == "-s" && i+1 < len(fields) {
 				result[strings.Split(fields[i+1], "/")[0]] = true
 			}
 		}
@@ -418,7 +456,234 @@ func discoverAPClients() map[string][2]string {
 		}
 		break
 	}
+
+	// Enrich device names from multiple sources for clients without hostname.
+	deviceMDNSCacheMu.Lock()
+	manualCopy := make(map[string]string, len(deviceManualNames))
+	for k, v := range deviceManualNames {
+		manualCopy[k] = v
+	}
+	mdnsCopy := make(map[string]string, len(deviceMDNSCache))
+	for k, v := range deviceMDNSCache {
+		mdnsCopy[k] = v
+	}
+	deviceMDNSCacheMu.Unlock()
+
+	for ip, identity := range clients {
+		mac, host := identity[0], identity[1]
+
+		// 1. Manual name by MAC or IP (highest priority).
+		if host == "" {
+			if name, ok := manualCopy[strings.ToLower(mac)]; ok {
+				host = name
+			} else if name, ok := manualCopy[ip]; ok {
+				host = name
+			}
+		}
+
+		// 2. mDNS / Bonjour name (cached from async resolution).
+		if host == "" {
+			if name, ok := mdnsCopy[ip]; ok {
+				host = name
+			}
+		}
+
+		// 3. MAC vendor + private address fallback.
+		if host == "" {
+			host = deviceDisplayName(mac, "")
+		}
+
+		// Request mDNS resolution for next refresh if still unidentified.
+		if identity[1] == "" && mac != "" {
+			resolveViaMDNS(ip)
+		}
+
+		clients[ip] = [2]string{mac, host}
+	}
+
 	return clients
+}
+
+// ---------------------------------------------------------------------------
+// Device identification: mDNS, MAC vendor lookup, manual names
+// ---------------------------------------------------------------------------
+
+var (
+	deviceMDNSCache   = make(map[string]string)
+	deviceMDNSCacheMu sync.Mutex
+	deviceMDNSPending = make(map[string]bool)
+	deviceManualNames = make(map[string]string)
+	deviceManualPath  string
+)
+
+func isPrivateMAC(mac string) bool {
+	mac = strings.TrimSpace(mac)
+	if len(mac) < 2 {
+		return false
+	}
+	firstByte, err := strconv.ParseUint(strings.ReplaceAll(mac, ":", "")[:2], 16, 8)
+	if err != nil {
+		return false
+	}
+	return firstByte&0x02 != 0
+}
+
+func macVendorName(mac string) string {
+	mac = strings.ToLower(strings.TrimSpace(mac))
+	if len(mac) < 8 {
+		return ""
+	}
+	prefix := mac[:8]
+	vendors := map[string]string{
+		"00:cd:fe": "Apple", "28:6a:ba": "Apple", "3c:06:30": "Apple",
+		"40:4d:7f": "Apple", "68:db:f5": "Apple", "78:7b:8a": "Apple",
+		"9c:20:7b": "Apple", "a4:83:e7": "Apple", "ac:bc:32": "Apple",
+		"b8:e8:56": "Apple", "c8:69:cd": "Apple", "d0:25:98": "Apple",
+		"e0:5f:45": "Apple", "f0:18:98": "Apple", "14:7d:da": "Apple",
+		"a8:5c:2c": "Apple", "f0:d4:f6": "Apple", "64:b0:a6": "Apple",
+		"dc:a4:ca": "Apple", "88:66:a5": "Apple", "7c:d1:c3": "Apple",
+		"f4:f9:51": "Apple", "8c:85:90": "Apple", "28:ff:3c": "Apple",
+		"38:f9:d3": "Apple", "48:a9:1c": "Apple", "54:4e:90": "Apple",
+		"60:c5:47": "Apple", "74:1b:b2": "Apple", "84:fc:fe": "Apple",
+		"98:01:a7": "Apple", "a0:78:17": "Apple", "bc:52:b7": "Apple",
+		"cc:08:8d": "Apple", "e4:25:e7": "Apple", "f8:ff:c2": "Apple",
+		"00:17:f2": "Apple", "d8:1c:79": "Apple", "34:08:bc": "Apple",
+		"18:65:90": "Apple", "00:1b:63": "Samsung", "00:21:19": "Samsung",
+		"00:26:37": "Samsung", "08:37:3d": "Samsung", "10:1d:c0": "Samsung",
+		"14:49:bc": "Samsung", "18:3a:2d": "Samsung", "1c:66:aa": "Samsung",
+		"24:18:1d": "Samsung", "28:cc:01": "Samsung", "2c:ae:2b": "Samsung",
+		"34:23:ba": "Samsung", "38:01:97": "Samsung", "40:4e:36": "Samsung",
+		"44:78:3e": "Samsung", "4c:bc:48": "Samsung", "50:01:bb": "Samsung",
+		"54:40:ad": "Samsung", "58:c3:8b": "Samsung", "6c:f3:73": "Samsung",
+		"78:52:1a": "Samsung", "84:11:9e": "Samsung", "94:35:0a": "Samsung",
+		"a0:82:1f": "Samsung", "b4:3a:28": "Samsung", "c0:97:27": "Samsung",
+		"d0:87:e2": "Samsung", "e4:b0:21": "Samsung", "f8:04:2e": "Samsung",
+		"b4:a9:fc": "Raspberry Pi", "d8:3a:dd": "Raspberry Pi",
+		"dc:a6:32": "Raspberry Pi", "e4:5f:01": "Raspberry Pi",
+		"2c:cf:67": "Raspberry Pi",
+		"00:50:b6": "Intel", "3c:a9:f4": "Intel", "48:51:b7": "Intel",
+		"68:17:29": "Intel", "80:86:f2": "Intel", "a0:36:9f": "Intel",
+		"00:15:5d": "Microsoft", "28:18:78": "Microsoft",
+		"7c:1e:52": "Google", "a4:77:33": "Google", "f4:f5:d8": "Google",
+		"30:52:cb": "Google", "f8:0f:f9": "Google",
+		"60:ab:d2": "Google", "94:eb:2c": "Google",
+		"04:d3:b0": "Huawei", "24:09:95": "Huawei", "48:46:fb": "Huawei",
+		"70:8c:b6": "Huawei", "80:b6:55": "Huawei", "c8:d7:19": "Huawei",
+		"94:77:2b": "uAvionix",
+	}
+	if vendor, ok := vendors[prefix]; ok {
+		return vendor
+	}
+	return ""
+}
+
+func deviceDisplayName(mac, hostname string) string {
+	if hostname != "" {
+		return hostname
+	}
+	if mac == "" {
+		return ""
+	}
+	vendor := macVendorName(mac)
+	if vendor != "" {
+		return vendor + " device"
+	}
+	if isPrivateMAC(mac) {
+		return "Private address device"
+	}
+	return ""
+}
+
+func resolveViaMDNS(ip string) {
+	deviceMDNSCacheMu.Lock()
+	if deviceMDNSPending[ip] {
+		deviceMDNSCacheMu.Unlock()
+		return
+	}
+	if _, ok := deviceMDNSCache[ip]; ok {
+		deviceMDNSCacheMu.Unlock()
+		return
+	}
+	deviceMDNSPending[ip] = true
+	deviceMDNSCacheMu.Unlock()
+
+	go func() {
+		defer func() {
+			deviceMDNSCacheMu.Lock()
+			delete(deviceMDNSPending, ip)
+			deviceMDNSCacheMu.Unlock()
+		}()
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "avahi-resolve-address", "-4", ip).Output()
+		if err != nil || len(out) == 0 {
+			return
+		}
+		fields := strings.Fields(string(out))
+		if len(fields) >= 2 {
+			name := strings.TrimSuffix(strings.TrimSuffix(fields[1], "."), ".local")
+			if name != "" && name != ip {
+				deviceMDNSCacheMu.Lock()
+				deviceMDNSCache[ip] = name
+				deviceMDNSCacheMu.Unlock()
+			}
+		}
+	}()
+}
+
+func loadDeviceManualNames() {
+	dataUsageMu.Lock()
+	path := dataUsageStorageDir
+	dataUsageMu.Unlock()
+	if path == "" {
+		return
+	}
+	deviceManualPath = filepath.Join(path, "device-names.json")
+	b, err := os.ReadFile(deviceManualPath)
+	if err != nil {
+		return
+	}
+	var names map[string]string
+	if json.Unmarshal(b, &names) == nil {
+		deviceMDNSCacheMu.Lock()
+		deviceManualNames = names
+		deviceMDNSCacheMu.Unlock()
+	}
+}
+
+func saveDeviceManualNames() {
+	if deviceManualPath == "" {
+		return
+	}
+	deviceMDNSCacheMu.Lock()
+	b, _ := json.MarshalIndent(deviceManualNames, "", "  ")
+	deviceMDNSCacheMu.Unlock()
+	_ = os.WriteFile(deviceManualPath, b, 0644)
+}
+
+func handleDeviceRename(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "POST required", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		Key  string `json:"key"`
+		Name string `json:"name"`
+	}
+	if json.NewDecoder(r.Body).Decode(&req) != nil || req.Key == "" {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	deviceMDNSCacheMu.Lock()
+	if req.Name == "" {
+		delete(deviceManualNames, req.Key)
+	} else {
+		deviceManualNames[req.Key] = req.Name
+	}
+	deviceMDNSCacheMu.Unlock()
+	saveDeviceManualNames()
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 }
 
 func isWANOnline() bool {
