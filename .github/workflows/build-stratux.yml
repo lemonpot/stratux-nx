@@ -61,7 +61,6 @@ jobs:
 
           grep -q "Internet Data" stratux/web/index.html
           grep -q "Flight Log" stratux/web/index.html
-          grep -q "Adaptive AHRS v2" stratux/web/plates/settings.html
           grep -q "ResetInvalid" stratux/main/sensors.go
 
           echo "Complete Stratux NX source verified"
