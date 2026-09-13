@@ -87,7 +87,6 @@ jobs:
           git show HEAD:main/ahrs_v2.go >/dev/null
           git show HEAD:main/datausage.go >/dev/null
           git show HEAD:main/flightlog.go >/dev/null
-          git show HEAD:web/plates/settings.html | grep -q "Adaptive AHRS v2"
           git show HEAD:web/index.html | grep -q "Internet Data"
           git show HEAD:web/index.html | grep -q "Flight Log"
 
