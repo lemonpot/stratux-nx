@@ -129,8 +129,14 @@ func internetFlowMonitorLoop() {
 
 func ensureFlowKillChain() {
 	_ = runIptables("-N", dataFlowKillChain)
-	if !iptablesRuleExists("-C", "FORWARD", "-j", dataFlowKillChain) {
-		_ = runIptables("-I", "FORWARD", "1", "-j", dataFlowKillChain)
+	// Only apply flow kill rules to internet-bound traffic, never to local
+	// AP services (GDL90 port 4000, AV-Link, web UI, etc.).
+	if !iptablesRuleExists("-C", "FORWARD", "-o", "wlan0", "-j", dataFlowKillChain) {
+		_ = runIptables("-I", "FORWARD", "1", "-o", "wlan0", "-j", dataFlowKillChain)
+	}
+	// Remove legacy unqualified rule if present.
+	for iptablesRuleExists("-C", "FORWARD", "-j", dataFlowKillChain) {
+		_ = runIptables("-D", "FORWARD", "-j", dataFlowKillChain)
 	}
 }
 

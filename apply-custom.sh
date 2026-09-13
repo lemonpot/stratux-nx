@@ -78,7 +78,7 @@ p.write_text(s)
 p = root / "image_build/stage2/10-stratux/01-run.sh"
 s = p.read_text()
 old = 'apt install --yes dnsmasq ifplugd iptables'
-new = 'apt install --yes dnsmasq ifplugd iptables conntrack'
+new = 'apt install --yes dnsmasq ifplugd iptables conntrack avahi-utils'
 if new not in s:
     if old not in s:
         raise SystemExit('Could not find Stratux runtime package install line')

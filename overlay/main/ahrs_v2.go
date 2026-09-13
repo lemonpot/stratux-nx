@@ -1,5 +1,13 @@
 package main
 
+// AHRS V2 - TEMPORARILY NOT EXPOSED IN UI
+// The code below is preserved and compiles, but the UI selector is hidden.
+// AHRSV2_Enabled defaults to false, so selectableAHRS always delegates to
+// the upstream Legacy SimpleAHRS. Both algorithms run in parallel; only
+// Legacy output is published to mySituation/GDL90/ForeFlight.
+// To re-enable the UI selector, set AHRS_V2_UI_VISIBLE = True in
+// patch-ahrs-v2.py and rebuild.
+
 import (
 	"math"
 
