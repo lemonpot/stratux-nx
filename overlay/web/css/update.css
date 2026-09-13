@@ -1,0 +1,237 @@
+/* ============================================================
+   STRATUX NX -- Software Update Page
+   ============================================================ */
+
+.update-page {
+  padding: 14px 14px 40px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.update-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 22px 24px;
+  border-radius: var(--sx-radius);
+  background: linear-gradient(135deg, #0c1322 0%, #162033 50%, #1a2744 100%);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, .15);
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.update-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(77, 159, 255, .06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+body.stratux-dark .update-hero {
+  background: linear-gradient(135deg, #060a12 0%, #0c1320 50%, #111d30 100%);
+  border: 1px solid var(--sx-border);
+}
+
+.update-hero h2 { margin: 3px 0 7px; font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+.update-hero p { margin: 0; max-width: 600px; color: #94a8c7; line-height: 1.5; font-size: 13px; }
+.update-eyebrow { font-size: 10px; letter-spacing: .14em; font-weight: 700; color: #6ba3eb; }
+
+.update-version-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 8px 14px;
+  border-radius: var(--sx-radius-full);
+  font-size: 13px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, .1);
+  font-family: "SF Mono", "Fira Code", monospace;
+}
+
+/* --- Panels ------------------------------------------------------ */
+.update-panel {
+  background: var(--sx-card);
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius);
+  margin-top: 12px;
+  box-shadow: var(--sx-shadow);
+  overflow: hidden;
+}
+
+.update-panel-highlight {
+  border-color: var(--sx-primary);
+  box-shadow: 0 0 0 1px var(--sx-primary), var(--sx-shadow-md);
+}
+
+.update-panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--sx-border);
+}
+
+.update-panel-header h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--sx-text);
+}
+
+.update-panel-header h3 .fa { margin-right: 6px; color: var(--sx-primary); }
+
+.update-muted { font-size: 12px; color: var(--sx-muted); line-height: 1.4; }
+
+.update-btn-small { border-radius: var(--sx-radius-xs) !important; font-size: 12px !important; }
+
+/* --- Version grid ------------------------------------------------ */
+.update-version-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 16px 18px;
+}
+
+.update-version-card {
+  background: var(--sx-card-soft);
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius-xs);
+  padding: 12px 14px;
+}
+
+.update-version-card span {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--sx-muted-2);
+  text-transform: uppercase;
+}
+
+.update-version-card strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--sx-text);
+  font-weight: 700;
+}
+
+.update-text-success { color: var(--sx-success) !important; }
+.update-text-warning { color: var(--sx-warning) !important; }
+.update-text-primary { color: var(--sx-primary) !important; }
+
+/* --- Action body ------------------------------------------------- */
+.update-action-body { padding: 18px; }
+
+.update-action-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--sx-primary-soft);
+  border: 1px solid var(--sx-primary);
+  border-radius: var(--sx-radius-sm);
+  color: var(--sx-text-2);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.update-action-text .fa { color: var(--sx-primary); margin-top: 2px; font-size: 15px; }
+
+.update-install-btn {
+  min-height: 48px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  border-radius: var(--sx-radius-sm) !important;
+}
+
+/* --- Download progress ------------------------------------------- */
+.update-download-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.update-download-status > i { font-size: 20px; color: var(--sx-primary); }
+.update-download-status strong { display: block; color: var(--sx-text); font-size: 15px; }
+.update-download-status span { display: block; color: var(--sx-muted); font-size: 12px; margin-top: 2px; }
+
+.update-progress-track {
+  height: 10px;
+  border-radius: var(--sx-radius-full);
+  background: var(--sx-card-soft);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--sx-border);
+}
+
+.update-progress-bar {
+  height: 100%;
+  border-radius: var(--sx-radius-full);
+  background: linear-gradient(90deg, #4d9fff, var(--sx-primary));
+  transition: width .5s ease;
+}
+
+/* --- Error ------------------------------------------------------- */
+.update-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--sx-danger-soft);
+  border: 1px solid var(--sx-danger);
+  border-radius: var(--sx-radius-sm);
+}
+
+.update-error > i { color: var(--sx-danger); margin-top: 2px; font-size: 15px; }
+.update-error strong { display: block; color: var(--sx-text); font-size: 13px; }
+.update-error span { display: block; color: var(--sx-muted); font-size: 12px; margin-top: 2px; }
+
+/* --- Success ----------------------------------------------------- */
+.update-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--sx-success-soft);
+  border: 1px solid var(--sx-success);
+  border-radius: var(--sx-radius-sm);
+}
+
+.update-success > i { color: var(--sx-success); margin-top: 2px; font-size: 18px; }
+.update-success strong { display: block; color: var(--sx-text); font-size: 14px; }
+.update-success span { display: block; color: var(--sx-muted); font-size: 12px; margin-top: 3px; line-height: 1.5; }
+
+/* --- Up to date state -------------------------------------------- */
+.update-up-to-date {
+  padding: 32px 18px;
+  text-align: center;
+}
+
+.update-up-to-date > i { font-size: 36px; color: var(--sx-success); display: block; margin-bottom: 10px; }
+.update-up-to-date > strong { display: block; font-size: 16px; color: var(--sx-text); }
+.update-up-to-date > span { display: block; font-size: 12px; color: var(--sx-muted); margin-top: 6px; }
+
+/* --- Manual body ------------------------------------------------- */
+.update-manual-body { padding: 16px 18px; }
+
+/* --- Responsive -------------------------------------------------- */
+@media (max-width: 600px) {
+  .update-page { padding: 8px 8px 28px; }
+  .update-hero { display: block; padding: 17px; border-radius: var(--sx-radius-sm); }
+  .update-hero h2 { font-size: 22px; }
+  .update-version-pill { display: inline-flex; margin-top: 14px; }
+  .update-version-grid { grid-template-columns: 1fr; }
+  .update-panel { border-radius: var(--sx-radius-sm); }
+  .update-panel-header { flex-wrap: wrap; padding: 14px; }
+}
