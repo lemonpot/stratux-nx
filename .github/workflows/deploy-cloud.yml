@@ -1,0 +1,32 @@
+name: Deploy Stratux NX Cloud
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Package cloud application
+        run: tar -C server -czf /tmp/stratuxnx-cloud.tgz .
+
+      - name: Deploy cloud application
+        env:
+          NX_SSH_HOST: ${{ secrets.NX_SSH_HOST }}
+          NX_SSH_USER: ${{ secrets.NX_SSH_USER }}
+          NX_SSH_PASS: ${{ secrets.NX_SSH_PASS }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq sshpass >/dev/null
+          ssh_opts=(-o StrictHostKeyChecking=no)
+          remote_release="/home/virtual/stratux/stratuxnx-cloud-release"
+          sshpass -p "$NX_SSH_PASS" scp "${ssh_opts[@]}" /tmp/stratuxnx-cloud.tgz \
+            "${NX_SSH_USER}@${NX_SSH_HOST}:/tmp/stratuxnx-cloud.tgz"
+          sshpass -p "$NX_SSH_PASS" ssh "${ssh_opts[@]}" "${NX_SSH_USER}@${NX_SSH_HOST}" \
+            "rm -rf '${remote_release}.new' && mkdir -p '${remote_release}.new' && tar -xzf /tmp/stratuxnx-cloud.tgz -C '${remote_release}.new' && rm -f /tmp/stratuxnx-cloud.tgz && rm -rf '${remote_release}' && mv '${remote_release}.new' '${remote_release}'"
+          printf '%s\n' "$NX_SSH_PASS" | sshpass -p "$NX_SSH_PASS" ssh "${ssh_opts[@]}" "${NX_SSH_USER}@${NX_SSH_HOST}" \
+            "sudo -S '${remote_release}/deploy-as-root.sh' '${remote_release}'"
