@@ -14,11 +14,6 @@
     </div>
   </div>
 
-  <div class="data-flow-explainer">
-    <i class="fa fa-info-circle"></i>
-    <span><strong>Highest usage is shown first.</strong> Numbers update every 2 seconds, but the ranking only reshuffles every 10 seconds so the screen stays readable. HTTPS content remains encrypted.</span>
-  </div>
-
   <div class="data-flow-error" ng-if="flowError">
     <i class="fa fa-exclamation-triangle"></i> {{flowError}}
   </div>
@@ -47,10 +42,6 @@
   </div>
 
   <div class="data-consumer-toolbar">
-    <div class="data-consumer-toolbar-copy">
-      <strong>Top data consumers</strong>
-      <span>Sorted by total session usage, not by momentary speed.</span>
-    </div>
     <div class="data-flow-search">
       <i class="fa fa-search"></i>
       <input type="text" ng-model="flowSearch" placeholder="Filter YouTube, Apple, host, IP...">

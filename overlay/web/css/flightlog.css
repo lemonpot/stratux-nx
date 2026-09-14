@@ -9,57 +9,6 @@
   margin: 0 auto;
 }
 
-/* --- Page header ------------------------------------------------- */
-.flightlog-hero {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: flex-start;
-  padding: 28px 0 20px;
-  border-bottom: 1px solid var(--sx-border);
-  color: var(--sx-text);
-  margin-bottom: 20px;
-}
-
-.flightlog-hero::before {
-  display: none;
-}
-
-body.stratux-dark .flightlog-hero {
-  background: transparent;
-}
-
-.flightlog-hero h2 { margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -.02em; }
-.flightlog-hero p { margin: 5px 0 0; max-width: 780px; color: var(--sx-muted); line-height: 1.5; font-size: 14px; }
-.flightlog-eyebrow { display: none; }
-
-.flightlog-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  padding: 6px 10px;
-  border-radius: var(--sx-radius-full);
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--sx-card-soft);
-  color: var(--sx-muted);
-  border: 1px solid var(--sx-border);
-}
-
-.flightlog-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--sx-muted-2);
-}
-
-.flightlog-pill.ok .flightlog-dot {
-  background: var(--sx-success);
-}
-
-.flightlog-pill.bad { color: var(--sx-danger-text); }
-
 .flightlog-error {
   border-radius: var(--sx-radius-sm);
   padding: 12px 14px;
@@ -277,7 +226,7 @@ body.stratux-dark .flightlog-hero {
 
 .flightlog-times > div {
   border: 1px solid var(--sx-border);
-  border-radius: var(--sx-radius-xs);
+  border-radius: var(--sx-radius);
   padding: 9px 10px;
   background: var(--sx-card);
 }
@@ -326,8 +275,7 @@ body.stratux-dark .flightlog-hero {
   display: block;
   width: 100%;
   height: 220px;
-  background: radial-gradient(circle at 1px 1px, var(--sx-border) 1px, transparent 0);
-  background-size: 18px 18px;
+  background: var(--sx-card-soft);
 }
 
 .flightlog-track.large { height: 300px; }
@@ -367,7 +315,7 @@ body.stratux-dark .flightlog-hero {
   width: 100%;
   height: 36px;
   border: 1px solid var(--sx-border-strong) !important;
-  border-radius: var(--sx-radius-xs) !important;
+  border-radius: var(--sx-radius) !important;
   padding: 8px 10px !important;
   font-size: 13px;
   background: var(--sx-card) !important;
@@ -386,7 +334,7 @@ body.stratux-dark .flightlog-hero {
 .flightlog-save-field .btn {
   width: 100%;
   height: 36px;
-  border-radius: var(--sx-radius-xs);
+  border-radius: var(--sx-radius);
 }
 
 .flightlog-save-field {
@@ -689,22 +637,15 @@ body.stratux-dark .flightlog-hero {
   display: flex;
   align-items: center;
   gap: 9px;
-  border-radius: var(--sx-radius-sm);
-  padding: 12px 14px;
-  background: var(--sx-card);
-  border: 1px solid var(--sx-border);
+  padding: 12px 0;
+  background: transparent;
+  border: 0;
   color: var(--sx-text-2);
   font-size: 13px;
   line-height: 1.4;
 }
 
 .flightlog-detection-note i { color: var(--sx-primary); font-size: 16px; }
-
-@keyframes flightlogPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .4; }
-}
-
 
 /* --- Responsive -------------------------------------------------- */
 @media (max-width: 950px) {
@@ -723,8 +664,6 @@ body.stratux-dark .flightlog-hero {
 
 @media (max-width: 700px) {
   .flightlog-page { padding: 0 16px 32px; }
-  .flightlog-hero { display: block; padding: 20px 0 16px; }
-  .flightlog-hero h2 { font-size: 21px; }
   .flightlog-pill { display: inline-flex; margin-top: 14px; }
   .flightlog-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .flightlog-page > .flightlog-grid-4 .flightlog-stat:nth-child(3) { border-left: 0; }

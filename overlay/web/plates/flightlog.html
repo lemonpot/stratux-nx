@@ -1,18 +1,4 @@
-<div ui-content-for="title"><span>Flight Log</span></div>
-
-<div class="flightlog-page" ng-cloak>
-  <div class="flightlog-hero">
-    <div>
-      <div class="flightlog-eyebrow">AUTOMATIC GPS FLIGHT LOGGER</div>
-      <h2>Flight Log</h2>
-      <p>Stratux NX watches GPS movement, detects taxi, takeoff and landing, stores the route, and resolves nearby airports locally without needing Internet.</p>
-    </div>
-    <div class="flightlog-pill" ng-class="{'ok': data.GPS.Valid, 'bad': !data.GPS.Valid}">
-      <span class="flightlog-dot"></span>
-      {{data.GPS.Valid ? 'GPS tracking' : 'Waiting for GPS'}}
-    </div>
-  </div>
-
+<div class="col-sm-12 flightlog-page" ng-cloak>
   <div class="flightlog-error" ng-if="errorMessage"><i class="fa fa-exclamation-triangle"></i> {{errorMessage}}</div>
 
   <div class="flightlog-grid flightlog-grid-4">

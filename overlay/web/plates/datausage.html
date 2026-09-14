@@ -1,20 +1,12 @@
-<div ui-content-for="title">
-  <span>Internet Data</span>
-</div>
-
-<div class="data-usage-page" ng-cloak>
-  <div class="data-hero">
-    <div>
-      <div class="data-eyebrow">STARLINK / INTERNET MONITOR</div>
-      <h2>Session Data Usage</h2>
-      <p>Only forwarded Internet traffic is counted. ADS-B, GPS, AHRS and local ForeFlight traffic are not included.</p>
-    </div>
-    <div class="data-hero-actions">
-      <button class="btn btn-default data-btn-small" ng-click="resetSession()" title="Reset counters"><i class="fa fa-undo"></i> New session</button>
+<div class="col-sm-12 data-usage-page" ng-cloak>
+  <div class="data-page-toolbar">
+    <p>Only forwarded Internet traffic is counted. ADS-B, GPS, AHRS and local ForeFlight traffic are not included.</p>
+    <div class="data-page-actions">
       <div class="data-connection-pill" ng-class="{'is-online': data.WANOnline, 'is-offline': !data.WANOnline}">
         <span class="data-dot"></span>
         {{ data.WANOnline ? 'Internet connected' : 'Internet offline' }}
       </div>
+      <button class="btn btn-default" ng-click="resetSession()" title="Reset counters"><i class="fa fa-undo"></i> New session</button>
     </div>
   </div>
 
