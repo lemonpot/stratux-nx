@@ -397,10 +397,19 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
     $scope.syncAction = function(action) {
         if ($scope.syncing) return;
         if (action === 'enable' && !window.confirm('Enable automatic Stratux NX Cloud sync? Completed flight routes will upload securely whenever Internet is available.')) return;
+        var claimWindow = action === 'claim-code' ? window.open('about:blank', '_blank') : null;
         $scope.syncing = true;
         $http.post('/flightLog/sync', {action:action}).then(function(response) {
             $scope.syncing = false;
             $scope.data.Sync = response.data || $scope.data.Sync;
+            if (action === 'claim-code' && $scope.data.Sync.ClaimURL) {
+                if (claimWindow) {
+                    claimWindow.location.replace($scope.data.Sync.ClaimURL);
+                } else {
+                    window.location.href = $scope.data.Sync.ClaimURL;
+                }
+                return;
+            }
             if (window.StratuxUI) {
                 var message = action === 'disable' ? 'Cloud sync disabled' : ($scope.data.Sync.Online ? 'Automatic flight sync is active' : 'No Internet now. Flights remain local and will sync automatically later.');
                 window.StratuxUI.toast(message, action === 'disable' ? 'info' : 'success', 4200);
@@ -408,6 +417,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
             $scope.refresh();
         }, function(response) {
             $scope.syncing = false;
+            if (claimWindow) claimWindow.close();
             $scope.errorMessage = 'Could not update cloud sync: ' + responseMessage(response, 'service unavailable');
         });
     };
