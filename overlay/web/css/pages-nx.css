@@ -15,6 +15,22 @@ div[ui-view] > .container-fluid {
   float: none !important;
 }
 
+div[ui-view].sx-page-full > .col-sm-12 {
+  width: 100%;
+  max-width: none;
+  padding: 0 !important;
+}
+
+div[ui-view].sx-page-full > .col-sm-12 > .panel {
+  margin: 0;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+div[ui-view].sx-page-full .panel-body-fullsize {
+  height: calc(100vh - 101px);
+}
+
 
 /* === UNIVERSAL PANEL STYLING ===================================== */
 
@@ -349,6 +365,13 @@ body.stratux-dark div[ui-view] .table img[src*="actype"] {
   filter: invert(1) brightness(1.8);
 }
 
+.traffic-page [style*="font-size:50%"],
+.traffic-page [style*="font-size: 50%"],
+.traffic-page [style*="font-size:80%"],
+.traffic-page [style*="font-size: 80%"] {
+  font-size: 11px !important;
+}
+
 /* Callsign column */
 div[ui-view] .table td:first-child {
   font-weight: 700;
@@ -439,12 +462,24 @@ input[type="file"]::file-selector-button {
 /* === GPS / AHRS PAGE ============================================= */
 
 /* Instrument canvases */
-#attitude_display,
-#heading_display {
+#ahrs_display,
+#gMeter_display {
   border-radius: var(--sx-radius) !important;
   overflow: hidden;
   border: 1px solid var(--sx-border);
 }
+
+.indicator {
+  padding: 5px 4px;
+  color: var(--sx-text-2) !important;
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius-xs) !important;
+  box-shadow: none !important;
+}
+
+.indicator.off { background: var(--sx-danger-soft) !important; color: var(--sx-danger-text) !important; }
+.indicator.on { background: var(--sx-success-soft) !important; color: var(--sx-success-text) !important; }
+.indicator.warn { background: var(--sx-warning-soft) !important; color: var(--sx-warning-text) !important; }
 
 /* Satellite signal bars */
 .bar_container {
@@ -488,6 +523,24 @@ div[ui-view] .panel-body .list-group .list-group-item:last-child { border-bottom
 
 
 /* === WEATHER PAGE ================================================ */
+
+.report_TAF,
+.report_PIREP,
+.report_WINDS,
+.flight_condition_VFR,
+.flight_condition_MVFR,
+.flight_condition_IFR,
+.flight_condition_LIFR {
+  border: 1px solid var(--sx-border) !important;
+  color: var(--sx-text-2) !important;
+  background: var(--sx-card-soft) !important;
+  box-shadow: none !important;
+}
+
+.flight_condition_VFR { color: var(--sx-success-text) !important; background: var(--sx-success-soft) !important; }
+.flight_condition_MVFR { color: var(--sx-primary-text) !important; background: var(--sx-primary-soft) !important; }
+.flight_condition_IFR { color: var(--sx-danger-text) !important; background: var(--sx-danger-soft) !important; }
+.flight_condition_LIFR { color: var(--sx-warning-text) !important; background: var(--sx-warning-soft) !important; }
 
 div[ui-view] .panel-body pre,
 div[ui-view] .panel-body .well {
