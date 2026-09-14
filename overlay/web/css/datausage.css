@@ -56,7 +56,17 @@
   background: var(--sx-success);
 }
 
-.data-connection-pill.is-offline { color: var(--sx-danger-text); }
+.data-connection-pill.is-online {
+  background: var(--sx-success-soft);
+  color: var(--sx-success-text);
+}
+
+.data-connection-pill.is-offline {
+  background: var(--sx-danger-soft);
+  color: var(--sx-danger-text);
+}
+
+.data-connection-pill.is-offline .data-dot { background: var(--sx-danger); }
 
 
 /* --- Alerts ------------------------------------------------------ */
@@ -108,7 +118,7 @@
 
 .data-stat-primary {
   border-color: var(--sx-border);
-  background: var(--sx-card);
+  background: var(--sx-primary-soft);
 }
 
 .data-stat-label {

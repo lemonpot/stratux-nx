@@ -105,6 +105,31 @@
     </div>
   </div>
 
+  <div class="flightlog-panel flightlog-cloud-panel">
+    <div class="flightlog-panel-header">
+      <div>
+        <h3>Stratux NX Cloud</h3>
+        <div class="flightlog-muted" ng-if="!data.Sync.Enabled">Flights always remain on this device. Enable cloud sync once to upload them automatically whenever Internet is available.</div>
+        <div class="flightlog-muted" ng-if="data.Sync.Enabled">{{data.Sync.Online ? 'Internet available · automatic sync active' : 'Offline · flights remain local and will upload automatically after reconnection'}}</div>
+      </div>
+      <span class="flightlog-cloud-state" ng-class="{'online': data.Sync.Enabled && data.Sync.Online, 'offline': data.Sync.Enabled && !data.Sync.Online}">
+        <i class="fa" ng-class="data.Sync.Enabled ? (data.Sync.Online ? 'fa-cloud-upload' : 'fa-cloud') : 'fa-lock'"></i>
+        {{data.Sync.Enabled ? (data.Sync.Online ? 'Sync active' : 'Waiting for Internet') : 'Local only'}}
+      </span>
+    </div>
+    <div class="flightlog-cloud-body">
+      <div class="flightlog-device-id"><span>DEVICE ID</span><strong>{{data.Sync.InstallationID || 'Initializing...'}}</strong><small>This public ID identifies this installation. Account linking uses a separate one-time secure code.</small></div>
+      <div class="flightlog-cloud-pending"><span>WAITING TO UPLOAD</span><strong>{{data.Sync.Pending || 0}}</strong><small>{{data.Sync.LastError || 'No synchronization errors'}}</small></div>
+      <div class="flightlog-cloud-actions">
+        <button class="btn btn-primary" ng-if="!data.Sync.Enabled" ng-click="syncAction('enable')" ng-disabled="syncing"><i class="fa fa-cloud-upload"></i> Enable automatic sync</button>
+        <button class="btn btn-default" ng-if="data.Sync.Enabled" ng-click="syncAction('retry')" ng-disabled="syncing || !data.Sync.Online"><i class="fa fa-refresh" ng-class="{'fa-spin': syncing}"></i> Sync now</button>
+        <button class="btn btn-default" ng-if="data.Sync.Enabled" ng-click="syncAction('claim-code')" ng-disabled="syncing || !data.Sync.Online"><i class="fa fa-link"></i> Link account</button>
+        <button class="btn btn-default" ng-if="data.Sync.Enabled" ng-click="syncAction('disable')" ng-disabled="syncing">Disable</button>
+      </div>
+      <div class="flightlog-claim-code" ng-if="data.Sync.ClaimCode"><span>ONE-TIME LINK CODE</span><strong>{{data.Sync.ClaimCode}}</strong><small>Sign in at app.stratuxnx.com and enter this code. It expires at {{formatLocal(data.Sync.ClaimExpiresUTC)}}.</small></div>
+    </div>
+  </div>
+
   <div class="flightlog-panel">
     <div class="flightlog-panel-header">
       <div>
@@ -196,7 +221,7 @@
 
     <div class="flightlog-history" ng-if="data.Flights.length">
       <button type="button" class="flightlog-history-row" ng-repeat="flight in data.Flights track by flight.ID" ng-click="selectFlight(flight)">
-        <div class="flightlog-history-route"><strong>{{airportCode(flight.DepartureAirport)}} <i class="fa fa-long-arrow-right"></i> {{airportCode(flight.ArrivalAirport)}}</strong><span>{{formatLocalDate(flight.TakeoffUTC || flight.OffBlockUTC)}}</span></div>
+        <div class="flightlog-history-route"><strong>{{airportCode(flight.DepartureAirport)}} <i class="fa fa-long-arrow-right"></i> {{airportCode(flight.ArrivalAirport)}}</strong><span>{{formatLocalDate(flight.TakeoffUTC || flight.OffBlockUTC)}}</span><em class="flightlog-sync-badge" ng-class="syncStatusClass(flight.SyncStatus)">{{syncStatusLabel(flight.SyncStatus)}}</em></div>
         <div><span>AIR</span><strong>{{formatDuration(flight.AirTimeSeconds)}}</strong></div>
         <div><span>BLOCK</span><strong>{{formatDuration(flight.BlockTimeSeconds)}}</strong></div>
         <div><span>TAXI</span><strong>{{formatDuration((flight.TaxiOutSeconds || 0) + (flight.TaxiInSeconds || 0))}}</strong></div>
@@ -208,18 +233,15 @@
 
   <div class="flightlog-panel" ng-if="selectedFlight">
     <div class="flightlog-panel-header">
-      <div><h3>{{airportCode(selectedFlight.DepartureAirport)}} → {{airportCode(selectedFlight.ArrivalAirport)}}</h3><div class="flightlog-muted">{{formatLocalDate(selectedFlight.TakeoffUTC || selectedFlight.OffBlockUTC)}} · {{formatNM(selectedFlight.DistanceNM)}} · {{selectedFlight.Track.length}} GPS points</div></div>
+      <div><h3>{{airportCode(selectedFlight.DepartureAirport)}} → {{airportCode(selectedFlight.ArrivalAirport)}} <em class="flightlog-sync-badge" ng-class="syncStatusClass(selectedFlight.SyncStatus)">{{syncStatusLabel(selectedFlight.SyncStatus)}}</em></h3><div class="flightlog-muted">{{formatLocalDate(selectedFlight.TakeoffUTC || selectedFlight.OffBlockUTC)}} · {{formatNM(selectedFlight.DistanceNM)}} · {{selectedFlight.Track.length}} GPS points</div></div>
       <button class="btn btn-default" ng-click="closeSelected()"><i class="fa fa-times"></i> Close</button>
     </div>
 
     <div class="flightlog-detail">
       <div class="flightlog-track-card" ng-if="selectedTrackPath">
         <div class="flightlog-track-head"><strong>Recorded route</strong><span>Start <b>{{airportCode(selectedFlight.DepartureAirport)}}</b> · End <b>{{airportCode(selectedFlight.ArrivalAirport)}}</b></span></div>
-        <svg class="flightlog-track large" viewBox="0 0 1000 420" preserveAspectRatio="none" aria-label="Recorded GPS flight track">
-          <polyline ng-attr-points="{{selectedTrackPath}}" fill="none" vector-effect="non-scaling-stroke"></polyline>
-          <circle ng-if="selectedTrackStart" ng-attr-cx="{{selectedTrackStart.x}}" ng-attr-cy="{{selectedTrackStart.y}}" r="8" class="start"></circle>
-          <circle ng-if="selectedTrackEnd" ng-attr-cx="{{selectedTrackEnd.x}}" ng-attr-cy="{{selectedTrackEnd.y}}" r="8" class="end"></circle>
-        </svg>
+        <div id="flightlog-selected-map" class="flightlog-map" aria-label="Recorded flight route map"></div>
+        <div class="flightlog-map-legend"><span><i class="start"></i> Start</span><span><i class="finish"></i> Finish</span><span>Map tiles require Internet; the recorded route remains available locally.</span></div>
       </div>
 
       <div class="flightlog-grid flightlog-grid-4 flightlog-detail-metrics">

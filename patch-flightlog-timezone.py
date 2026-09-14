@@ -26,8 +26,8 @@ if old in s:
 elif new not in s:
     raise SystemExit('Could not add airport timezone')
 
-old = '''\tAirportDatabaseReady bool               `json:"AirportDatabaseReady"`\n\tAirportCount         int                `json:"AirportCount"`\n\tStoragePath          string             `json:"StoragePath"`\n}'''
-new = '''\tAirportDatabaseReady  bool               `json:"AirportDatabaseReady"`\n\tAirportCount          int                `json:"AirportCount"`\n\tTimezoneDatabaseReady bool               `json:"TimezoneDatabaseReady"`\n\tLocalTimezone         string             `json:"LocalTimezone"`\n\tTimezoneSource        string             `json:"TimezoneSource"`\n\tStoragePath           string             `json:"StoragePath"`\n}'''
+old = '''\tAirportDatabaseReady bool               `json:"AirportDatabaseReady"`\n\tAirportCount         int                `json:"AirportCount"`\n\tStoragePath          string             `json:"StoragePath"`\n\tSync                 flightSyncPublicState `json:"Sync"`\n}'''
+new = '''\tAirportDatabaseReady  bool                  `json:"AirportDatabaseReady"`\n\tAirportCount          int                   `json:"AirportCount"`\n\tTimezoneDatabaseReady bool                  `json:"TimezoneDatabaseReady"`\n\tLocalTimezone         string                `json:"LocalTimezone"`\n\tTimezoneSource        string                `json:"TimezoneSource"`\n\tStoragePath           string                `json:"StoragePath"`\n\tSync                  flightSyncPublicState `json:"Sync"`\n}'''
 if old in s:
     s = s.replace(old, new, 1)
 elif new not in s:
@@ -62,8 +62,8 @@ if old in s:
 elif 'updateFlightResolvedTimezoneLocked(sample)' not in s:
     raise SystemExit('Could not wire automatic timezone resolver into monitor loop')
 
-old = '''\tloadCurrentFlightLocked()\n\tloadAirportDatabaseLocked()\n\tflightInitialized = true'''
-new = '''\tloadCurrentFlightLocked()\n\tloadAirportDatabaseLocked()\n\tloadFlightTimezoneGridLocked()\n\tif !flightSettings.AutoTimezone {\n\t\tflightResolvedTimezone = flightSettings.Timezone\n\t\tflightTimezoneSource = "manual"\n\t}\n\tflightInitialized = true'''
+old = '''\tloadCurrentFlightLocked()\n\tloadAirportDatabaseLocked()\n\tflightSyncInitializeLocked()\n\tflightInitialized = true'''
+new = '''\tloadCurrentFlightLocked()\n\tloadAirportDatabaseLocked()\n\tloadFlightTimezoneGridLocked()\n\tflightSyncInitializeLocked()\n\tif !flightSettings.AutoTimezone {\n\t\tflightResolvedTimezone = flightSettings.Timezone\n\t\tflightTimezoneSource = "manual"\n\t}\n\tflightInitialized = true'''
 if old in s:
     s = s.replace(old, new, 1)
 elif 'loadFlightTimezoneGridLocked()' not in s:
@@ -235,8 +235,8 @@ if 'func loadFlightTimezoneGridLocked()' not in s:
     s = s.replace(marker, helper, 1)
 
 # API exposes resolved timezone and source.
-old = '''\tresp := flightLogResponse{Phase: phase, GPS: gps, Current: current, CurrentTrack: track, CurrentAirport: airportCopy, Flights: history, Settings: settings, AirportDatabaseReady: flightAirportDBReady, AirportCount: len(flightAirports), StoragePath: flightStorageDir}'''
-new = '''\tlocalTimezone := flightResolvedTimezone\n\ttimezoneSource := flightTimezoneSource\n\tif localTimezone == "" {\n\t\tlocalTimezone = settings.Timezone\n\t\ttimezoneSource = "fallback"\n\t}\n\tresp := flightLogResponse{Phase: phase, GPS: gps, Current: current, CurrentTrack: track, CurrentAirport: airportCopy, Flights: history, Settings: settings, AirportDatabaseReady: flightAirportDBReady, AirportCount: len(flightAirports), TimezoneDatabaseReady: flightTimezoneDBReady, LocalTimezone: localTimezone, TimezoneSource: timezoneSource, StoragePath: flightStorageDir}'''
+old = '''\tresp := flightLogResponse{Phase: phase, GPS: gps, Current: current, CurrentTrack: track, CurrentAirport: airportCopy, Flights: history, Settings: settings, AirportDatabaseReady: flightAirportDBReady, AirportCount: len(flightAirports), StoragePath: flightStorageDir, Sync: syncState}'''
+new = '''\tlocalTimezone := flightResolvedTimezone\n\ttimezoneSource := flightTimezoneSource\n\tif localTimezone == "" {\n\t\tlocalTimezone = settings.Timezone\n\t\ttimezoneSource = "fallback"\n\t}\n\tresp := flightLogResponse{Phase: phase, GPS: gps, Current: current, CurrentTrack: track, CurrentAirport: airportCopy, Flights: history, Settings: settings, AirportDatabaseReady: flightAirportDBReady, AirportCount: len(flightAirports), TimezoneDatabaseReady: flightTimezoneDBReady, LocalTimezone: localTimezone, TimezoneSource: timezoneSource, StoragePath: flightStorageDir, Sync: syncState}'''
 if old in s:
     s = s.replace(old, new, 1)
 elif 'TimezoneDatabaseReady: flightTimezoneDBReady' not in s:

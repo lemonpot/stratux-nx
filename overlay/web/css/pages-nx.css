@@ -692,7 +692,7 @@ div[ui-view] .panel-body a[href*="downloaddb"]:hover {
 #radar_display,
 .radar-container {
   border-radius: var(--sx-radius) !important;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--sx-border);
   background: #0c1018 !important;
 }

@@ -43,6 +43,7 @@ jobs:
 
           test -f stratux/main/datausage.go
           test -f stratux/main/flightlog.go
+          test -f stratux/main/flightlog_sync.go
           test -f stratux/main/ahrs_v2.go
 
           test -f stratux/web/plates/datausage.html
@@ -87,6 +88,7 @@ jobs:
           git show HEAD:main/ahrs_v2.go >/dev/null
           git show HEAD:main/datausage.go >/dev/null
           git show HEAD:main/flightlog.go >/dev/null
+          git show HEAD:main/flightlog_sync.go >/dev/null
           git show HEAD:web/index.html | grep -q "Internet Data"
           git show HEAD:web/index.html | grep -q "Flight Log"
 
