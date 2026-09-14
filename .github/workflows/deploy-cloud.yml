@@ -1,10 +1,10 @@
-name: Deploy Stratux NX Cloud
+name: Stage Stratux NX Cloud
 
 on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  stage:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -13,7 +13,7 @@ jobs:
       - name: Package cloud application
         run: tar -C server -czf /tmp/stratuxnx-cloud.tgz .
 
-      - name: Deploy cloud application
+      - name: Stage cloud application
         env:
           NX_SSH_HOST: ${{ secrets.NX_SSH_HOST }}
           NX_SSH_USER: ${{ secrets.NX_SSH_USER }}
@@ -28,5 +28,4 @@ jobs:
             "${NX_SSH_USER}@${NX_SSH_HOST}:/tmp/stratuxnx-cloud.tgz"
           sshpass -p "$NX_SSH_PASS" ssh "${ssh_opts[@]}" "${NX_SSH_USER}@${NX_SSH_HOST}" \
             "rm -rf '${remote_release}.new' && mkdir -p '${remote_release}.new' && tar -xzf /tmp/stratuxnx-cloud.tgz -C '${remote_release}.new' && rm -f /tmp/stratuxnx-cloud.tgz && rm -rf '${remote_release}' && mv '${remote_release}.new' '${remote_release}'"
-          printf '%s\n' "$NX_SSH_PASS" | sshpass -p "$NX_SSH_PASS" ssh "${ssh_opts[@]}" "${NX_SSH_USER}@${NX_SSH_HOST}" \
-            "sudo -S '${remote_release}/deploy-as-root.sh' '${remote_release}'"
+          echo "Cloud release staged. Root must run deploy-as-root.sh to publish it."
