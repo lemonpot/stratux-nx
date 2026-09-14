@@ -40,7 +40,9 @@ body.stratux-dark .update-hero {
   border-radius: var(--sx-radius-full);
   font-size: 13px;
   font-weight: 700;
-  background: rgba(255, 255, 255, .1);
+  background: var(--sx-card-soft);
+  color: var(--sx-muted);
+  border: 1px solid var(--sx-border);
   font-family: "SF Mono", "Fira Code", monospace;
 }
 
@@ -69,14 +71,16 @@ body.stratux-dark .update-hero {
 
 .update-panel-header h3 {
   margin: 0 0 4px;
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--sx-text);
 }
 
 .update-panel-header h3 .fa { margin-right: 6px; color: var(--sx-primary); }
 
 .update-muted { font-size: 12px; color: var(--sx-muted); line-height: 1.4; }
+.update-power-note { margin-top: 10px; }
+.update-install-spacing { margin-top: 12px; }
 
 .update-btn-small { border-radius: var(--sx-radius-xs) !important; font-size: 12px !important; }
 
@@ -165,7 +169,7 @@ body.stratux-dark .update-hero {
 .update-progress-bar {
   height: 100%;
   border-radius: var(--sx-radius-full);
-  background: linear-gradient(90deg, #4d9fff, var(--sx-primary));
+  background: var(--sx-primary);
   transition: width .5s ease;
 }
 
@@ -214,9 +218,9 @@ body.stratux-dark .update-hero {
 
 /* --- Responsive -------------------------------------------------- */
 @media (max-width: 600px) {
-  .update-page { padding: 8px 8px 28px; }
-  .update-hero { display: block; padding: 17px; border-radius: var(--sx-radius-sm); }
-  .update-hero h2 { font-size: 22px; }
+  .update-page { padding: 0 16px 32px; }
+  .update-hero { display: block; padding: 20px 0 16px; }
+  .update-hero h2 { font-size: 21px; }
   .update-version-pill { display: inline-flex; margin-top: 14px; }
   .update-version-grid { grid-template-columns: 1fr; }
   .update-panel { border-radius: var(--sx-radius-sm); }
@@ -226,6 +230,17 @@ body.stratux-dark .update-hero {
 /* === Update panel inside Settings === */
 .sx-update-panel .panel-heading { display: flex; justify-content: space-between; align-items: center; }
 .sx-update-status-badge { color: var(--sx-primary); font-size: 12px; font-weight: 700; }
+.sx-update-retry { margin-left: 10px; }
+.sx-manual-update-copy p {
+  margin: 0 0 4px;
+  color: var(--sx-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.sx-manual-update-copy small {
+  display: block;
+  margin-bottom: 10px;
+}
 .sx-update-version-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
 .sx-update-version-row > div { flex: 1; min-width: 120px; }
 .sx-update-version-row strong { display: block; font-size: 13px; color: var(--sx-text); margin-bottom: 2px; }

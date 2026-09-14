@@ -1,0 +1,26 @@
+<div class="col-sm-12 sx-radar-page">
+	<div class="panel panel-default">
+		<div class="panel-heading sx-radar-heading">
+			<div>
+				<span class="panel_label">Traffic radar</span>
+				<small>Relative range and altitude around your aircraft</small>
+			</div>
+			<div class="sx-radar-status">
+				<span ng-show="ConnectState == 'Connected'" class="label label-success">{{ConnectState}}</span>
+				<span ng-hide="ConnectState == 'Connected'" class="label label-danger">{{ConnectState}}</span>
+				<span ng-show="BaroAltValid == 'Baro'" class="label label-success">Barometric altitude</span>
+				<span ng-show="BaroAltValid == 'GPS'" class="label label-warning">Using GPS altitude</span>
+				<span ng-show="BaroAltValid == 'AdsbEstimated'" class="label label-warning">Using ADS-B altitude</span>
+				<span ng-show="BaroAltValid == 'Invalid'" class="label label-danger">No altitude</span>
+				<span ng-show="GPSValid == 'Invalid'" class="label label-danger">No GPS</span>
+				<span ng-show="CPUTemp < 70" class="label label-info">{{CPUTemp}}°C</span>
+				<span ng-hide="(CPUTemp < 70) || (CPUTemp >= 80)" class="label label-warning">{{CPUTemp}}°C</span>
+				<span ng-hide="CPUTemp < 80" class="label label-danger">{{CPUTemp}}°C</span>
+			</div>
+		</div>
+
+		<div class="panel-body">
+			<div id="radar_display"></div>
+		</div>
+	</div>
+</div>

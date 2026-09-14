@@ -66,16 +66,14 @@ body.stratux-dark .data-hero {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #9ca3af;
-  box-shadow: 0 0 0 4px rgba(156, 163, 175, .15);
+  background: var(--sx-muted-2);
 }
 
 .data-connection-pill.is-online .data-dot {
-  background: #34d49a;
-  box-shadow: 0 0 0 4px rgba(52, 212, 154, .16);
+  background: var(--sx-success);
 }
 
-.data-connection-pill.is-offline { color: #fecaca; }
+.data-connection-pill.is-offline { color: var(--sx-danger-text); }
 
 
 /* --- Alerts ------------------------------------------------------ */
@@ -105,17 +103,23 @@ body.stratux-dark .data-hero {
 .data-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 0;
   margin-bottom: 12px;
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius);
+  overflow: hidden;
 }
 
 .data-stat-card {
   background: var(--sx-card);
-  border: 1px solid var(--sx-border);
-  border-radius: var(--sx-radius);
+  border: 0;
+  border-left: 1px solid var(--sx-border);
+  border-radius: 0;
   padding: 17px;
   min-width: 0;
 }
+
+.data-stat-card:first-child { border-left: 0; }
 
 .data-stat-card:hover { box-shadow: none; }
 
@@ -554,6 +558,8 @@ body.stratux-dark .data-hero {
 /* --- Responsive -------------------------------------------------- */
 @media (max-width: 900px) {
   .data-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .data-stat-card:nth-child(3) { border-left: 0; }
+  .data-stat-card:nth-child(n+3) { border-top: 1px solid var(--sx-border); }
   .data-settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -562,8 +568,8 @@ body.stratux-dark .data-hero {
   .data-hero { display: block; padding: 20px 0 16px; }
   .data-hero h2 { font-size: 21px; }
   .data-connection-pill { display: inline-flex; margin-top: 14px; }
-  .data-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .data-stat-card { padding: 13px; border-radius: var(--sx-radius-sm); }
+  .data-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .data-stat-card { padding: 13px; }
   .data-stat-value { font-size: 20px; }
   .data-stat-time { font-size: 17px; }
   .data-panel { border-radius: var(--sx-radius-sm); }

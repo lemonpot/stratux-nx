@@ -24,9 +24,9 @@ if old_heading in s:
 old_upload = '                    <!-- Upload. Temporary. -->\n                    <div class="col-xs-12">'
 new_upload = (
     '                    <!-- Manual .deb upload -->\n'
-    '                    <div class="col-xs-12">\n'
-    '                        <p style="margin:0 0 4px;font-weight:700;font-size:13px;">Manual update</p>\n'
-    '                        <p style="margin:0 0 8px;font-size:11px;color:#888;">Upload a .deb file to update without internet</p>\n'
+    '                    <div class="col-xs-12 sx-manual-update-copy">\n'
+    '                        <p>Manual update</p>\n'
+    '                        <small>Upload a .deb file to update without internet</small>\n'
     '                    </div>\n'
     '                    <div class="col-xs-12">'
 )

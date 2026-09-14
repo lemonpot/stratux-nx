@@ -68,15 +68,17 @@ if '/update/check' not in s:
 
 # --- Go: call initUpdater() from managementInterface() ---
 if 'initUpdater()' not in s:
-    # Find the start of the management interface goroutine or the ListenAndServe.
-    marker2 = 'managementAddr :='
-    if marker2 not in s:
-        # Try alternative patterns.
-        marker2 = 'log.Fatal(http.ListenAndServe'
+    markers = (
+        '\tif err := http.ListenAndServe(addr, nil); err != nil {',
+        '\tlog.Fatal(http.ListenAndServe',
+        '\tmanagementAddr :=',
+    )
+    for marker2 in markers:
         if marker2 in s:
-            s = s.replace(marker2, 'go initUpdater()\n\t' + marker2, 1)
+            s = s.replace(marker2, '\tinitUpdater()\n\n' + marker2, 1)
+            break
     else:
-        s = s.replace(marker2, 'go initUpdater()\n\t' + marker2, 1)
+        raise SystemExit('Could not wire initUpdater into managementInterface()')
 
 p.write_text(s)
 
