@@ -133,6 +133,9 @@ python3 "$SCRIPT_DIR/patch-settings-ux-v2.py" "$TARGET"
 # publish a sticky value into Mobile Angular UI's title yield.
 python3 "$SCRIPT_DIR/patch-navbar-brand.py" "$TARGET"
 
+# Product attribution, themed logos and proper application icons.
+python3 "$SCRIPT_DIR/wire-about.py" "$TARGET"
+
 # Stratux still uses the legacy HTML AppCache. Make the manifest change whenever
 # this customization branch changes so browsers cannot keep older UI assets.
 CACHE_VERSION="$(git -C "$SCRIPT_DIR" rev-parse --short=12 HEAD 2>/dev/null || date +%s)"

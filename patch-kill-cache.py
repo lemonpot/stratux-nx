@@ -40,7 +40,8 @@ if 'http-equiv="Cache-Control"' not in s:
     insert_pos = head_tag.end()
     s = s[:insert_pos] + cache_meta + s[insert_pos:]
 
-# 3. Append ?v=BUILD_VERSION to every local CSS href and JS src.
+# 3. Append ?v=BUILD_VERSION to local CSS, JS and shell image assets.
+# Browsers retain favicons especially aggressively even with no-store headers.
 vq = "?v=" + build_version
 
 def bust(match):
@@ -52,6 +53,7 @@ def bust(match):
 
 s = re.sub(r'href="css/[^"]*"', bust, s)
 s = re.sub(r'src="(plates/js|js)/[^"]*"', bust, s)
+s = re.sub(r'(href|src)="img/[^"]*"', bust, s)
 
 p.write_text(s)
 
