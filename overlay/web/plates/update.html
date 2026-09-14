@@ -82,7 +82,7 @@
         <div class="update-progress-track">
           <div class="update-progress-bar" ng-style="{'width': status.download_percent + '%'}"></div>
         </div>
-        <p class="update-muted" style="margin-top:10px;">Do not disconnect from the internet or power off the device.</p>
+        <p class="update-muted update-power-note">Do not disconnect from the internet or power off the device.</p>
       </div>
 
       <!-- Download error -->
@@ -94,7 +94,7 @@
             <span>{{status.download_error}}</span>
           </div>
         </div>
-        <button class="btn btn-primary btn-block update-install-btn" ng-click="installUpdate()" style="margin-top:12px;">
+        <button class="btn btn-primary btn-block update-install-btn update-install-spacing" ng-click="installUpdate()">
           <i class="fa fa-refresh"></i> Retry download
         </button>
       </div>

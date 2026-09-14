@@ -23,7 +23,7 @@ brand_link = re.search(r'(<a\s+href="#/">\s*)Stratux(\s*</a>)', s)
 if brand_link:
     s = s.replace(brand_link.group(0),
         brand_link.group(1) +
-        '<img src="img/logo-nx.png" alt="" style="height:26px;width:26px;vertical-align:middle;margin:-2px 7px 0 0;border-radius:5px;"> '
+        '<img class="sx-brand-logo" src="img/logo-nx.png" alt=""> '
         'Stratux NX' +
         brand_link.group(2), 1)
 p.write_text(s)

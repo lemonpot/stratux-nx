@@ -30,6 +30,14 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
     $scope.browserTimezone = '';
     var settingsLoaded = false;
 
+    function responseMessage(response, fallback) {
+        var detail = response && response.data;
+        if (typeof detail !== 'string' || /^\s*</.test(detail)) {
+            return fallback;
+        }
+        return detail;
+    }
+
     try {
         if (window.Intl && Intl.DateTimeFormat) {
             $scope.browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
@@ -285,7 +293,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
             updateCurrentTrack();
             $scope.errorMessage='';
         }, function(response) {
-            $scope.errorMessage='Unable to read the flight logger: ' + ((response && response.data) || 'service unavailable');
+            $scope.errorMessage='Unable to read the flight logger: ' + responseMessage(response, 'service unavailable');
         });
     };
 
@@ -305,7 +313,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
             $scope.refresh();
         }, function(response) {
             $scope.savingSettings=false;
-            $scope.errorMessage='Could not save Flight Log settings: ' + ((response && response.data) || 'unknown error');
+            $scope.errorMessage='Could not save Flight Log settings: ' + responseMessage(response, 'unknown error');
         });
     };
 
@@ -319,7 +327,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
                 if (el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'});
             },50);
         }, function(response) {
-            $scope.errorMessage='Could not open this flight: ' + ((response && response.data) || 'unknown error');
+            $scope.errorMessage='Could not open this flight: ' + responseMessage(response, 'unknown error');
         });
     };
 
@@ -334,7 +342,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
             if (window.StratuxUI) window.StratuxUI.toast('Flight saved','success',1800);
             $scope.refresh();
         }, function(response){
-            $scope.errorMessage='Could not finish the flight: ' + ((response && response.data) || 'unknown error');
+            $scope.errorMessage='Could not finish the flight: ' + responseMessage(response, 'unknown error');
         });
     };
 
@@ -343,7 +351,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         $http.post('/flightLog/action', {action:'discard'}).then(function(){
             $scope.refresh();
         }, function(response){
-            $scope.errorMessage='Could not discard the flight: ' + ((response && response.data) || 'unknown error');
+            $scope.errorMessage='Could not discard the flight: ' + responseMessage(response, 'unknown error');
         });
     };
 

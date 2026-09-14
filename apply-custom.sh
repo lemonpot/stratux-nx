@@ -123,6 +123,7 @@ python3 "$SCRIPT_DIR/patch-flightlog-timezone-compilefix.py" "$TARGET"
 
 # OTA update page and Go backend handlers.
 python3 "$SCRIPT_DIR/wire-update.py" "$TARGET"
+python3 "$SCRIPT_DIR/patch-ota-installer.py" "$TARGET"
 
 # Embed Software Update panel into Settings and improve Settings UX.
 python3 "$SCRIPT_DIR/patch-settings-update.py" "$TARGET"

@@ -24,6 +24,27 @@ if 'js/modern-ui.js' not in s:
 p.write_text(s)
 
 # ---------------------------------------------------------------------------
+# Radar controls: replace abbreviated labels with concise, readable actions.
+# ---------------------------------------------------------------------------
+p = root / "web/plates/js/radar.js"
+s = p.read_text()
+radar_labels = {
+    "zoomin.text('Ra-')": "zoomin.text('−')",
+    "zoomout.text('Ra+')": "zoomout.text('+')",
+    "fullscreen.text('F/S')": "fullscreen.text('Full')",
+    "speech.text('Undef')": "speech.text('Mute')",
+    ".text('BpSp')": ".text('Both')",
+    ".text('Spch')": ".text('Voice')",
+    ".text('SnOff')": ".text('Mute')",
+}
+for old, new in radar_labels.items():
+    if old in s:
+        s = s.replace(old, new)
+    elif new not in s:
+        raise SystemExit(f"Could not patch radar control label: {old}")
+p.write_text(s)
+
+# ---------------------------------------------------------------------------
 # AppCache: make the new shared UX assets available in standalone/iPad mode.
 # ---------------------------------------------------------------------------
 p = root / "web/stratux.appcache"

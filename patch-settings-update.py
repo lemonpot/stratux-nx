@@ -11,7 +11,7 @@ UPDATE_PANEL = '''\
             <div class="panel panel-default sx-update-panel" ng-controller="UpdateCtrl">
                 <div class="panel-heading">
                     <span>Software Update</span>
-                    <span class="sx-update-status-badge" ng-if="status.available.update_available" style="float:right;">
+                    <span class="sx-update-status-badge" ng-if="status.available.update_available">
                         <i class="fa fa-arrow-circle-up"></i> Update available
                     </span>
                 </div>
@@ -53,7 +53,7 @@ UPDATE_PANEL = '''\
 
                         <div class="alert alert-danger" ng-if="status.download_error">
                             <i class="fa fa-exclamation-triangle"></i> {{status.download_error}}
-                            <button class="btn btn-sm btn-danger" ng-click="installUpdate()" style="margin-left:10px;">Retry</button>
+                            <button class="btn btn-sm btn-danger sx-update-retry" ng-click="installUpdate()">Retry</button>
                         </div>
                     </div>
 

@@ -169,7 +169,7 @@ div[ui-view] .label {
 
 div[ui-view] .alert-info {
   background: var(--sx-primary-soft) !important;
-  border: 1px solid var(--sx-primary) !important;
+  border: 1px solid var(--sx-border) !important;
   border-radius: var(--sx-radius-sm) !important;
   color: var(--sx-primary-text) !important;
   font-weight: 600;
@@ -452,7 +452,19 @@ input[type="file"]::file-selector-button {
   cursor: pointer;
 }
 
-/* Reboot/shutdown buttons */
+/* System actions */
+div[ui-view][data-sx-route="settings"] button[ui-turn-on="modalReboot"] {
+  background: var(--sx-card) !important;
+  border-color: var(--sx-border-strong) !important;
+  color: var(--sx-text) !important;
+}
+
+div[ui-view][data-sx-route="settings"] button[ui-turn-on="modalShutdown"] {
+  background: var(--sx-danger-soft) !important;
+  border-color: rgba(205, 61, 100, .24) !important;
+  color: var(--sx-danger-text) !important;
+}
+
 .btn-danger.btn-block {
   min-height: 42px;
   font-size: 14px !important;
@@ -541,6 +553,18 @@ div[ui-view] .panel-body .list-group .list-group-item:last-child { border-bottom
 .flight_condition_MVFR { color: var(--sx-primary-text) !important; background: var(--sx-primary-soft) !important; }
 .flight_condition_IFR { color: var(--sx-danger-text) !important; background: var(--sx-danger-soft) !important; }
 .flight_condition_LIFR { color: var(--sx-warning-text) !important; background: var(--sx-warning-soft) !important; }
+
+div[ui-view][data-sx-route="weather"] > .col-sm-12 > .panel:first-child {
+  display: none;
+}
+
+.weather-page [align="center"] {
+  text-align: left;
+}
+
+.weather-page [style*="background-color"] {
+  background: transparent !important;
+}
 
 div[ui-view] .panel-body pre,
 div[ui-view] .panel-body .well {
@@ -735,14 +759,110 @@ div[ui-view] .panel-body textarea {
 }
 
 .traffic-footer {
-  background: var(--sx-card-soft) !important;
+  background: var(--sx-card) !important;
 }
 
 .panel-footer {
   padding: 14px 20px;
-  background: var(--sx-card-soft);
+  background: var(--sx-card);
   border-top: 1px solid var(--sx-border);
   color: var(--sx-text-2);
+}
+
+
+/* === ROUTE CONSISTENCY =========================================== */
+
+/* Settings is intentionally one column. Narrow two-column forms caused
+   labels and controls to wrap differently from every other section. */
+div[ui-view][data-sx-route="settings"] > .col-sm-12 > .col-sm-6 {
+  width: 100%;
+  padding: 0;
+  float: none;
+}
+
+div[ui-view][data-sx-route="settings"] .panel-body .form-group.reset-flow {
+  display: grid;
+  grid-template-columns: minmax(190px, 240px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  min-height: 36px;
+}
+
+div[ui-view][data-sx-route="settings"] .panel-body .form-group.reset-flow > label {
+  width: auto;
+  padding: 0;
+  float: none;
+  line-height: 1.4;
+}
+
+div[ui-view][data-sx-route="settings"] .panel-body .form-group.reset-flow > form,
+div[ui-view][data-sx-route="settings"] .panel-body .form-group.reset-flow > div:not(.col-xs-12) {
+  min-width: 0;
+}
+
+div[ui-view][data-sx-route="settings"] .panel-body .form-group.reset-flow input,
+div[ui-view][data-sx-route="settings"] .panel-body .form-group.reset-flow select {
+  width: 100%;
+  float: none;
+}
+
+div[ui-view][data-sx-route="settings"] .panel-body .form-group.reset-flow > .col-xs-12,
+div[ui-view][data-sx-route="settings"] .panel-body .form-group.reset-flow > .btn {
+  width: 100%;
+  padding: 0;
+  grid-column: 1 / -1;
+}
+
+/* Traffic options use the same aligned two-column rows as settings. */
+.traffic-footer > .separator { display: none; }
+
+.traffic-footer > .row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+}
+
+.traffic-footer > .row::before,
+.traffic-footer > .row::after {
+  display: none;
+}
+
+.traffic-footer > .row > .col-sm-3 {
+  display: flex;
+  width: auto;
+  min-height: 42px;
+  padding: 8px 0;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--sx-border);
+}
+
+.traffic-footer > .row > .col-sm-3:nth-child(-n+2) { border-top: 0; }
+
+.traffic-footer .control-label,
+.traffic-footer > .row > .col-sm-3 > span {
+  width: auto;
+  padding: 0;
+  float: none;
+}
+
+/* AHRS/GPS becomes one readable column on tablet-sized screens. */
+@media (max-width: 1199px) {
+  div[ui-view][data-sx-route="gps"] > .col-sm-12 > .col-sm-6 {
+    width: 100%;
+    padding-right: 0;
+    padding-left: 0;
+    float: none;
+  }
+
+  div[ui-view][data-sx-route="gps"] .panel-body .text-center {
+    text-align: left;
+  }
+
+  div[ui-view][data-sx-route="gps"] #ahrs_display,
+  div[ui-view][data-sx-route="gps"] #gMeter_display {
+    max-width: 620px;
+  }
 }
 
 @media (max-width: 767px) {
@@ -770,4 +890,12 @@ div[ui-view] .panel-body textarea {
   .status-products > div:nth-child(even) { border-left: 1px solid var(--sx-border); }
   .status-radio-head,
   .status-radio-row { grid-template-columns: 80px minmax(0, 1fr) 44px; gap: 10px; }
+
+  div[ui-view][data-sx-route="settings"] .panel-body .form-group.reset-flow {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .traffic-footer > .row { grid-template-columns: 1fr; }
+  .traffic-footer > .row > .col-sm-3:nth-child(2) { border-top: 1px solid var(--sx-border); }
 }

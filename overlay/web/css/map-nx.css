@@ -4,6 +4,28 @@
    ============================================================ */
 
 /* --- Map container: full viewport -------------------------------- */
+.sx-map-page {
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  float: none !important;
+}
+
+.sx-map-page > .panel {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.sx-map-page .panel-body-fullsize {
+  height: calc(100vh - 101px);
+}
+
+.sx-map-display {
+  width: 100%;
+  height: 100%;
+}
+
 #map_display,
 .map-container,
 #map_display .ol-viewport {
@@ -27,7 +49,7 @@
   height: 40px !important;
   margin: 0 !important;
   border: 1px solid rgba(255, 255, 255, .12) !important;
-  border-radius: 10px !important;
+  border-radius: var(--sx-radius) !important;
   background: rgba(22, 29, 41, .85) !important;
   color: #fff !important;
   font-size: 18px !important;
@@ -86,7 +108,7 @@
 .layer-switcher button {
   width: 38px !important;
   height: 38px !important;
-  border-radius: 10px !important;
+  border-radius: var(--sx-radius) !important;
   background: rgba(22, 29, 41, .85) !important;
   border: 1px solid rgba(255, 255, 255, .12) !important;
   color: #fff !important;
@@ -97,7 +119,7 @@
 .layer-switcher .panel {
   background: rgba(22, 29, 41, .92) !important;
   border: 1px solid rgba(255, 255, 255, .1) !important;
-  border-radius: 10px !important;
+  border-radius: var(--sx-radius) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, .3) !important;
@@ -128,7 +150,7 @@
   overflow-y: auto;
   background: rgba(22, 29, 41, .88);
   border: 1px solid rgba(255, 255, 255, .08);
-  border-radius: 12px;
+  border-radius: var(--sx-radius);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 8px 32px rgba(0, 0, 0, .25);
@@ -190,7 +212,7 @@
   padding: 6px 10px;
   background: rgba(22, 29, 41, .85);
   border: 1px solid rgba(255, 255, 255, .08);
-  border-radius: 8px;
+  border-radius: var(--sx-radius);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: rgba(255, 255, 255, .8);
@@ -203,13 +225,11 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #34d49a;
-  box-shadow: 0 0 6px rgba(52, 212, 154, .5);
+  background: var(--sx-success);
 }
 
 .sx-map-gps-badge .gps-dot.no-fix {
-  background: #ff6b6b;
-  box-shadow: 0 0 6px rgba(255, 107, 107, .5);
+  background: var(--sx-danger);
 }
 
 /* --- Center on position button ----------------------------------- */
@@ -221,7 +241,7 @@
   width: 40px;
   height: 40px;
   border: 1px solid rgba(255, 255, 255, .12);
-  border-radius: 10px;
+  border-radius: var(--sx-radius);
   background: rgba(22, 29, 41, .85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);

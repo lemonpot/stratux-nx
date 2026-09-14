@@ -1,26 +1,26 @@
 /* ============================================================
    STRATUX NX -- Design System
-   Aviation-grade UI. Dark-first. iPad-optimized.
+   One restrained visual language for every section.
    ============================================================ */
 
 /* --- Design Tokens (Stripe-inspired) ----------------------------- */
 :root {
   /* Stripe-inspired Stratux NX Design System */
-  --sx-bg: #f6f9fc;
-  --sx-bg-subtle: #f0f3f7;
+  --sx-bg: #ffffff;
+  --sx-bg-subtle: #f7f8fa;
   --sx-card: #ffffff;
-  --sx-card-soft: #f6f9fc;
-  --sx-card-hover: #f9fafb;
+  --sx-card-soft: #f7f8fa;
+  --sx-card-hover: #f7f8fa;
   --sx-text: #1a1f36;
   --sx-text-2: #3c4257;
   --sx-muted: #697386;
   --sx-muted-2: #8792a2;
   --sx-border: #e3e8ee;
   --sx-border-strong: #c1c9d2;
-  --sx-primary: #4d9fff;
-  --sx-primary-hover: #3388f5;
-  --sx-primary-soft: rgba(77, 159, 255, .08);
-  --sx-primary-text: #0055b3;
+  --sx-primary: #635bff;
+  --sx-primary-hover: #5147e5;
+  --sx-primary-soft: rgba(99, 91, 255, .08);
+  --sx-primary-text: #5147e5;
   --sx-success: #0cad4e;
   --sx-success-soft: rgba(12, 173, 78, .08);
   --sx-success-text: #0a8a3e;
@@ -30,14 +30,14 @@
   --sx-danger: #cd3d64;
   --sx-danger-soft: rgba(205, 61, 100, .08);
   --sx-danger-text: #a02e4d;
-  --sx-radius: 8px;
-  --sx-radius-sm: 6px;
+  --sx-radius: 6px;
+  --sx-radius-sm: 5px;
   --sx-radius-xs: 4px;
   --sx-radius-full: 100px;
-  --sx-shadow: 0 1px 3px rgba(0,0,0,.04);
-  --sx-shadow-md: 0 2px 6px rgba(0,0,0,.06);
-  --sx-shadow-lg: 0 4px 12px rgba(0,0,0,.08);
-  --sx-shadow-xs: 0 1px 2px rgba(0,0,0,.03);
+  --sx-shadow: none;
+  --sx-shadow-md: 0 2px 6px rgba(26,31,54,.08);
+  --sx-shadow-lg: 0 8px 24px rgba(26,31,54,.12);
+  --sx-shadow-xs: none;
   --sx-transition: .15s ease;
   --sx-transition-slow: .25s ease;
   --sx-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
@@ -121,6 +121,14 @@ body.stratux-dark .navbar.navbar-app {
   border-radius: 6px;
 }
 
+.navbar-brand .sx-brand-logo {
+  width: 26px;
+  height: 26px;
+  margin: -2px 7px 0 0;
+  border-radius: var(--sx-radius-sm);
+  vertical-align: middle;
+}
+
 .navbar .btn {
   height: 51px;
   display: flex;
@@ -193,7 +201,6 @@ body.stratux-dark .navbar.navbar-app {
   background: var(--sx-primary-soft) !important;
   color: var(--sx-primary) !important;
   font-weight: 700;
-  border-left: 3px solid var(--sx-primary) !important;
 }
 
 .sidebar .list-group-item.sx-active i {
@@ -340,13 +347,13 @@ select:focus,
 textarea:focus,
 .custom-select:focus {
   border-color: var(--sx-primary) !important;
-  box-shadow: 0 0 0 3px rgba(77, 159, 255, .15) !important;
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, .12) !important;
 }
 
 body.stratux-dark input:focus,
 body.stratux-dark select:focus,
 body.stratux-dark textarea:focus {
-  box-shadow: 0 0 0 3px rgba(77, 159, 255, .15) !important;
+  box-shadow: 0 0 0 3px rgba(99, 91, 255, .15) !important;
 }
 
 input::placeholder,
@@ -359,8 +366,24 @@ textarea::placeholder {
   box-shadow: 0 0 0 3px rgba(229, 52, 46, .08) !important;
 }
 
-.grayout, [disabled] {
+.grayout {
   opacity: .5 !important;
+}
+
+[disabled] {
+  cursor: not-allowed !important;
+}
+
+input[disabled],
+select[disabled],
+textarea[disabled],
+.btn[disabled],
+.btn.disabled {
+  opacity: 1 !important;
+  background: var(--sx-card-soft) !important;
+  border-color: var(--sx-border) !important;
+  color: var(--sx-muted-2) !important;
+  box-shadow: none !important;
 }
 
 
