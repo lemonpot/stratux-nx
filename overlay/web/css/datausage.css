@@ -53,12 +53,13 @@
 }
 
 .data-connection-pill.is-online .data-dot {
-  background: var(--sx-success);
+  background: #10b981;
 }
 
 .data-connection-pill.is-online {
-  background: var(--sx-success-soft);
-  color: var(--sx-success-text);
+  background: #ecfdf3;
+  color: #047857;
+  border-color: #a7f3d0;
 }
 
 .data-connection-pill.is-offline {

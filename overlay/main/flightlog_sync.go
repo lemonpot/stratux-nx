@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -38,6 +39,7 @@ type flightSyncPublicState struct {
 	LastError      string `json:"LastError,omitempty"`
 	ClaimCode      string `json:"ClaimCode,omitempty"`
 	ClaimExpiresUTC string `json:"ClaimExpiresUTC,omitempty"`
+	ClaimURL       string `json:"ClaimURL,omitempty"`
 }
 
 type flightSyncConfig struct {
@@ -55,6 +57,9 @@ var (
 	flightIdentityPath string
 	flightSyncPath     string
 	flightSyncWake     = make(chan struct{}, 1)
+	flightCloudClockMu sync.Mutex
+	flightCloudOffset  int64
+	flightCloudClockAt time.Time
 )
 
 func init() {
@@ -134,7 +139,15 @@ func flightSyncPublicStateLocked() flightSyncPublicState {
 		LastError:      flightSyncLastErr,
 		ClaimCode:      flightSyncClaimCode,
 		ClaimExpiresUTC: flightSyncClaimExpiry,
+		ClaimURL:       flightClaimURL(flightSyncClaimCode),
 	}
+}
+
+func flightClaimURL(code string) string {
+	if code == "" {
+		return ""
+	}
+	return "https://app.stratuxnx.com/?claim=" + code
 }
 
 func wakeFlightSync() {
@@ -298,11 +311,24 @@ func requestFlightClaimCode(identity flightInstallationIdentity) (string, string
 }
 
 func flightCloudRequest(method, url string, identity flightInstallationIdentity, body []byte) (*http.Response, error) {
+	syncFlightCloudClock(false)
+	resp, err := signedFlightCloudRequest(method, url, identity, body)
+	if err == nil && resp.StatusCode == http.StatusUnauthorized {
+		resp.Body.Close()
+		syncFlightCloudClock(true)
+		return signedFlightCloudRequest(method, url, identity, body)
+	}
+	return resp, err
+}
+
+func signedFlightCloudRequest(method, url string, identity flightInstallationIdentity, body []byte) (*http.Response, error) {
 	privateKey, err := base64.RawURLEncoding.DecodeString(identity.PrivateKey)
 	if err != nil || len(privateKey) != ed25519.PrivateKeySize {
 		return nil, fmt.Errorf("invalid installation private key")
 	}
-	timestamp := fmt.Sprintf("%d", time.Now().UTC().Unix())
+	flightCloudClockMu.Lock()
+	timestamp := fmt.Sprintf("%d", time.Now().UTC().Unix()+flightCloudOffset)
+	flightCloudClockMu.Unlock()
 	signed := append([]byte(timestamp+"\n"), body...)
 	signature := ed25519.Sign(ed25519.PrivateKey(privateKey), signed)
 	req, err := http.NewRequest(method, url, bytes.NewReader(body))
@@ -314,6 +340,34 @@ func flightCloudRequest(method, url string, identity flightInstallationIdentity,
 	req.Header.Set("X-Timestamp", timestamp)
 	req.Header.Set("X-Signature", base64.RawURLEncoding.EncodeToString(signature))
 	return (&http.Client{Timeout: 20 * time.Second}).Do(req)
+}
+
+func syncFlightCloudClock(force bool) {
+	flightCloudClockMu.Lock()
+	if !force && !flightCloudClockAt.IsZero() && time.Since(flightCloudClockAt) < 5*time.Minute {
+		flightCloudClockMu.Unlock()
+		return
+	}
+	flightCloudClockMu.Unlock()
+
+	req, err := http.NewRequest(http.MethodGet, flightCloudBaseURL+"/ping", nil)
+	if err != nil {
+		return
+	}
+	resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
+	if err != nil {
+		return
+	}
+	resp.Body.Close()
+	serverTime, err := http.ParseTime(resp.Header.Get("Date"))
+	if err != nil {
+		return
+	}
+
+	flightCloudClockMu.Lock()
+	flightCloudOffset = serverTime.Unix() - time.Now().UTC().Unix()
+	flightCloudClockAt = time.Now()
+	flightCloudClockMu.Unlock()
 }
 
 func flightCloudHTTPError(resp *http.Response) error {
