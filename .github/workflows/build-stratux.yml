@@ -48,20 +48,29 @@ jobs:
 
           test -f stratux/web/plates/datausage.html
           test -f stratux/web/plates/flightlog.html
+          test -f stratux/web/plates/about.html
           test -f stratux/web/plates/js/datausage.js
           test -f stratux/web/plates/js/flightlog.js
           test -f stratux/web/css/datausage.css
           test -f stratux/web/css/map-nx.css
           test -f stratux/web/css/pages-nx.css
           test -f stratux/web/css/update.css
+          test -f stratux/web/css/about.css
           test -f stratux/web/js/map-nx.js
           test -f stratux/web/plates/update.html
           test -f stratux/web/plates/js/update.js
           test -f stratux/main/updater.go
           test -f stratux/web/img/logo-nx.png
+          test -f stratux/web/img/logo-android3.png
+          test -f stratux/web/img/logo-apple3.png
+          test -f stratux/web/img/logo-stratux-light.png
+          test -f stratux/web/img/logo-stratux-dark.png
 
           grep -q "Internet Data" stratux/web/index.html
           grep -q "Flight Log" stratux/web/index.html
+          grep -q 'href="#/about"' stratux/web/index.html
+          grep -q 'sx-sidebar-brand' stratux/web/index.html
+          grep -q "state('about'" stratux/web/js/main.js
           grep -q "ResetInvalid" stratux/main/sensors.go
           grep -q 'NX_OTA_INSTALL' stratux/debian/preinst.dpkg
           grep -q 'NX_OTA_INSTALL' stratux/debian/prerm.dpkg

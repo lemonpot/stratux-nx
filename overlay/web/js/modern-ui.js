@@ -19,6 +19,7 @@
     '#/datausage': { title: 'Internet Data', subtitle: 'Monitor and control internet data usage.',                  eyebrow: 'CONNECTIVITY', group: 'tools', icon: 'fa-bar-chart' },
     '#/logs':      { title: 'Logs',          subtitle: 'System log files and diagnostic downloads.',                eyebrow: 'DIAGNOSTICS', group: 'system', icon: 'fa-file-text-o' },
     '#/settings':  { title: 'Settings',      subtitle: 'Configure radios, WiFi, ownship, sensors and behavior.',   eyebrow: 'CONFIGURATION', group: 'system', icon: 'fa-cog' },
+    '#/about':     { title: 'About',         subtitle: 'Project history, attribution and Stratux NX information.', eyebrow: 'STRATUX NX', group: 'system', icon: 'fa-info-circle' },
     // Update is embedded in Settings -- no hero needed
     '#/developer': { title: 'Developer',     subtitle: 'Advanced diagnostics and developer controls.',              eyebrow: 'ADVANCED', group: 'system', icon: 'fa-code' }
   };
