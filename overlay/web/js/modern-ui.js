@@ -201,8 +201,24 @@
   }
 
   function renderPageHeader() {
-    // Heroes disabled -- Stripe-like minimal UI, page titles are inline.
-    return;
+    var route = currentRoute();
+    if (route === '#/map' || route === '#/flightlog' || route === '#/datausage') return;
+
+    var view = document.querySelector('div[ui-view]');
+    var meta = pageMeta[route];
+    if (!view || !meta) return;
+
+    var existing = view.querySelector('.sx-page-header');
+    if (existing && existing.getAttribute('data-route') === route) return;
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+
+    var header = document.createElement('header');
+    header.className = 'sx-page-header';
+    header.setAttribute('data-route', route);
+    header.innerHTML = '<div><h1></h1><p></p></div>';
+    header.querySelector('h1').textContent = meta.title;
+    header.querySelector('p').textContent = meta.subtitle;
+    view.insertBefore(header, view.firstChild);
   }
 
 
@@ -226,12 +242,12 @@
   /* --- Route Content Watcher -------------------------------------- */
 
   function watchRouteContent() {
-    var view = document.querySelector('div[ui-view]');
-    if (!view || !window.MutationObserver) return;
+    var root = document.querySelector('.app-content') || document.body;
+    if (!root || !window.MutationObserver) return;
     var observer = new MutationObserver(function() {
       window.setTimeout(renderPageHeader, 0);
     });
-    observer.observe(view, { childList: true });
+    observer.observe(root, { childList: true, subtree: true });
   }
 
 
@@ -276,6 +292,9 @@
     watchTheme();
     watchRouteContent();
     refreshChrome();
+    // Angular may attach ui-view after DOMContentLoaded on slower receivers.
+    window.setTimeout(renderPageHeader, 250);
+    window.setTimeout(renderPageHeader, 1000);
   });
 
   window.addEventListener('hashchange', function() {

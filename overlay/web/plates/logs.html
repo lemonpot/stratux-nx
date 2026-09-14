@@ -1,0 +1,43 @@
+<div class="col-sm-12 logs-page">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <span class="panel_label">Available logs</span>
+    </div>
+    <div class="panel-body">
+      <div class="logs-links">
+        <a class="logs-link" target="_blank" href="../logs/stratux.log">
+          <span class="logs-link-icon"><i class="fa fa-file-text-o"></i></span>
+          <span>
+            <strong>Stratux system log</strong>
+            <small>Open the current receiver log</small>
+          </span>
+          <i class="fa fa-external-link logs-link-open"></i>
+        </a>
+        <a class="logs-link" target="_blank" href="../logs/">
+          <span class="logs-link-icon"><i class="fa fa-folder-open-o"></i></span>
+          <span>
+            <strong>All diagnostic files</strong>
+            <small>System, AHRS and replay logs</small>
+          </span>
+          <i class="fa fa-external-link logs-link-open"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <span class="panel_label">Browser diagnostics</span>
+    </div>
+    <div class="panel-body logs-diagnostics">
+      <div>
+        <span>Browser</span>
+        <code>{{userAgent}}</code>
+      </div>
+      <div>
+        <span>Viewport</span>
+        <code>{{deviceViewport}}</code>
+      </div>
+    </div>
+  </div>
+</div>
