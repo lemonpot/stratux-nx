@@ -73,7 +73,7 @@ func updaterLoop() {
 	}
 }
 
-func checkForUpdate() {
+func checkForUpdate() error {
 	updaterState.mu.Lock()
 	updaterState.CheckError = ""
 	updaterState.mu.Unlock()
@@ -87,16 +87,17 @@ func checkForUpdate() {
 		updaterState.CheckError = fmt.Sprintf("Connection failed: %s", err.Error())
 		updaterState.LastCheck = time.Now()
 		updaterState.mu.Unlock()
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
+		err := fmt.Errorf("server returned %d", resp.StatusCode)
 		updaterState.mu.Lock()
 		updaterState.CheckError = fmt.Sprintf("Server returned %d", resp.StatusCode)
 		updaterState.LastCheck = time.Now()
 		updaterState.mu.Unlock()
-		return
+		return err
 	}
 
 	var info updateInfo
@@ -105,7 +106,7 @@ func checkForUpdate() {
 		updaterState.CheckError = "Invalid response from update server"
 		updaterState.LastCheck = time.Now()
 		updaterState.mu.Unlock()
-		return
+		return err
 	}
 
 	updaterState.mu.Lock()
@@ -120,6 +121,7 @@ func checkForUpdate() {
 	if info.UpdateAvailable {
 		log.Printf("UPDATER: new version available: %s (current: %s)\n", info.Version, stratuxVersion)
 	}
+	return nil
 }
 
 func downloadAndStageUpdate() error {
@@ -269,10 +271,7 @@ func downloadAndStageUpdate() error {
 // HTTP handlers for the web UI.
 
 func handleUpdateCheck(w http.ResponseWriter, r *http.Request) {
-	go checkForUpdate()
-
-	// Return current state immediately.
-	time.Sleep(200 * time.Millisecond)
+	checkForUpdate()
 
 	updaterState.mu.RLock()
 	defer updaterState.mu.RUnlock()
@@ -296,6 +295,13 @@ func handleUpdateInstall(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
+		// The download endpoint serves the current release. Refresh its metadata
+		// immediately before downloading so a newly published build cannot be
+		// checked against an older cached filename or checksum.
+		if err := checkForUpdate(); err != nil {
+			log.Printf("UPDATER: pre-download check failed: %s\n", err.Error())
+			return
+		}
 		if err := downloadAndStageUpdate(); err != nil {
 			log.Printf("UPDATER: install failed: %s\n", err.Error())
 			return
