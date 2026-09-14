@@ -202,9 +202,10 @@
 
   function renderPageHeader() {
     var route = currentRoute();
+    var view = document.querySelector('div[ui-view]');
+    if (view) view.classList.toggle('sx-page-full', route === '#/map');
     if (route === '#/map' || route === '#/flightlog' || route === '#/datausage') return;
 
-    var view = document.querySelector('div[ui-view]');
     var meta = pageMeta[route];
     if (!view || !meta) return;
 
