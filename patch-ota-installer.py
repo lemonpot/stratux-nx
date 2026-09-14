@@ -17,6 +17,24 @@ if new_dpkg not in source:
         raise SystemExit("Could not find boot-time dpkg command")
     source = source.replace(old_dpkg, new_dpkg, 1)
 
+old_install_order = '''\t\t# Move the deb to /tmp and re-enable overlay BEFORE calling dpkg.
+\t\t# The dpkg postinst runs 'systemctl daemon-reload && systemctl start stratux'
+\t\t# which will kill this ExecStartPre process via daemon-reload. By cleaning up
+\t\t# first the system is in a consistent state even if dpkg kills this script.
+\t\tUPDATE_TEMP_FILE="/tmp/$(basename "${UPDATE_PACKAGE_FILE}")"
+\t\tmv "${UPDATE_PACKAGE_FILE}" "${UPDATE_TEMP_FILE}"
+\t\t/sbin/overlayctl enable
+\t\tif NX_OTA_INSTALL=1 dpkg -i --force-depends "${UPDATE_TEMP_FILE}"; then'''
+new_install_order = '''\t\t# Keep the overlay disabled while dpkg writes to the real ext4 root.
+\t\t# NX_OTA_INSTALL prevents postinst from restarting this service mid-install.
+\t\tUPDATE_TEMP_FILE="/tmp/$(basename "${UPDATE_PACKAGE_FILE}")"
+\t\tmv "${UPDATE_PACKAGE_FILE}" "${UPDATE_TEMP_FILE}"
+\t\tif NX_OTA_INSTALL=1 dpkg -i --force-depends "${UPDATE_TEMP_FILE}"; then'''
+if new_install_order not in source:
+    if old_install_order not in source:
+        raise SystemExit("Could not keep overlay disabled during package install")
+    source = source.replace(old_install_order, new_install_order, 1)
+
 old_stage_reboot = '''/sbin/overlayctl disable
 \t\t\twLog "Package staged. Rebooting to install on bare ext4..."
 \t\t\treboot'''
@@ -33,13 +51,21 @@ old_finish = '''rm -f "${UPDATE_TEMP_FILE}"
 \t\twLog "Finished. Rebooting..."
 \t\treboot'''
 new_finish = '''rm -f "${UPDATE_TEMP_FILE}"
+\t\t/sbin/overlayctl enable
 \t\tsync
 \t\twLog "Finished. Rebooting..."
 \t\treboot'''
 if new_finish not in source:
-    if old_finish not in source:
+    old_finish_with_sync = '''rm -f "${UPDATE_TEMP_FILE}"
+\t\tsync
+\t\twLog "Finished. Rebooting..."
+\t\treboot'''
+    if old_finish_with_sync in source:
+        source = source.replace(old_finish_with_sync, new_finish, 1)
+    elif old_finish in source:
+        source = source.replace(old_finish, new_finish, 1)
+    else:
         raise SystemExit("Could not find package install reboot")
-    source = source.replace(old_finish, new_finish, 1)
 
 prestart.write_text(source)
 
