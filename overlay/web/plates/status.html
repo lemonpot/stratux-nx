@@ -1,0 +1,137 @@
+<div class="col-sm-12 status-page">
+  <div class="status-version">
+    <button type="button" class="btn btn-hidden" ng-click="VersionClick()">
+      Version <tt>{{Version}} ({{Build}})</tt>
+    </button>
+  </div>
+
+  <div class="status-summary">
+    <div>
+      <span>Connection</span>
+      <strong ng-class="ConnectState == 'Connected' ? 'is-ok' : 'is-bad'">{{ConnectState}}</strong>
+    </div>
+    <div>
+      <span>Recent clients</span>
+      <strong>{{Connected_Users}}</strong>
+    </div>
+    <div>
+      <span>SDR devices</span>
+      <strong>{{Devices}}</strong>
+    </div>
+    <div>
+      <span>Uptime</span>
+      <strong>{{Uptime}}</strong>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <span class="panel_label">Radio reception</span>
+      <span ng-show="DeveloperMode" class="label label-warning">Developer mode</span>
+    </div>
+    <div class="panel-body">
+      <div class="status-radio-head">
+        <span>Receiver</span><span>Messages now</span><span>Peak</span>
+      </div>
+      <div class="status-radio-row" ng-class="{'section_invisible': !visible_uat}">
+        <strong>UAT</strong>
+        <div class="bar_container">
+          <div class="bar_display" ng-attr-style="background-color: {{uatStyleColor}}; width:{{UAT_messages_max ? 100*UAT_messages_last_minute / UAT_messages_max : 0}}%"></div>
+          <div class="bar_text">{{UAT_messages_last_minute}}</div>
+        </div>
+        <span>{{UAT_messages_max}}</span>
+      </div>
+      <div class="status-radio-row" ng-class="{'section_invisible': !visible_es}">
+        <strong>1090ES</strong>
+        <div class="bar_container">
+          <div class="bar_display" ng-attr-style="background-color: {{esStyleColor}}; width:{{ES_messages_max ? 100*ES_messages_last_minute / ES_messages_max : 0}}%"></div>
+          <div class="bar_text">{{ES_messages_last_minute}}</div>
+        </div>
+        <span>{{ES_messages_max}}</span>
+      </div>
+      <div class="status-radio-row" ng-class="{'section_invisible': !visible_ais}">
+        <strong>AIS{{AIS_connected ? '' : ' · disconnected'}}</strong>
+        <div class="bar_container">
+          <div class="bar_display" ng-attr-style="background-color: {{aisStyleColor}}; width:{{AIS_messages_max ? 100*AIS_messages_last_minute / AIS_messages_max : 0}}%"></div>
+          <div class="bar_text">{{AIS_messages_last_minute}}</div>
+        </div>
+        <span>{{AIS_messages_max}}</span>
+      </div>
+      <div class="status-radio-row" ng-class="{'section_invisible': !visible_ogn}">
+        <strong>OGN{{OGN_connected ? '' : ' · disconnected'}}</strong>
+        <div class="bar_container">
+          <div class="bar_display" ng-attr-style="background-color: {{ognStyleColor}}; width:{{OGN_messages_max ? 100*OGN_messages_last_minute / OGN_messages_max : 0}}%"></div>
+          <div class="bar_text">{{OGN_messages_last_minute}}</div>
+        </div>
+        <span>{{OGN_messages_max}}</span>
+      </div>
+
+      <div class="status-products" ng-class="{'section_invisible': !visible_uat}">
+        <div><span>Towers</span><strong>{{UAT_Towers}}</strong></div>
+        <div><span>METARs</span><strong>{{UAT_METAR_total}}</strong></div>
+        <div><span>TAFs</span><strong>{{UAT_TAF_total}}</strong></div>
+        <div><span>NEXRAD</span><strong>{{UAT_NEXRAD_total}}</strong></div>
+        <div><span>PIREPs</span><strong>{{UAT_PIREP_total}}</strong></div>
+        <div><span>SIGMETs</span><strong>{{UAT_SIGMET_total}}</strong></div>
+        <div><span>NOTAMs</span><strong>{{UAT_NOTAM_total}}</strong></div>
+        <div><span>Other</span><strong>{{UAT_OTHER_total}}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-columns">
+    <div class="panel panel-default" ng-class="{'section_invisible': !visible_gps}">
+      <div class="panel-heading"><span class="panel_label">GPS</span></div>
+      <div class="panel-body status-key-values">
+        <div><span>Hardware</span><strong>{{GPS_hardware}} <a href="http://{{GPS_NetworkRemoteIp}}" ng-show="GPS_hardware=='Network'">{{GPS_NetworkRemoteIp}}</a></strong></div>
+        <div><span>Protocol</span><strong>{{GPS_protocol}}</strong></div>
+        <div><span>Solution</span><strong>{{GPS_solution}}{{GPS_position_accuracy}}</strong></div>
+        <div><span>Satellites</span><strong>{{GPS_satellites_locked}} in solution · {{GPS_satellites_seen}} seen · {{GPS_satellites_tracked}} tracked</strong></div>
+      </div>
+    </div>
+
+    <div class="panel panel-default">
+      <div class="panel-heading"><span class="panel_label">System</span></div>
+      <div class="panel-body status-key-values">
+        <div><span>CPU temperature</span><strong>{{CPUTemp}}</strong></div>
+        <div><span>Free storage</span><strong>{{DiskSpace}} MiB</strong></div>
+        <div ng-class="{'section_invisible': !visible_uat}"><span>UAT frames</span><strong>{{UAT_messages_total}}</strong></div>
+        <div ng-class="{'section_invisible': !visible_es}"><span>1090ES frames</span><strong>{{ES_messages_total}}</strong></div>
+        <div ng-class="{'section_invisible': !visible_ais}"><span>AIS frames</span><strong>{{AIS_messages_total}}</strong></div>
+        <div ng-class="{'section_invisible': !visible_ogn}"><span>OGN frames</span><strong>{{OGN_messages_total}}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel panel-default" ng-class="{'section_invisible': !visible_errors}">
+    <div class="panel-heading"><span class="panel_label">Errors</span></div>
+    <div class="panel-body">
+      <ul class="status-errors">
+        <li ng-repeat="err in Errors"><i class="fa fa-exclamation-triangle"></i><span>{{err}}</span></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div ui-content-for="modals">
+  <div class="modal" ui-if="RegionSelect" ui-state="RegionSelect">
+    <div class="modal-overlay"></div>
+    <div class="vertical-alignment-helper center-block">
+      <div class="modal-dialog vertical-align-center">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button class="close" ui-turn-off="RegionSelect"></button>
+            <h4 class="modal-title">Select operating region</h4>
+          </div>
+          <div class="modal-body">
+            <p><strong>Select the operating region for this receiver.</strong></p>
+            <div class="status-region-actions">
+              <button ui-turn-off="RegionSelect" onclick="angular.element(this).scope().setRegionClick('US')" class="btn btn-default">United States</button>
+              <button ui-turn-off="RegionSelect" onclick="angular.element(this).scope().setRegionClick('EU')" class="btn btn-default">Europe</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -3,8 +3,8 @@
    ============================================================ */
 
 .update-page {
-  padding: 14px 14px 40px;
-  max-width: 900px;
+  padding: 0 24px 48px;
+  max-width: 1408px;
   margin: 0 auto;
 }
 
@@ -13,35 +13,23 @@
   justify-content: space-between;
   gap: 20px;
   align-items: flex-start;
-  padding: 22px 24px;
-  border-radius: var(--sx-radius);
-  background: linear-gradient(135deg, #0c1322 0%, #162033 50%, #1a2744 100%);
-  color: #fff;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, .15);
-  margin-bottom: 14px;
-  position: relative;
-  overflow: hidden;
+  padding: 28px 0 20px;
+  border-bottom: 1px solid var(--sx-border);
+  color: var(--sx-text);
+  margin-bottom: 20px;
 }
 
 .update-hero::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -20%;
-  width: 60%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(77, 159, 255, .06) 0%, transparent 70%);
-  pointer-events: none;
+  display: none;
 }
 
 body.stratux-dark .update-hero {
-  background: linear-gradient(135deg, #060a12 0%, #0c1320 50%, #111d30 100%);
-  border: 1px solid var(--sx-border);
+  background: transparent;
 }
 
-.update-hero h2 { margin: 3px 0 7px; font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
-.update-hero p { margin: 0; max-width: 600px; color: #94a8c7; line-height: 1.5; font-size: 13px; }
-.update-eyebrow { font-size: 10px; letter-spacing: .14em; font-weight: 700; color: #6ba3eb; }
+.update-hero h2 { margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -.02em; }
+.update-hero p { margin: 5px 0 0; max-width: 600px; color: var(--sx-muted); line-height: 1.5; font-size: 14px; }
+.update-eyebrow { display: none; }
 
 .update-version-pill {
   display: flex;
@@ -62,13 +50,12 @@ body.stratux-dark .update-hero {
   border: 1px solid var(--sx-border);
   border-radius: var(--sx-radius);
   margin-top: 12px;
-  box-shadow: var(--sx-shadow);
   overflow: hidden;
 }
 
 .update-panel-highlight {
-  border-color: var(--sx-primary);
-  box-shadow: 0 0 0 1px var(--sx-primary), var(--sx-shadow-md);
+  border-color: var(--sx-border);
+  box-shadow: none;
 }
 
 .update-panel-header {
@@ -110,7 +97,7 @@ body.stratux-dark .update-hero {
 
 .update-version-card span {
   display: block;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: .06em;
   color: var(--sx-muted-2);

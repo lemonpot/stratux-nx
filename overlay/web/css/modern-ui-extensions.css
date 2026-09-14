@@ -2,8 +2,33 @@
    STRATUX NX -- Extended Components (Stripe-inspired)
    ============================================================ */
 
-/* Page heroes: disabled -- using clean inline titles */
+/* Legacy promotional heroes stay disabled. */
 .sx-page-hero { display: none !important; }
+
+/* Shared page title used by every standard page. */
+.sx-page-header {
+  width: calc(100% - 48px);
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 28px 0 20px;
+  border-bottom: 1px solid var(--sx-border);
+}
+
+.sx-page-header h1 {
+  margin: 0;
+  color: var(--sx-text);
+  font-size: 24px;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+}
+
+.sx-page-header p {
+  margin: 5px 0 0;
+  color: var(--sx-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
 
 /* Panel body refinements */
 .panel-body .form-group:last-child { margin-bottom: 0 !important; }
@@ -26,3 +51,13 @@
 }
 
 .panel-body hr { border-color: var(--sx-border); }
+
+@media (max-width: 767px) {
+  .sx-page-header {
+    width: calc(100% - 32px);
+    padding: 20px 0 16px;
+  }
+
+  .sx-page-header h1 { font-size: 21px; }
+  .sx-page-header p { font-size: 13px; }
+}
