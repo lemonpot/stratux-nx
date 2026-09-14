@@ -69,6 +69,53 @@ p.write_text(s)
 p = root / "web/plates/js/settings.js"
 s = p.read_text()
 
+wifi_network_assignment = "\t\t$scope.WiFiClientNetworks = settings.WiFiClientNetworks;"
+wifi_network_assignment_safe = (
+    "\t\t$scope.WiFiClientNetworks = Array.isArray(settings.WiFiClientNetworks) "
+    "? settings.WiFiClientNetworks : [];"
+)
+if wifi_network_assignment in s:
+    s = s.replace(wifi_network_assignment, wifi_network_assignment_safe, 1)
+elif wifi_network_assignment_safe not in s:
+    raise SystemExit("Could not initialize WiFiClientNetworks safely")
+
+wifi_network_actions = '''\t$scope.addWiFiClientNetwork = function () {
+\t\t$scope.WiFiClientNetworks.push({
+\t\t\tSSID: '',
+\t\t\tPassword: ''
+\t\t});
+\t\t$scope.$apply();
+\t};
+
+\t$scope.removeWiFiClientNetwork = function (Network) {
+\t\tvar idx = $scope.WiFiClientNetworks.indexOf(Network);
+\t\tif (idx >= 0) {
+\t\t\t$scope.WiFiClientNetworks.splice(idx, 1);
+\t\t}
+\t\t$scope.$apply();
+\t};'''
+wifi_network_actions_safe = '''\t$scope.addWiFiClientNetwork = function () {
+\t\tif (!Array.isArray($scope.WiFiClientNetworks)) {
+\t\t\t$scope.WiFiClientNetworks = [];
+\t\t}
+\t\t$scope.WiFiClientNetworks.push({
+\t\t\tSSID: '',
+\t\t\tPassword: ''
+\t\t});
+\t};
+
+\t$scope.removeWiFiClientNetwork = function (Network) {
+\t\tif (!Array.isArray($scope.WiFiClientNetworks)) return;
+\t\tvar idx = $scope.WiFiClientNetworks.indexOf(Network);
+\t\tif (idx >= 0) {
+\t\t\t$scope.WiFiClientNetworks.splice(idx, 1);
+\t\t}
+\t};'''
+if wifi_network_actions in s:
+    s = s.replace(wifi_network_actions, wifi_network_actions_safe, 1)
+elif wifi_network_actions_safe not in s:
+    raise SystemExit("Could not harden WiFi client network actions")
+
 set_settings_pattern = re.compile(
     r'\tfunction setSettings\(msg\) \{.*?\n\t\}\n\n\tgetSettings\(\);',
     re.S,
