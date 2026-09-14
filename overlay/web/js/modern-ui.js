@@ -201,29 +201,8 @@
   }
 
   function renderPageHeader() {
-    var route = currentRoute();
-    if (route === '#/datausage' || route === '#/flightlog' || route === '#/update') return;
-    var view = document.querySelector('div[ui-view]');
-    if (!view) return;
-    var meta = pageMeta[route];
-    if (!meta) return;
-    var old = directPageHero(view);
-    if (old && old.getAttribute('data-route') === route) return;
-    if (old && old.parentNode) old.parentNode.removeChild(old);
-
-    var hero = document.createElement('div');
-    hero.className = 'sx-page-hero';
-    hero.setAttribute('data-route', route);
-    hero.innerHTML =
-      '<div>' +
-        '<div class="sx-page-eyebrow"></div>' +
-        '<h2></h2>' +
-        '<p></p>' +
-      '</div>';
-    hero.querySelector('.sx-page-eyebrow').textContent = meta.eyebrow;
-    hero.querySelector('h2').textContent = meta.title;
-    hero.querySelector('p').textContent = meta.subtitle;
-    view.insertBefore(hero, view.firstChild);
+    // Heroes disabled -- Stripe-like minimal UI, page titles are inline.
+    return;
   }
 
 
