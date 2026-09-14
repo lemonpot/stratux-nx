@@ -18,14 +18,19 @@ if old in s:
     s = s.replace(old, new, 1)
 elif new not in s:
     raise SystemExit('Could not find Stratux navbar brand container')
-# Replace the brand text and add the NX logo.
-brand_link = re.search(r'(<a\s+href="#/">\s*)Stratux(\s*</a>)', s)
-if brand_link:
-    s = s.replace(brand_link.group(0),
-        brand_link.group(1) +
-        '<img class="sx-brand-logo" src="img/logo-nx.png" alt=""> '
-        'Stratux NX' +
-        brand_link.group(2), 1)
+# Replace any upstream brand content with the NX icon and name. Mobile Angular
+# UI may otherwise turn the original image into a plain-text page title.
+brand_link = re.search(
+    r'(<div class="navbar-brand navbar-brand-center">\s*<a\s+href="#/">).*?(</a>)',
+    s,
+    flags=re.S,
+)
+if not brand_link:
+    raise SystemExit('Could not find Stratux navbar brand link')
+s = s[:brand_link.start()] + brand_link.group(1) + (
+    '<img class="sx-brand-logo" src="img/logo-nx.png" alt=""> '
+    'Stratux NX'
+) + brand_link.group(2) + s[brand_link.end():]
 p.write_text(s)
 
 # Remove our custom page title publishers as well. They are no longer needed
@@ -51,6 +56,8 @@ if 'navbar-brand navbar-brand-center" ui-yield-to="title"' in index:
     raise SystemExit('Navbar is still using dynamic page-title yield')
 if '>\n\t\t\t\t<a href="#/">' not in index and '<a href="#/">' not in index:
     raise SystemExit('Static Stratux home brand link is missing')
+if 'class="sx-brand-logo" src="img/logo-nx.png"' not in index:
+    raise SystemExit('Static Stratux NX navbar logo is missing')
 for rel in ("web/plates/datausage.html", "web/plates/flightlog.html"):
     p = root / rel
     if p.exists() and 'ui-content-for="title"' in p.read_text():
