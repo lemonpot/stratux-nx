@@ -54,4 +54,16 @@ s = re.sub(r'href="css/[^"]*"', bust, s)
 s = re.sub(r'src="(plates/js|js)/[^"]*"', bust, s)
 
 p.write_text(s)
-print("Cache killed: manifest removed, meta tags added, %s appended to assets" % vq)
+
+# 4. Gut the AppCache manifest so browsers that already cached it
+#    will see NETWORK:* and stop using the offline cache.
+appcache = root / "web/stratux.appcache"
+if appcache.exists():
+    appcache.write_text(
+        "CACHE MANIFEST\n"
+        "# Stratux NX: AppCache disabled -- do not cache anything\n"
+        "NETWORK:\n"
+        "*\n"
+    )
+
+print("Cache killed: manifest removed, meta tags added, %s appended to assets, appcache gutted" % vq)

@@ -142,6 +142,9 @@ else
 fi
 printf '\n# Internet Data build: %s\n' "$CACHE_VERSION" >> "$TARGET/web/stratux.appcache"
 
+# Force no-cache HTTP headers on the Go web server.
+python3 "$SCRIPT_DIR/patch-no-cache-headers.py" "$TARGET"
+
 # Kill HTML5 AppCache and add cache-busting to all web assets.
 # This MUST run LAST so other patches can still find clean src/href markers.
 python3 "$SCRIPT_DIR/patch-kill-cache.py" "$TARGET"
