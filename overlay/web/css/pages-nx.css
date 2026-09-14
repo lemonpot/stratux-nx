@@ -1,25 +1,12 @@
 /* ============================================================
-   STRATUX NX -- Upstream Page Enhancements
-   Consistent styling across ALL pages.
-   Uses var(--sx-*) design tokens from modern-ui.css.
+   STRATUX NX -- Upstream Page Enhancements (Stripe-inspired)
+   Clean, minimal, information-dense. No animations, no flashy
+   effects. Uses var(--sx-*) design tokens from modern-ui.css.
    ============================================================ */
-
-
-/* === PAGE TRANSITIONS ============================================ */
-
-div[ui-view] {
-  animation: sxPageIn .25s ease both;
-}
-
-@keyframes sxPageIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: none; }
-}
 
 
 /* === GLOBAL PAGE LAYOUT ========================================== */
 
-/* All pages: consistent max-width and centering */
 div[ui-view] > .col-sm-12,
 div[ui-view] > div > .col-sm-12,
 div[ui-view] > .container-fluid {
@@ -38,24 +25,20 @@ div[ui-view] .panel {
   box-shadow: var(--sx-shadow) !important;
   overflow: hidden;
   margin-bottom: 14px;
-  transition: box-shadow var(--sx-transition);
-}
-
-div[ui-view] .panel:hover {
-  box-shadow: var(--sx-shadow-md) !important;
 }
 
 div[ui-view] .panel .panel-heading {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: .01em;
-  padding: 13px 18px !important;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  padding: 16px 20px !important;
   background: var(--sx-card) !important;
+  color: var(--sx-text) !important;
   border-bottom: 1px solid var(--sx-border) !important;
 }
 
 div[ui-view] .panel .panel-body {
-  padding: 16px 18px !important;
+  padding: 20px !important;
   background: var(--sx-card) !important;
 }
 
@@ -67,27 +50,28 @@ div[ui-view] .table {
 }
 
 div[ui-view] .table > thead > tr > th {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--sx-muted-2);
-  border-bottom-width: 1px !important;
-  padding: 10px 14px;
-  background: var(--sx-card-soft);
+  letter-spacing: .05em;
+  color: var(--sx-muted);
+  border-bottom: 1px solid var(--sx-border) !important;
+  border-top: 0 !important;
+  padding: 10px 16px;
+  background: transparent;
 }
 
 div[ui-view] .table > tbody > tr > td {
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
-  padding: 10px 14px;
+  font-size: 14px;
+  padding: 10px 16px;
   vertical-align: middle;
   border-color: var(--sx-border) !important;
-  transition: background var(--sx-transition);
+  border-top: 1px solid var(--sx-border);
 }
 
-div[ui-view] .table > tbody > tr:hover > td {
-  background: var(--sx-card-hover);
+div[ui-view] .table > tbody > tr:last-child > td {
+  border-bottom: 0;
 }
 
 div[ui-view] .table-responsive {
@@ -136,17 +120,17 @@ div[ui-view] .panel-body .col-xs-6 {
 /* === UNIVERSAL PROGRESS BARS ===================================== */
 
 div[ui-view] .panel-body .progress {
-  height: 8px;
+  height: 6px;
   border-radius: var(--sx-radius-full);
   background: var(--sx-card-soft);
-  box-shadow: inset 0 0 0 1px var(--sx-border);
+  box-shadow: none;
+  border: 1px solid var(--sx-border);
   overflow: hidden;
   margin-bottom: 8px;
 }
 
 div[ui-view] .panel-body .progress-bar {
   border-radius: var(--sx-radius-full);
-  transition: width 300ms ease;
 }
 
 div[ui-view] .panel-body .progress-bar-success { background: var(--sx-success) !important; }
@@ -157,11 +141,11 @@ div[ui-view] .panel-body .progress-bar-danger  { background: var(--sx-danger) !i
 /* === UNIVERSAL LABELS / BADGES =================================== */
 
 div[ui-view] .label {
-  font-size: 10px !important;
-  padding: 4px 10px !important;
+  font-size: 11px !important;
+  padding: 3px 8px !important;
   border-radius: var(--sx-radius-full) !important;
-  font-weight: 700 !important;
-  letter-spacing: .02em;
+  font-weight: 600 !important;
+  letter-spacing: .01em;
 }
 
 
@@ -178,17 +162,17 @@ div[ui-view] .alert-info {
 
 /* === STATUS PAGE (HOME) ========================================== */
 
-/* Version display — styled as a pill */
+/* Version display — simple muted text, no pill */
 div[ui-view] .col-sm-12 > p.text-center {
-  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
-  font-size: 12px;
+  font-family: var(--sx-mono);
+  font-size: 13px;
   color: var(--sx-muted);
-  padding: 8px 16px;
-  margin: 6px auto 10px;
+  padding: 4px 0;
+  margin: 4px auto 10px;
   max-width: 400px;
-  background: var(--sx-card-soft);
-  border: 1px solid var(--sx-border);
-  border-radius: var(--sx-radius-full);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
   text-align: center;
 }
 
@@ -210,7 +194,7 @@ body.stratux-dark div[ui-view] .table img[src*="actype"] {
 /* Callsign column */
 div[ui-view] .table td:first-child {
   font-weight: 700;
-  font-family: "SF Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+  font-family: var(--sx-mono);
   font-size: 12px;
   color: var(--sx-text);
   letter-spacing: .02em;
@@ -222,7 +206,7 @@ div[ui-view] .table td:first-child {
 /* Section dividers */
 div[ui-view] .panel-body > .separator,
 div[ui-view] .panel-body > hr {
-  margin: 16px -18px !important;
+  margin: 16px -20px !important;
   background: var(--sx-border);
   border: 0;
   height: 1px;
@@ -235,7 +219,7 @@ div[ui-view] .panel-body .checkbox label {
   padding-left: 22px;
   font-weight: 600;
   color: var(--sx-text-2);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
 }
 
@@ -256,9 +240,9 @@ div[ui-view] .panel-body .help-block {
 div[ui-view] .panel-heading .badge {
   background: var(--sx-primary-soft) !important;
   color: var(--sx-primary) !important;
-  font-weight: 700;
+  font-weight: 600;
   border-radius: var(--sx-radius-full);
-  font-size: 10px;
+  font-size: 11px;
   padding: 3px 8px;
 }
 
@@ -273,23 +257,18 @@ div[ui-view] .panel-body select {
 /* File upload buttons */
 input[type="file"] {
   padding: 6px !important;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 input[type="file"]::file-selector-button {
   background: var(--sx-card-soft);
-  border: 1px solid var(--sx-border-strong);
+  border: 1px solid var(--sx-border);
   border-radius: var(--sx-radius-xs);
   color: var(--sx-text-2);
   font-weight: 600;
   padding: 6px 12px;
   margin-right: 10px;
   cursor: pointer;
-  transition: background 150ms ease;
-}
-
-input[type="file"]::file-selector-button:hover {
-  background: var(--sx-card-hover);
 }
 
 /* Reboot/shutdown buttons */
@@ -307,7 +286,6 @@ input[type="file"]::file-selector-button:hover {
   border-radius: var(--sx-radius) !important;
   overflow: hidden;
   border: 1px solid var(--sx-border);
-  box-shadow: var(--sx-shadow);
 }
 
 /* Satellite signal bars */
@@ -326,16 +304,16 @@ div[ui-view] .panel-body td > strong {
 /* Satellite count badges */
 div[ui-view] .panel-body .label[class*="label-"] {
   font-size: 11px !important;
-  padding: 4px 8px !important;
+  padding: 3px 8px !important;
   border-radius: var(--sx-radius-full) !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 }
 
 
 /* === TOWERS PAGE ================================================= */
 
 div[ui-view] .panel-body .list-group {
-  margin: -16px -18px !important;
+  margin: -20px -20px !important;
   border-radius: 0 !important;
 }
 
@@ -343,13 +321,8 @@ div[ui-view] .panel-body .list-group .list-group-item {
   border-radius: 0 !important;
   border-left: 0 !important;
   border-right: 0 !important;
-  padding: 12px 18px !important;
-  font-size: 13px;
-  transition: background var(--sx-transition);
-}
-
-div[ui-view] .panel-body .list-group .list-group-item:hover {
-  background: var(--sx-card-hover) !important;
+  padding: 12px 20px !important;
+  font-size: 14px;
 }
 
 div[ui-view] .panel-body .list-group .list-group-item:first-child { border-top: 0 !important; }
@@ -364,7 +337,7 @@ div[ui-view] .panel-body .well {
   border: 1px solid var(--sx-border) !important;
   border-radius: var(--sx-radius-sm) !important;
   color: var(--sx-text-2) !important;
-  font-family: "SF Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+  font-family: var(--sx-mono);
   font-size: 12px;
   line-height: 1.6;
   padding: 14px !important;
@@ -381,12 +354,11 @@ div[ui-view] .panel-body a[href*="downloaddb"] {
   padding: 8px 14px;
   background: var(--sx-card-soft);
   border: 1px solid var(--sx-border);
-  border-radius: var(--sx-radius-xs);
+  border-radius: var(--sx-radius-sm);
   color: var(--sx-primary) !important;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 14px;
   text-decoration: none !important;
-  transition: all var(--sx-transition);
 }
 
 div[ui-view] .panel-body a[href*="downloadlog"]:hover,
@@ -403,7 +375,6 @@ div[ui-view] .panel-body a[href*="downloaddb"]:hover {
   border-radius: var(--sx-radius) !important;
   overflow: hidden;
   border: 1px solid var(--sx-border);
-  box-shadow: var(--sx-shadow);
   background: #0c1018 !important;
 }
 
@@ -414,7 +385,7 @@ div[ui-view] .panel-body a[href*="downloaddb"]:hover {
 /* === DEVELOPER PAGE ============================================== */
 
 div[ui-view] .panel-body textarea {
-  font-family: "SF Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace !important;
+  font-family: var(--sx-mono) !important;
   font-size: 12px !important;
   line-height: 1.6 !important;
   border-radius: var(--sx-radius-sm) !important;
@@ -430,7 +401,7 @@ div[ui-view] .panel-body textarea {
 .alert {
   border-radius: var(--sx-radius-sm) !important;
   border-width: 1px !important;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 

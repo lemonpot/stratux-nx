@@ -3,94 +3,68 @@
    Aviation-grade UI. Dark-first. iPad-optimized.
    ============================================================ */
 
-/* --- Design Tokens ----------------------------------------------- */
+/* --- Design Tokens (Stripe-inspired) ----------------------------- */
 :root {
-  /* Surface */
-  --sx-bg: #f8f9fb;
-  --sx-bg-subtle: #f0f2f5;
+  /* Stripe-inspired Stratux NX Design System */
+  --sx-bg: #f6f9fc;
+  --sx-bg-subtle: #f0f3f7;
   --sx-card: #ffffff;
-  --sx-card-soft: #f4f6f9;
-  --sx-card-hover: #eef1f5;
-
-  /* Text */
-  --sx-text: #0f1419;
-  --sx-text-2: #3b4654;
-  --sx-muted: #6b7a8d;
-  --sx-muted-2: #9aa5b4;
-
-  /* Borders */
-  --sx-border: #e4e8ee;
-  --sx-border-strong: #cdd3dc;
-
-  /* Brand */
-  --sx-primary: #0066ff;
-  --sx-primary-hover: #0052d4;
-  --sx-primary-soft: #eef4ff;
-  --sx-primary-text: #003faa;
-
-  /* Semantic */
-  --sx-success: #00a854;
-  --sx-success-soft: #eafaf1;
-  --sx-success-text: #006838;
-  --sx-warning: #e6960a;
-  --sx-warning-soft: #fef8ec;
-  --sx-warning-text: #8a5a00;
-  --sx-danger: #e5342e;
-  --sx-danger-soft: #fef0f0;
-  --sx-danger-text: #a31f1b;
-
-  /* Elevation */
-  --sx-shadow-xs: 0 1px 2px rgba(0,0,0,.04);
-  --sx-shadow: 0 2px 8px rgba(0,0,0,.06), 0 0 1px rgba(0,0,0,.08);
-  --sx-shadow-md: 0 4px 16px rgba(0,0,0,.08), 0 0 1px rgba(0,0,0,.1);
-  --sx-shadow-lg: 0 12px 40px rgba(0,0,0,.12), 0 0 1px rgba(0,0,0,.1);
-
-  /* Shape */
-  --sx-radius: 14px;
-  --sx-radius-sm: 10px;
-  --sx-radius-xs: 7px;
-  --sx-radius-full: 999px;
-
-  /* Motion */
-  --sx-transition: 150ms ease;
-  --sx-transition-slow: 250ms ease;
+  --sx-card-soft: #f6f9fc;
+  --sx-card-hover: #f9fafb;
+  --sx-text: #1a1f36;
+  --sx-text-2: #3c4257;
+  --sx-muted: #697386;
+  --sx-muted-2: #8792a2;
+  --sx-border: #e3e8ee;
+  --sx-border-strong: #c1c9d2;
+  --sx-primary: #4d9fff;
+  --sx-primary-hover: #3388f5;
+  --sx-primary-soft: rgba(77, 159, 255, .08);
+  --sx-primary-text: #0055b3;
+  --sx-success: #0cad4e;
+  --sx-success-soft: rgba(12, 173, 78, .08);
+  --sx-success-text: #0a8a3e;
+  --sx-warning: #e8912d;
+  --sx-warning-soft: rgba(232, 145, 45, .08);
+  --sx-warning-text: #b36b1a;
+  --sx-danger: #cd3d64;
+  --sx-danger-soft: rgba(205, 61, 100, .08);
+  --sx-danger-text: #a02e4d;
+  --sx-radius: 8px;
+  --sx-radius-sm: 6px;
+  --sx-radius-xs: 4px;
+  --sx-radius-full: 100px;
+  --sx-shadow: 0 1px 3px rgba(0,0,0,.04);
+  --sx-shadow-md: 0 2px 6px rgba(0,0,0,.06);
+  --sx-shadow-lg: 0 4px 12px rgba(0,0,0,.08);
+  --sx-shadow-xs: 0 1px 2px rgba(0,0,0,.03);
+  --sx-transition: .15s ease;
+  --sx-transition-slow: .25s ease;
+  --sx-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --sx-mono: "SF Mono", "Fira Code", ui-monospace, monospace;
 }
 
 /* --- Dark Mode --------------------------------------------------- */
 body.stratux-dark {
-  --sx-bg: #0c1018;
-  --sx-bg-subtle: #111822;
-  --sx-card: #161d29;
-  --sx-card-soft: #1a2232;
-  --sx-card-hover: #1f2940;
-
-  --sx-text: #edf0f5;
-  --sx-text-2: #c4cbd6;
-  --sx-muted: #7d8a9c;
-  --sx-muted-2: #576375;
-
-  --sx-border: #232e3e;
-  --sx-border-strong: #2e3b4e;
-
-  --sx-primary: #4d9fff;
-  --sx-primary-hover: #3388f5;
-  --sx-primary-soft: #0f2040;
-  --sx-primary-text: #8ac2ff;
-
-  --sx-success: #34d49a;
-  --sx-success-soft: #0d2a20;
-  --sx-success-text: #6ee8ba;
-  --sx-warning: #f7b731;
-  --sx-warning-soft: #2a2010;
-  --sx-warning-text: #f7cf6e;
-  --sx-danger: #ff6b6b;
-  --sx-danger-soft: #2c1418;
-  --sx-danger-text: #ff9e9e;
-
-  --sx-shadow-xs: 0 1px 2px rgba(0,0,0,.2);
-  --sx-shadow: 0 2px 8px rgba(0,0,0,.25), 0 0 1px rgba(0,0,0,.3);
-  --sx-shadow-md: 0 4px 16px rgba(0,0,0,.3), 0 0 1px rgba(0,0,0,.35);
-  --sx-shadow-lg: 0 12px 40px rgba(0,0,0,.45), 0 0 1px rgba(0,0,0,.4);
+  --sx-bg: #0a0e1a;
+  --sx-bg-subtle: #111827;
+  --sx-card: #151b2b;
+  --sx-card-soft: #1a2236;
+  --sx-card-hover: #1e2840;
+  --sx-text: #e8ecf1;
+  --sx-text-2: #c1c9d4;
+  --sx-muted: #8792a2;
+  --sx-muted-2: #697386;
+  --sx-border: #2a3448;
+  --sx-border-strong: #3d4a60;
+  --sx-primary-soft: rgba(77, 159, 255, .12);
+  --sx-success-soft: rgba(12, 173, 78, .12);
+  --sx-warning-soft: rgba(232, 145, 45, .12);
+  --sx-danger-soft: rgba(205, 61, 100, .12);
+  --sx-shadow: 0 1px 3px rgba(0,0,0,.2);
+  --sx-shadow-md: 0 2px 6px rgba(0,0,0,.3);
+  --sx-shadow-lg: 0 4px 12px rgba(0,0,0,.4);
+  --sx-shadow-xs: 0 1px 2px rgba(0,0,0,.15);
 }
 
 
@@ -98,7 +72,7 @@ body.stratux-dark {
 html, body {
   background: var(--sx-bg) !important;
   color: var(--sx-text-2);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--sx-font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 14px;
@@ -122,17 +96,15 @@ a:hover { color: var(--sx-primary-hover); }
 
 /* === TOP NAVBAR ================================================== */
 .navbar.navbar-app {
-  height: 54px;
-  min-height: 54px;
+  height: 52px;
+  min-height: 52px;
   background: var(--sx-card) !important;
   border-bottom: 1px solid var(--sx-border) !important;
-  box-shadow: var(--sx-shadow-xs);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  box-shadow: none !important;
 }
 
 body.stratux-dark .navbar.navbar-app {
-  background: rgba(22, 29, 41, .92) !important;
+  background: var(--sx-card) !important;
 }
 
 .navbar-brand, .navbar-brand a, .navbar .btn {
@@ -140,9 +112,9 @@ body.stratux-dark .navbar.navbar-app {
 }
 
 .navbar-brand {
-  font-weight: 700;
-  letter-spacing: -.02em;
-  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  font-size: 15px;
 }
 
 .navbar-brand img {
@@ -150,13 +122,13 @@ body.stratux-dark .navbar.navbar-app {
 }
 
 .navbar .btn {
-  height: 53px;
+  height: 51px;
   display: flex;
   align-items: center;
   gap: 6px;
   border: 0 !important;
   background: transparent !important;
-  font-weight: 600;
+  font-weight: 500;
   transition: background var(--sx-transition);
 }
 
@@ -169,13 +141,13 @@ body.stratux-dark .navbar.navbar-app {
 .sidebar {
   background: var(--sx-card) !important;
   border-color: var(--sx-border) !important;
-  box-shadow: var(--sx-shadow-lg);
+  box-shadow: none;
 }
 
 .sidebar .scrollable-header,
 .sidebar .app-name {
-  height: 54px;
-  line-height: 54px;
+  height: 52px;
+  line-height: 52px;
   background: var(--sx-card) !important;
   color: var(--sx-text) !important;
   border-bottom: 1px solid var(--sx-border) !important;
@@ -221,6 +193,7 @@ body.stratux-dark .navbar.navbar-app {
   background: var(--sx-primary-soft) !important;
   color: var(--sx-primary) !important;
   font-weight: 700;
+  border-left: 3px solid var(--sx-primary) !important;
 }
 
 .sidebar .list-group-item.sx-active i {
@@ -266,7 +239,7 @@ div[ui-view] > .col-sm-12 > .text-center:first-child {
 }
 
 .panel:hover {
-  box-shadow: var(--sx-shadow-md) !important;
+  box-shadow: var(--sx-shadow) !important;
 }
 
 .panel-heading,
@@ -342,9 +315,9 @@ input[type=search],
 select,
 textarea,
 .custom-select {
-  min-height: 38px;
-  border: 1px solid var(--sx-border-strong) !important;
-  border-radius: var(--sx-radius-xs) !important;
+  height: 36px;
+  border: 1px solid var(--sx-border) !important;
+  border-radius: 6px !important;
   background: var(--sx-card) !important;
   color: var(--sx-text) !important;
   padding: 8px 12px !important;
@@ -359,7 +332,7 @@ select:focus,
 textarea:focus,
 .custom-select:focus {
   border-color: var(--sx-primary) !important;
-  box-shadow: 0 0 0 3px rgba(0, 102, 255, .12) !important;
+  box-shadow: 0 0 0 3px rgba(77, 159, 255, .15) !important;
 }
 
 body.stratux-dark input:focus,
@@ -385,28 +358,28 @@ textarea::placeholder {
 
 /* === BUTTONS ===================================================== */
 .btn, .fake-btn {
-  border-radius: var(--sx-radius-xs) !important;
-  border: 1px solid var(--sx-border-strong) !important;
-  font-weight: 600 !important;
-  font-size: 13px;
-  box-shadow: var(--sx-shadow-xs) !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--sx-border) !important;
+  font-weight: 500 !important;
+  font-size: 14px;
+  height: 36px;
+  box-shadow: none !important;
   transition: all var(--sx-transition);
   cursor: pointer;
 }
 
 .btn:active {
-  transform: translateY(1px);
   box-shadow: none !important;
 }
 
 .btn-default, .fake-btn {
   background: var(--sx-card) !important;
-  color: var(--sx-text-2) !important;
+  color: var(--sx-text) !important;
 }
 
 .btn-default:hover, .fake-btn:hover {
   background: var(--sx-card-hover) !important;
-  border-color: var(--sx-border-strong) !important;
+  border-color: var(--sx-border) !important;
 }
 
 .btn-primary {
@@ -903,7 +876,7 @@ body.stratux-dark .modal-overlay {
   color: var(--sx-muted);
   margin-left: 8px;
   font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
-  opacity: .7;
+  opacity: 1;
 }
 .sx-update-dot {
   display: inline-block;
@@ -923,11 +896,11 @@ body.stratux-dark .modal-overlay {
 /* === RESPONSIVE ================================================== */
 @media (max-width: 767px) {
   .navbar.navbar-app {
-    height: 50px;
-    min-height: 50px;
+    height: 48px;
+    min-height: 48px;
   }
 
-  .navbar .btn { height: 49px; }
+  .navbar .btn { height: 47px; }
 
   .panel-group {
     padding-left: 0 !important;
