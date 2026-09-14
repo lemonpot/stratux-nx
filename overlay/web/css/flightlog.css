@@ -52,7 +52,7 @@
 
 .flightlog-stat-primary {
   border-color: var(--sx-border);
-  background: var(--sx-card);
+  background: var(--sx-primary-soft);
 }
 
 .flightlog-stat > span, .flightlog-mini > span {
@@ -93,6 +93,10 @@
   border-radius: var(--sx-radius);
   margin-top: 12px;
   overflow: hidden;
+}
+
+.flightlog-telemetry-panel {
+  border-top: 2px solid rgba(99, 91, 255, .34);
 }
 
 .flightlog-panel-header {
@@ -283,6 +287,41 @@
 .flightlog-track circle.start { fill: var(--sx-success); }
 .flightlog-track circle.end { fill: var(--sx-danger); }
 
+.flightlog-map {
+  width: 100%;
+  height: 360px;
+  background: var(--sx-card-soft);
+}
+
+.flightlog-map .ol-viewport { border-radius: 0; }
+
+.flightlog-map-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--sx-border);
+  color: var(--sx-muted);
+  font-size: 11px;
+}
+
+.flightlog-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.flightlog-map-legend span:last-child { margin-left: auto; }
+
+.flightlog-map-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.flightlog-map-legend i.start { background: var(--sx-success); }
+.flightlog-map-legend i.finish { background: var(--sx-danger); }
+
 
 /* --- Actions ----------------------------------------------------- */
 .flightlog-live-actions {
@@ -293,6 +332,114 @@
 }
 
 .flightlog-danger-link { color: var(--sx-danger-text); }
+
+.flightlog-cloud-panel {
+  border-top: 2px solid rgba(22, 163, 106, .34);
+}
+
+.flightlog-cloud-state,
+.flightlog-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--sx-border);
+  border-radius: 999px;
+  background: var(--sx-card-soft);
+  color: var(--sx-muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.flightlog-cloud-state { padding: 7px 10px; }
+.flightlog-sync-badge { padding: 4px 7px; vertical-align: middle; }
+
+.flightlog-cloud-state.online,
+.flightlog-sync-badge.uploaded {
+  border-color: rgba(22, 163, 106, .22);
+  background: var(--sx-success-soft);
+  color: var(--sx-success-text);
+}
+
+.flightlog-cloud-state.offline,
+.flightlog-sync-badge.pending {
+  border-color: rgba(245, 158, 11, .24);
+  background: var(--sx-warning-soft);
+  color: var(--sx-warning-text);
+}
+
+.flightlog-sync-badge.failed {
+  border-color: rgba(205, 61, 100, .22);
+  background: var(--sx-danger-soft);
+  color: var(--sx-danger-text);
+}
+
+.flightlog-cloud-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(150px, .5fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 18px;
+}
+
+.flightlog-cloud-body span,
+.flightlog-device-id small,
+.flightlog-cloud-pending small {
+  display: block;
+}
+
+.flightlog-cloud-body span {
+  color: var(--sx-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .06em;
+}
+
+.flightlog-device-id strong,
+.flightlog-cloud-pending strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--sx-text);
+  font-size: 14px;
+}
+
+.flightlog-device-id strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flightlog-device-id small,
+.flightlog-cloud-pending small {
+  margin-top: 4px;
+  color: var(--sx-muted);
+  font-size: 11px;
+}
+
+.flightlog-cloud-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.flightlog-claim-code {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  border: 1px solid rgba(99, 91, 255, .2);
+  border-radius: var(--sx-radius);
+  background: var(--sx-primary-soft);
+}
+
+.flightlog-claim-code strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--sx-primary-text);
+  font-size: 22px;
+  letter-spacing: .12em;
+}
 
 
 /* --- Settings ---------------------------------------------------- */
@@ -678,12 +825,17 @@
   .flightlog-airport-block strong { font-size: 19px; }
   .flightlog-times { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .flightlog-settings { grid-template-columns: 1fr; padding: 14px; }
+  .flightlog-cloud-body { grid-template-columns: 1fr; padding: 14px; }
+  .flightlog-cloud-actions { justify-content: flex-start; }
   .flightlog-save-field { grid-column: auto; }
   .flightlog-history { padding: 8px; }
   .flightlog-history-row { grid-template-columns: 1.7fr 1fr 24px; padding: 10px; }
   .flightlog-history-row > div:nth-child(3), .flightlog-history-row > div:nth-child(4), .flightlog-history-row > div:nth-child(5) { display: none; }
   .flightlog-track { height: 180px; }
   .flightlog-track.large { height: 230px; }
+  .flightlog-map { height: 260px; }
+  .flightlog-map-legend { align-items: flex-start; flex-wrap: wrap; }
+  .flightlog-map-legend span:last-child { width: 100%; margin-left: 0; }
   .flightlog-live-actions { display: grid; grid-template-columns: 1fr; }
   .flightlog-live-actions .btn { width: 100%; }
   .flightlog-telemetry-body { padding: 12px; }
