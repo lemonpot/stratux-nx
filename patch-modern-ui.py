@@ -42,6 +42,16 @@ for old, new in radar_labels.items():
         s = s.replace(old, new)
     elif new not in s:
         raise SystemExit(f"Could not patch radar control label: {old}")
+
+radar_geometry = {
+    ".viewbox(-201, -201, 402, 302)": ".viewbox(-211, -211, 422, 422)",
+    "this.height = canvasWidth * 0.5;": "this.height = canvasWidth;",
+}
+for old, new in radar_geometry.items():
+    if old in s:
+        s = s.replace(old, new, 1)
+    elif new not in s:
+        raise SystemExit(f"Could not patch radar geometry: {old}")
 p.write_text(s)
 
 # ---------------------------------------------------------------------------

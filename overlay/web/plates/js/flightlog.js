@@ -19,6 +19,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         Settings: {Timezone:'UTC', AutoDetect:true},
         AirportDatabaseReady: false,
         AirportCount: 0,
+        Sync: {Enabled:false, InstallationID:'', Online:false, Pending:0, LastError:''},
         StoragePath: ''
     };
     $scope.settings = {Timezone:'UTC', AutoDetect:true};
@@ -27,8 +28,10 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
     $scope.selectedFlight = null;
     $scope.currentTrackPath = '';
     $scope.selectedTrackPath = '';
+    $scope.syncing = false;
     $scope.browserTimezone = '';
     var settingsLoaded = false;
+    var selectedFlightMap = null;
 
     function responseMessage(response, fallback) {
         var detail = response && response.data;
@@ -243,6 +246,23 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         return 'parked';
     };
 
+    $scope.syncStatusLabel = function(status) {
+        switch (status) {
+            case 'uploaded': return 'Cloud';
+            case 'uploading': return 'Uploading';
+            case 'pending': return 'Pending';
+            case 'failed': return 'Retry needed';
+            default: return 'Local only';
+        }
+    };
+
+    $scope.syncStatusClass = function(status) {
+        if (status === 'uploaded') return 'uploaded';
+        if (status === 'uploading' || status === 'pending') return 'pending';
+        if (status === 'failed') return 'failed';
+        return 'local';
+    };
+
     function buildTrack(points) {
         points = points || [];
         if (points.length < 2) return {path:'', start:null, end:null};
@@ -277,6 +297,63 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         $scope.selectedTrackPath=t.path;
         $scope.selectedTrackStart=t.start;
         $scope.selectedTrackEnd=t.end;
+    }
+
+    function destroySelectedFlightMap() {
+        if (selectedFlightMap) {
+            selectedFlightMap.setTarget(null);
+            selectedFlightMap = null;
+        }
+    }
+
+    function renderSelectedFlightMap() {
+        destroySelectedFlightMap();
+        var target = document.getElementById('flightlog-selected-map');
+        var points = ($scope.selectedFlight && $scope.selectedFlight.Track) || [];
+        if (!target || typeof ol === 'undefined' || points.length < 2) return;
+
+        var coordinates = [];
+        angular.forEach(points, function(point) {
+            var lat = Number(point.Latitude);
+            var lon = Number(point.Longitude);
+            if (isFinite(lat) && isFinite(lon)) coordinates.push(ol.proj.fromLonLat([lon, lat]));
+        });
+        if (coordinates.length < 2) return;
+
+        var route = new ol.Feature({geometry: new ol.geom.LineString(coordinates)});
+        route.setStyle(new ol.style.Style({
+            stroke: new ol.style.Stroke({color:'#635bff', width:4})
+        }));
+        var start = new ol.Feature({geometry:new ol.geom.Point(coordinates[0])});
+        var finish = new ol.Feature({geometry:new ol.geom.Point(coordinates[coordinates.length - 1])});
+        start.setStyle(new ol.style.Style({
+            image:new ol.style.Circle({radius:7, fill:new ol.style.Fill({color:'#16a36a'}), stroke:new ol.style.Stroke({color:'#fff', width:2})})
+        }));
+        finish.setStyle(new ol.style.Style({
+            image:new ol.style.Circle({radius:7, fill:new ol.style.Fill({color:'#cd3d64'}), stroke:new ol.style.Stroke({color:'#fff', width:2})})
+        }));
+
+        selectedFlightMap = new ol.Map({
+            target: target,
+            layers: [
+                new ol.layer.Tile({
+                    source:new ol.source.XYZ({
+                        url:'https://{a-d}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                        attributions:'&copy; OpenStreetMap &copy; CARTO',
+                        crossOrigin:'anonymous',
+                        maxZoom:19
+                    })
+                }),
+                new ol.layer.Vector({source:new ol.source.Vector({features:[route, start, finish]})})
+            ],
+            view:new ol.View({center:coordinates[0], zoom:9}),
+            controls:ol.control.defaults({attributionOptions:{collapsible:true}})
+        });
+        selectedFlightMap.getView().fit(route.getGeometry().getExtent(), {
+            padding:[36, 36, 36, 36],
+            maxZoom:14,
+            duration:250
+        });
     }
 
     $scope.refresh = function() {
@@ -317,12 +394,31 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         });
     };
 
+    $scope.syncAction = function(action) {
+        if ($scope.syncing) return;
+        if (action === 'enable' && !window.confirm('Enable automatic Stratux NX Cloud sync? Completed flight routes will upload securely whenever Internet is available.')) return;
+        $scope.syncing = true;
+        $http.post('/flightLog/sync', {action:action}).then(function(response) {
+            $scope.syncing = false;
+            $scope.data.Sync = response.data || $scope.data.Sync;
+            if (window.StratuxUI) {
+                var message = action === 'disable' ? 'Cloud sync disabled' : ($scope.data.Sync.Online ? 'Automatic flight sync is active' : 'No Internet now. Flights remain local and will sync automatically later.');
+                window.StratuxUI.toast(message, action === 'disable' ? 'info' : 'success', 4200);
+            }
+            $scope.refresh();
+        }, function(response) {
+            $scope.syncing = false;
+            $scope.errorMessage = 'Could not update cloud sync: ' + responseMessage(response, 'service unavailable');
+        });
+    };
+
     $scope.selectFlight = function(flight) {
         if (!flight || !flight.ID) return;
         $http.get('/flightLog/flight?id=' + encodeURIComponent(flight.ID), {cache:false}).then(function(response) {
             $scope.selectedFlight=response.data || null;
             updateSelectedTrack();
             window.setTimeout(function(){
+                renderSelectedFlightMap();
                 var el=document.querySelector('.flightlog-panel:last-of-type');
                 if (el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'});
             },50);
@@ -332,6 +428,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
     };
 
     $scope.closeSelected = function() {
+        destroySelectedFlightMap();
         $scope.selectedFlight=null;
         $scope.selectedTrackPath='';
     };
@@ -357,5 +454,8 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
 
     $scope.refresh();
     var timer=$interval($scope.refresh,1000);
-    $scope.$on('$destroy',function(){ $interval.cancel(timer); });
+    $scope.$on('$destroy',function(){
+        $interval.cancel(timer);
+        destroySelectedFlightMap();
+    });
 });

@@ -1,0 +1,8 @@
+<?php
+return [
+    'NX_CSRF_SECRET' => 'replace-with-64-random-characters',
+    'GOOGLE_CLIENT_ID' => '',
+    'GOOGLE_CLIENT_SECRET' => '',
+    'APPLE_CLIENT_ID' => '',
+    'APPLE_CLIENT_SECRET' => '',
+];
