@@ -63,6 +63,10 @@ jobs:
           grep -q "Internet Data" stratux/web/index.html
           grep -q "Flight Log" stratux/web/index.html
           grep -q "ResetInvalid" stratux/main/sensors.go
+          grep -q 'NX_OTA_INSTALL' stratux/debian/preinst.dpkg
+          grep -q 'NX_OTA_INSTALL' stratux/debian/prerm.dpkg
+          grep -q 'NX_OTA_INSTALL' stratux/debian/postinst.dpkg
+          grep -q 'last-install.log' stratux/debian/stratux-pre-start.sh
 
           echo "Complete Stratux NX source verified"
 
