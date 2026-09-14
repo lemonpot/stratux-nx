@@ -131,8 +131,14 @@
     var brand = document.querySelector('.navbar-brand.navbar-brand-center');
     if (!brand) return;
     var link = brand.querySelector('a[href="#/"]');
-    if (link && link.textContent.trim() === 'Stratux') {
-      link.textContent = 'Stratux NX';
+    if (link && !link.querySelector('.sx-brand-logo')) {
+      link.textContent = '';
+      var logo = document.createElement('img');
+      logo.className = 'sx-brand-logo';
+      logo.src = 'img/logo-nx.png';
+      logo.alt = '';
+      link.appendChild(logo);
+      link.appendChild(document.createTextNode('Stratux NX'));
     }
     if (!brand.querySelector('.sx-version-badge')) {
       initVersionBadge(brand);
