@@ -2,6 +2,24 @@
 declare(strict_types=1);
 require dirname(__DIR__) . '/lib.php';
 
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
+
+$asset = (string)($_GET['asset'] ?? '');
+$assetFiles = [
+    'icon' => ['icon.png', 'image/png'],
+    'logo-dark' => ['logo-dark.png', 'image/png'],
+    'logo-light' => ['logo-light.png', 'image/png'],
+];
+if (isset($assetFiles[$asset])) {
+    [$assetFile, $contentType] = $assetFiles[$asset];
+    header('Content-Type: ' . $contentType);
+    header('X-Content-Type-Options: nosniff');
+    readfile(__DIR__ . '/' . $assetFile);
+    exit;
+}
+
 $action = (string)($_GET['action'] ?? '');
 $page = (string)($_GET['page'] ?? '');
 $claimCode = strtoupper(trim((string)($_GET['claim'] ?? $_COOKIE['nx_pending_claim'] ?? '')));
@@ -156,14 +174,14 @@ function h(string $value): string { return htmlspecialchars($value, ENT_QUOTES, 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <link rel="icon" type="image/png" href="/icon.png">
+  <link rel="icon" type="image/png" href="/?asset=icon">
   <title>Stratux NX Account</title>
   <style>
     :root{--bg:#f6f8fb;--card:#fff;--text:#1a1f36;--muted:#697386;--border:#e3e8ee;--primary:#635bff;--soft:#f0efff;--danger:#b4234d}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.top{height:68px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px}.brand-logo{display:block;width:178px;height:auto}.wrap{max-width:1100px;margin:0 auto;padding:36px 24px}.hero{margin-bottom:24px}.hero h1{font-size:28px;margin:0 0 6px}.hero p,.muted{color:var(--muted)}.card{background:var(--card);border:1px solid var(--border);border-radius:8px;margin:14px 0;overflow:hidden}.head{padding:16px 18px;border-bottom:1px solid var(--border)}.head h2{font-size:16px;margin:0}.body{padding:18px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.device,.flight{border:1px solid var(--border);border-radius:7px;padding:14px}.device strong,.flight strong{display:block}.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.row.space{justify-content:space-between}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 13px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font:600 13px inherit;text-decoration:none;cursor:pointer}.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}.btn.danger{color:var(--danger)}input{height:36px;border:1px solid var(--border);border-radius:6px;padding:0 10px;min-width:210px;background:var(--card);color:var(--text)}.notice{padding:12px 14px;border-radius:6px;background:#fff3f6;color:var(--danger);margin-bottom:16px}.login{max-width:480px;margin:80px auto}.login .btn{width:100%;margin-top:10px}.pill{display:inline-block;padding:3px 7px;border-radius:99px;background:var(--soft);color:#5147e5;font-size:11px;font-weight:600}.empty{padding:22px;color:var(--muted);text-align:center}@media(prefers-color-scheme:dark){:root{--bg:#07131f;--card:#0b1b2a;--text:#f6f9fc;--muted:#9eacba;--border:#213449;--soft:#17263c}.pill{color:#a9a4ff}.notice{background:#321826}}@media(max-width:700px){.grid{grid-template-columns:1fr}.top{padding:0 16px}.brand-logo{width:154px}.wrap{padding:24px 16px}.row.space{align-items:flex-start;flex-direction:column}input{width:100%}}
   </style>
 </head>
 <body>
-<header class="top"><a href="/" aria-label="Stratux NX home"><picture><source media="(prefers-color-scheme: dark)" srcset="/logo-dark.png"><img class="brand-logo" src="/logo-light.png" alt="Stratux NX"></picture></a><?php if ($user): ?><a class="btn" href="/?action=logout">Sign out</a><?php endif ?></header>
+<header class="top"><a href="/" aria-label="Stratux NX home"><picture><source media="(prefers-color-scheme: dark)" srcset="/?asset=logo-dark"><img class="brand-logo" src="/?asset=logo-light" alt="Stratux NX"></picture></a><?php if ($user): ?><a class="btn" href="/?action=logout">Sign out</a><?php endif ?></header>
 <main class="wrap">
 <?php if ($error): ?><div class="notice"><?=h($error)?></div><?php endif ?>
 <?php if ($page === 'privacy'): ?>
