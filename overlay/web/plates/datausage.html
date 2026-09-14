@@ -2,9 +2,13 @@
   <div class="data-page-toolbar">
     <p>Only forwarded Internet traffic is counted. ADS-B, GPS, AHRS and local ForeFlight traffic are not included.</p>
     <div class="data-page-actions">
-      <div class="data-connection-pill {{data.WANOnline ? 'is-online' : 'is-offline'}}">
+      <div class="data-connection-pill is-online" ng-if="data.WANOnline">
         <span class="data-dot"></span>
-        {{ data.WANOnline ? 'Internet connected' : 'Internet offline' }}
+        Internet connected
+      </div>
+      <div class="data-connection-pill is-offline" ng-if="!data.WANOnline">
+        <span class="data-dot"></span>
+        Internet offline
       </div>
       <button class="btn btn-default" ng-click="resetSession()" title="Reset counters"><i class="fa fa-undo"></i> New session</button>
     </div>
