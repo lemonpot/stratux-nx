@@ -207,7 +207,7 @@
       view.classList.toggle('sx-page-full', route === '#/map');
       view.setAttribute('data-sx-route', route === '#/' ? 'status' : route.replace('#/', ''));
     }
-    if (route === '#/map' || route === '#/flightlog' || route === '#/datausage') return;
+    if (route === '#/map') return;
 
     var meta = pageMeta[route];
     if (!view || !meta) return;
