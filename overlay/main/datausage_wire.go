@@ -30,8 +30,15 @@ func (c dataUsageClient) MarshalJSON() ([]byte, error) {
 		DownloadBps    float64
 		LastSeen       string
 		WarningReached bool
+		Exempt          bool
+		LimitMB         uint64
 	}
-	return json.Marshal(wire{c.IP, c.MAC, c.Hostname, c.Connected, c.Blocked, c.UploadBytes, c.DownloadBytes, c.TotalBytes, c.UploadBps, c.DownloadBps, c.LastSeen, c.WarningReached})
+	return json.Marshal(wire{
+		c.IP, c.MAC, c.Hostname, c.Connected, c.Blocked,
+		c.UploadBytes, c.DownloadBytes, c.TotalBytes,
+		c.UploadBps, c.DownloadBps, c.LastSeen, c.WarningReached,
+		c.Exempt, c.LimitMB,
+	})
 }
 
 func (e dataUsageLogRecord) MarshalJSON() ([]byte, error) {

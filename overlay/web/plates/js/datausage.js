@@ -30,6 +30,7 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
     var settingsLoaded = false;
     var feedbackTimer = null;
     var devicePolicyDrafts = {};
+    var devicePolicyFeedback = {};
 
     function deviceKey(client) {
         return String((client && (client.MAC || client.IP)) || '');
@@ -131,12 +132,42 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         return devicePolicyDrafts[key];
     };
 
+    $scope.currentPolicyMode = function(client) {
+        if (client && client.Exempt) return 'unlimited';
+        if (client && Number(client.LimitMB || 0) > 0) return 'custom';
+        return 'standard';
+    };
+
+    $scope.currentPolicyTitle = function(client) {
+        var mode = $scope.currentPolicyMode(client);
+        if (mode === 'unlimited') return 'No automatic limit';
+        if (mode === 'custom') return 'Custom limit: ' + client.LimitMB + ' MB';
+        return 'Standard limit: ' + $scope.settings.AutoBlockMB + ' MB';
+    };
+
+    $scope.currentPolicyDescription = function(client) {
+        if (client && client.Exempt) return 'Stratux NX will never pause this device automatically.';
+        return 'Internet pauses automatically when this device reaches the shown amount.';
+    };
+
+    $scope.policyFeedback = function(client) {
+        return devicePolicyFeedback[deviceKey(client)] || null;
+    };
+
+    function setPolicyFeedback(client, message, type) {
+        devicePolicyFeedback[deviceKey(client)] = {
+            message: message,
+            type: type || 'success'
+        };
+    }
+
     $scope.chooseDevicePolicy = function(client, mode) {
         var draft = $scope.policyDraft(client);
         var previousMode = draft.mode;
         draft.mode = mode;
         if (mode === 'custom') {
             if (!draft.limitMB) draft.limitMB = Number($scope.settings.AutoBlockMB || 500);
+            setPolicyFeedback(client, 'Enter the amount and press “Apply limit” to save it.', 'info');
             return;
         }
         $scope.applyDevicePolicy(client, previousMode);
@@ -147,14 +178,17 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         var draft = $scope.policyDraft(client);
         var limit = draft.mode === 'custom' ? Number(draft.limitMB) : 0;
         if (draft.mode === 'custom' && (!limit || limit < 1)) {
+            setPolicyFeedback(client, 'Enter a limit of at least 1 MB.', 'error');
             $scope.errorMessage = 'Enter a device limit of at least 1 MB.';
             return;
         }
         if (draft.mode === 'custom' && limit > Number($scope.settings.SessionLimitMB || 0)) {
+            setPolicyFeedback(client, 'Choose an amount no higher than the session limit.', 'error');
             $scope.errorMessage = 'This device limit cannot be higher than the session limit of ' + $scope.settings.SessionLimitMB + ' MB.';
             return;
         }
         draft.pending = true;
+        setPolicyFeedback(client, 'Saving this device setting…', 'pending');
         $http.post('/dataUsage/policy', {
             ip: client.IP,
             mac: client.MAC || '',
@@ -167,10 +201,13 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
             client.Blocked = false;
             var name = client.Hostname || 'This device';
             if (draft.mode === 'unlimited') {
+                setPolicyFeedback(client, 'Saved. This device now has no automatic data limit.');
                 showFeedback(name + ' now has no automatic data limit.');
             } else if (draft.mode === 'custom') {
+                setPolicyFeedback(client, 'Saved. Internet will pause for this device at ' + limit + ' MB.');
                 showFeedback(name + ' will pause at ' + limit + ' MB.');
             } else {
+                setPolicyFeedback(client, 'Saved. This device now uses the standard ' + $scope.settings.AutoBlockMB + ' MB limit.');
                 showFeedback(name + ' now uses the standard ' + $scope.settings.AutoBlockMB + ' MB limit.');
             }
             $scope.errorMessage = '';
@@ -178,6 +215,7 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         }, function(response) {
             draft.pending = false;
             if (rollbackMode) draft.mode = rollbackMode;
+            setPolicyFeedback(client, 'Not saved. Check the connection and try again.', 'error');
             $scope.errorMessage = 'Could not save the device limit: ' + ((response && response.data) || 'unknown error');
         });
     };
