@@ -3,6 +3,9 @@ name: Build Stratux NX Full Image
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build_image:
     runs-on: ubuntu-24.04-arm
@@ -45,6 +48,11 @@ jobs:
           test -f stratux/main/flightlog.go
           test -f stratux/main/flightlog_sync.go
           test -f stratux/main/ahrs_v2.go
+          test -f stratux/LICENSE
+          test -f stratux/debian/copyright
+          test -f stratux/debian/stratux-nx-license
+          test -f stratux/debian/STRATUX-NX-NOTICES.md
+          test -f stratux/scripts/collect-licenses.py
 
           test -f stratux/web/plates/datausage.html
           test -f stratux/web/plates/flightlog.html
@@ -71,6 +79,8 @@ jobs:
           grep -q 'href="#/about"' stratux/web/index.html
           grep -q 'sx-sidebar-brand' stratux/web/index.html
           grep -q "state('about'" stratux/web/js/main.js
+          grep -q 'Maintainer: Lemonpot' stratux/debian/control.dpkg
+          grep -q 'scripts/collect-licenses.py' stratux/Makefile
           grep -q "ResetInvalid" stratux/main/sensors.go
           grep -q 'NX_OTA_INSTALL' stratux/debian/preinst.dpkg
           grep -q 'NX_OTA_INSTALL' stratux/debian/prerm.dpkg
@@ -108,6 +118,28 @@ jobs:
           echo "Committed source used by pi-gen:"
           git log -1 --oneline
 
+      - name: Package corresponding source
+        run: |
+          set -euo pipefail
+          VERSION=$(awk '/^VERSIONSTR :=/{print $3}' stratux/Makefile)
+          SOURCE_ROOT="corresponding-source/stratux-nx-${VERSION}"
+          mkdir -p "$SOURCE_ROOT/stratux" "$SOURCE_ROOT/stratux-nx-customizations"
+          git -C stratux archive HEAD | tar -x -C "$SOURCE_ROOT/stratux"
+          git -C custom archive "$GITHUB_SHA" | tar -x -C "$SOURCE_ROOT/stratux-nx-customizations"
+          for submodule in dump1090 rtl-ais ogn/ogn-tracker image_build/pi-gen; do
+            mkdir -p "$SOURCE_ROOT/stratux/$submodule"
+            git -C "stratux/$submodule" archive HEAD | tar -x -C "$SOURCE_ROOT/stratux/$submodule"
+          done
+          {
+            echo "Stratux NX version: $VERSION"
+            echo "Stratux NX commit: $GITHUB_SHA"
+            echo "Stratux upstream commit: $(git -C stratux rev-parse HEAD^)"
+            git -C stratux submodule status --recursive
+          } > "$SOURCE_ROOT/BUILD-SOURCE.txt"
+          tar -C corresponding-source -czf "stratux-nx-${VERSION}-corresponding-source.tar.gz" "stratux-nx-${VERSION}"
+          echo "NX_RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "NX_SOURCE_ARCHIVE=stratux-nx-${VERSION}-corresponding-source.tar.gz" >> "$GITHUB_ENV"
+
       - name: Build Stratux NX image
         run: |
           set -euo pipefail
@@ -124,6 +156,11 @@ jobs:
           ls -lh ota-update/
           if [ -z "$(ls ota-update/*.deb 2>/dev/null)" ]; then
             echo "WARNING: no .deb found, OTA package not available"
+          else
+            DEB_FILE=$(ls ota-update/*.deb | head -1)
+            dpkg-deb -c "$DEB_FILE" | grep -q './usr/share/doc/stratux/copyright'
+            dpkg-deb -c "$DEB_FILE" | grep -q './usr/share/doc/stratux/licenses/INDEX.txt'
+            dpkg-deb -c "$DEB_FILE" | grep -q 'stratux-nx-notices'
           fi
 
       - name: Show generated files
@@ -146,6 +183,34 @@ jobs:
           path: ota-update/*.deb
           compression-level: 0
           if-no-files-found: warn
+
+      - name: Upload corresponding source
+        uses: actions/upload-artifact@v4
+        with:
+          name: stratux-nx-corresponding-source
+          path: ${{ env.NX_SOURCE_ARCHIVE }}
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Publish permanent release and source
+        if: hashFiles('ota-update/*.deb') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          DEB_FILE=$(ls ota-update/*.deb | head -1)
+          TAG="nx-${NX_RELEASE_VERSION}"
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Stratux NX ${NX_RELEASE_VERSION}" \
+              --notes "Stratux NX OTA package and complete corresponding source for this binary release." \
+              --prerelease
+          fi
+          gh release upload "$TAG" "$DEB_FILE" "$NX_SOURCE_ARCHIVE" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
 
       - name: Publish OTA to update server
         if: hashFiles('ota-update/*.deb') != ''

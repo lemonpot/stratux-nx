@@ -95,6 +95,7 @@ PY
 
 # Custom build identity shown by Stratux and used in the Debian package name.
 python3 "$SCRIPT_DIR/patch-version.py" "$TARGET"
+python3 "$SCRIPT_DIR/patch-licensing.py" "$TARGET"
 
 # Internet usage backend, service ranking, unrestricted device policies and UX.
 python3 "$SCRIPT_DIR/patch-flow-backend.py" "$TARGET"
