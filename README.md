@@ -10,7 +10,13 @@ Enhanced flight logging, managed internet connectivity, a modern interface, offl
 
 ## Overview
 
-Stratux NX is an independent distribution based on the open-source [Stratux](https://github.com/cyoung/stratux) project. It builds on Stratux's proven foundation while adding an integrated set of features focused on everyday cockpit use, post-flight records, connectivity control, and a refreshed user experience.
+Stratux NX is an independent distribution built from the community-maintained
+[stratux/stratux](https://github.com/stratux/stratux) project, which continues
+the original [cyoung/stratux](https://github.com/cyoung/stratux) work founded
+by Christopher Young and other contributors. It builds on Stratux's proven
+foundation while adding an integrated set of features focused on everyday
+cockpit use, post-flight records, connectivity control, and a refreshed user
+experience.
 
 Stratux NX is developed and maintained by Lemonpot. It is not a replacement for upstream Stratux, nor is it represented as an official upstream release.
 
@@ -44,12 +50,25 @@ Introduces an adaptive AHRS implementation designed to improve attitude estimati
 
 Stratux NX would not exist without the work of the Stratux project and its contributors.
 
-- **Upstream project:** [cyoung/stratux](https://github.com/cyoung/stratux)
+- **Current upstream project:** [stratux/stratux](https://github.com/stratux/stratux)
+- **Original project:** [cyoung/stratux](https://github.com/cyoung/stratux)
 - **Stratux NX:** an independently developed and maintained downstream distribution
 - **Maintainer:** [Lemonpot](https://lemonpot.ai/)
 - **Compatibility and changes:** Stratux NX may add, modify, or replace components relative to upstream Stratux
 
 We aim to preserve clear attribution and a constructive relationship with the upstream community. Features specific to Stratux NX should be reported in this repository; issues reproducible in unmodified upstream Stratux may also belong in the upstream project.
+
+## Licensing and source
+
+Lemonpot-authored Stratux NX files and modifications are available under the
+[BSD 3-Clause License](LICENSE), except where a file states otherwise.
+Stratux and bundled third-party components remain under their respective
+licenses. See [Third-party notices](THIRD_PARTY_NOTICES.md) for attribution,
+component licensing and source information.
+
+Published OTA releases include a corresponding-source archive containing the
+exact upstream source, initialized submodules and Stratux NX customization
+used to create the binary package.
 
 ## Project Status
 
@@ -65,7 +84,9 @@ The pilot in command remains responsible for using approved data, maintaining ap
 
 Bug reports, feature requests, and contributions are welcome through this repository. When reporting an issue, please include the Stratux NX version, hardware configuration, connected devices, and enough detail to reproduce the behavior.
 
-For upstream Stratux development, documentation, and community resources, visit the [official Stratux repository](https://github.com/cyoung/stratux).
+For current upstream Stratux development, documentation, and community
+resources, visit the
+[community-maintained Stratux repository](https://github.com/stratux/stratux).
 
 ## Acknowledgements
 
