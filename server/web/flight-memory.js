@@ -10,6 +10,7 @@
   var scrubber = document.getElementById('replay-scrubber');
   var speedSelect = document.getElementById('replay-speed');
   var followButton = document.getElementById('replay-follow');
+  var resetViewButton = document.getElementById('replay-reset-view');
   var profileCanvas = document.getElementById('flight-profile-canvas');
   var fallbackCanvas = document.getElementById('replay-fallback-canvas');
   var cesiumContainer = document.getElementById('replay-3d');
@@ -37,12 +38,23 @@
   var marker = null;
   var completedRoute = null;
   var routePositions = [];
+  var routeSphere = null;
   var following = false;
   var landingData = null;
   var ghostLandings = [];
   var contextSnapshots = [];
   var trafficMarker = null;
   var showNearbyTraffic = false;
+  var routeMinimumAltitudeFt = 0;
+  var verticalExaggeration = 8;
+
+  function visualAltitudeMeters(altitudeFt) {
+    return 30 + Math.max(0, number(altitudeFt) - routeMinimumAltitudeFt) * 0.3048 * verticalExaggeration;
+  }
+
+  function visualPosition(longitude, latitude, altitudeFt) {
+    return Cesium.Cartesian3.fromDegrees(longitude, latitude, visualAltitudeMeters(altitudeFt));
+  }
 
   function setStatus(message, type) {
     status.textContent = message;
@@ -438,10 +450,10 @@
     var target = snapshot && snapshot.NearestTraffic;
     trafficMarker.show = !!(showNearbyTraffic && target);
     if (trafficMarker.show) {
-      trafficMarker.position = Cesium.Cartesian3.fromDegrees(
+      trafficMarker.position = visualPosition(
         number(target.Longitude),
         number(target.Latitude),
-        Math.max(0, number(target.AltitudeFt) * 0.3048)
+        number(target.AltitudeFt)
       );
     }
   }
@@ -638,6 +650,16 @@
       marker.position = routePositions[currentIndex];
       completedRoute.polyline.positions = routePositions.slice(0, currentIndex + 1);
       updateTrafficContext(point.time);
+      if (following) {
+        viewer.camera.lookAt(
+          routePositions[currentIndex],
+          new Cesium.HeadingPitchRange(
+            Cesium.Math.toRadians(point.courseDeg + 180),
+            Cesium.Math.toRadians(-18),
+            8500
+          )
+        );
+      }
       viewer.scene.requestRender();
     }
     drawProfile();
@@ -678,15 +700,40 @@
       setStatus('Basemap unavailable. The 3D flight path is still available.', 'warning');
     }
 
+    routeMinimumAltitudeFt = Math.min.apply(null, points.map(function (point) {
+      return point.altitudeFt;
+    }));
     routePositions = points.map(function (point) {
-      return Cesium.Cartesian3.fromDegrees(point.longitude, point.latitude, Math.max(0, point.altitudeFt * 0.3048));
+      return visualPosition(point.longitude, point.latitude, point.altitudeFt);
+    });
+    var groundPositions = points.map(function (point) {
+      return Cesium.Cartesian3.fromDegrees(point.longitude, point.latitude, 30);
     });
 
     viewer.entities.add({
       polyline: {
+        positions: groundPositions,
+        width: 2,
+        material: new Cesium.PolylineDashMaterialProperty({
+          color: Cesium.Color.fromCssColorString('#8b97a8').withAlpha(0.75),
+          dashLength: 14
+        }),
+        arcType: Cesium.ArcType.NONE
+      }
+    });
+    viewer.entities.add({
+      wall: {
+        positions: groundPositions,
+        minimumHeights: points.map(function () { return 30; }),
+        maximumHeights: points.map(function (point) { return visualAltitudeMeters(point.altitudeFt); }),
+        material: Cesium.Color.fromCssColorString('#635bff').withAlpha(0.13)
+      }
+    });
+    viewer.entities.add({
+      polyline: {
         positions: routePositions,
-        width: 3,
-        material: Cesium.Color.fromCssColorString('#7180ff').withAlpha(0.4),
+        width: 4,
+        material: Cesium.Color.fromCssColorString('#8d85ff').withAlpha(0.9),
         arcType: Cesium.ArcType.NONE
       }
     });
@@ -708,6 +755,40 @@
         disableDepthTestDistance: Number.POSITIVE_INFINITY
       }
     });
+    viewer.entities.add({
+      position: groundPositions[0],
+      point: {
+        pixelSize: 10,
+        color: Cesium.Color.fromCssColorString('#16a36a'),
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2
+      },
+      label: {
+        text: 'START',
+        font: '600 12px -apple-system, BlinkMacSystemFont, sans-serif',
+        fillColor: Cesium.Color.WHITE,
+        showBackground: true,
+        backgroundColor: Cesium.Color.fromCssColorString('#101828').withAlpha(0.84),
+        pixelOffset: new Cesium.Cartesian2(0, -24)
+      }
+    });
+    viewer.entities.add({
+      position: groundPositions[groundPositions.length - 1],
+      point: {
+        pixelSize: 10,
+        color: Cesium.Color.fromCssColorString('#cd3d64'),
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2
+      },
+      label: {
+        text: 'FINISH',
+        font: '600 12px -apple-system, BlinkMacSystemFont, sans-serif',
+        fillColor: Cesium.Color.WHITE,
+        showBackground: true,
+        backgroundColor: Cesium.Color.fromCssColorString('#101828').withAlpha(0.84),
+        pixelOffset: new Cesium.Cartesian2(0, -24)
+      }
+    });
     trafficMarker = viewer.entities.add({
       show: false,
       point: {
@@ -719,11 +800,27 @@
       }
     });
 
-    var sphere = Cesium.BoundingSphere.fromPoints(routePositions);
-    viewer.camera.flyToBoundingSphere(sphere, {
-      duration: 0,
-      offset: new Cesium.HeadingPitchRange(0, -0.65, Math.max(sphere.radius * 2.2, 5000))
-    });
+    routeSphere = Cesium.BoundingSphere.fromPoints(routePositions);
+    resetOverviewCamera();
+    viewer.scene.requestRender();
+  }
+
+  function resetOverviewCamera() {
+    if (!viewer || !routeSphere) return;
+    following = false;
+    viewer.trackedEntity = undefined;
+    followButton.textContent = 'Follow aircraft';
+    followButton.classList.remove('is-active');
+    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+    viewer.camera.viewBoundingSphere(
+      routeSphere,
+      new Cesium.HeadingPitchRange(
+        Cesium.Math.toRadians(28),
+        Cesium.Math.toRadians(-20),
+        Math.max(routeSphere.radius * 1.8, 7000)
+      )
+    );
+    viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
     viewer.scene.requestRender();
   }
 
@@ -773,10 +870,15 @@
     followButton.addEventListener('click', function () {
       if (!viewer || !marker) return;
       following = !following;
-      viewer.trackedEntity = following ? marker : undefined;
       followButton.textContent = following ? 'Stop following' : 'Follow aircraft';
       followButton.classList.toggle('is-active', following);
+      if (following) {
+        updateReplay(flight);
+      } else {
+        resetOverviewCamera();
+      }
     });
+    resetViewButton.addEventListener('click', resetOverviewCamera);
     trafficButton.addEventListener('click', function () {
       showNearbyTraffic = !showNearbyTraffic;
       trafficButton.textContent = showNearbyTraffic ? 'Hide nearby traffic' : 'Show nearby traffic';

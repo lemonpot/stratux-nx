@@ -338,8 +338,8 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
             layers: [
                 new ol.layer.Tile({
                     source:new ol.source.XYZ({
-                        url:'https://{a-d}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-                        attributions:'&copy; OpenStreetMap &copy; CARTO',
+                        url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        attributions:'&copy; OpenStreetMap contributors',
                         crossOrigin:'anonymous',
                         maxZoom:19
                     })

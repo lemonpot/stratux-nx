@@ -466,6 +466,7 @@ function aircraft_label(array $row): string {
         <p class="memory-sr-only">Interactive route replay from <?=h($departure)?> to <?=h($arrival)?>. Use Play or the timeline slider to move through the flight.</p>
         <div id="replay-3d" aria-label="3D flight replay"></div>
         <div id="replay-fallback" hidden><canvas id="replay-fallback-canvas" role="img" aria-label="Recorded route from <?=h($departure)?> to <?=h($arrival)?>"></canvas></div>
+        <div class="replay-scale-note">3D vertical scale ×8</div>
         <div class="replay-attribution"><a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap contributors</a></div>
       </div>
       <div class="replay-controls">
@@ -487,6 +488,7 @@ function aircraft_label(array $row): string {
             <option value="120">120×</option>
           </select>
           <button id="replay-follow" class="btn" type="button" disabled>Follow aircraft</button>
+          <button id="replay-reset-view" class="btn" type="button">Reset 3D view</button>
           <button id="replay-traffic" class="btn" type="button" hidden>Show nearby traffic</button>
         </div>
       </div>

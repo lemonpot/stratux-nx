@@ -436,6 +436,22 @@
 
 .replay-attribution a { color: inherit; }
 
+.replay-scale-note {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 5px;
+  background: rgba(7, 19, 31, .82);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  pointer-events: none;
+}
+
 .replay-controls {
   padding: 14px 16px 16px;
   border-top: 1px solid var(--border);
@@ -475,7 +491,7 @@
 
 .replay-transport {
   display: grid;
-  grid-template-columns: auto minmax(140px, 1fr) auto auto auto;
+  grid-template-columns: auto minmax(140px, 1fr) auto auto auto auto;
   align-items: center;
   gap: 10px;
 }
