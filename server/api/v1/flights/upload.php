@@ -13,6 +13,9 @@ if (!is_array($flight) || !is_string($flight['ID'] ?? null) || $flight['ID'] ===
 if (!is_array($flight['Track'] ?? null) || count($flight['Track']) < 2) {
     nx_json(['error' => 'flight track requires at least two points'], 400);
 }
+if (count($flight['Track']) > 25000) {
+    nx_json(['error' => 'flight track exceeds 25000 points'], 413);
+}
 
 $db = nx_db();
 $contentHash = hash('sha256', $body);

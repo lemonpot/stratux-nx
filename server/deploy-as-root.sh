@@ -10,6 +10,7 @@ test -f "$SOURCE/lib.php" || { echo "Release not found at $SOURCE"; exit 1; }
 
 install -d -o www-data -g www-data -m 0750 "$TARGET/data" "$TARGET/config"
 install -o www-data -g www-data -m 0644 "$SOURCE/lib.php" "$TARGET/lib.php"
+install -o www-data -g www-data -m 0644 "$SOURCE/flight-memory.php" "$TARGET/flight-memory.php"
 install -d -o www-data -g www-data -m 0755 "$TARGET/api/v1/installations" "$TARGET/api/v1/flights"
 install -o www-data -g www-data -m 0644 "$SOURCE/api/v1/installations/register.php" "$TARGET/api/v1/installations/register.php"
 install -o www-data -g www-data -m 0644 "$SOURCE/api/v1/installations/claim-code.php" "$TARGET/api/v1/installations/claim-code.php"
@@ -18,6 +19,8 @@ install -o www-data -g www-data -m 0644 "$SOURCE/web/index.php" "$TARGET/web/ind
 install -o www-data -g www-data -m 0644 "$SOURCE/web/logo-dark.png" "$TARGET/web/logo-dark.png"
 install -o www-data -g www-data -m 0644 "$SOURCE/web/logo-light.png" "$TARGET/web/logo-light.png"
 install -o www-data -g www-data -m 0644 "$SOURCE/web/icon.png" "$TARGET/web/icon.png"
+install -o www-data -g www-data -m 0644 "$SOURCE/web/flight-memory.css" "$TARGET/web/flight-memory.css"
+install -o www-data -g www-data -m 0644 "$SOURCE/web/flight-memory.js" "$TARGET/web/flight-memory.js"
 
 if [[ -f "$CONFIG_SOURCE" ]]; then
   install -o www-data -g www-data -m 0640 "$CONFIG_SOURCE" "$TARGET/config/app.php"
@@ -26,7 +29,7 @@ elif [[ ! -f "$TARGET/config/app.php" ]]; then
 fi
 
 php -m | grep -qx sodium
-for file in "$TARGET/lib.php" "$TARGET/api/v1/installations/"*.php "$TARGET/api/v1/flights/"*.php "$TARGET/web/index.php"; do
+for file in "$TARGET/lib.php" "$TARGET/flight-memory.php" "$TARGET/api/v1/installations/"*.php "$TARGET/api/v1/flights/"*.php "$TARGET/web/index.php"; do
   php -l "$file" >/dev/null
 done
 
