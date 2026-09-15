@@ -48,25 +48,49 @@ CREATE TABLE IF NOT EXISTS sessions (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   expires_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS pilot_profiles (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  home_airport TEXT NOT NULL DEFAULT '',
+  timezone TEXT NOT NULL DEFAULT 'UTC',
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS aircraft_profiles (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  registration TEXT NOT NULL DEFAULT '',
+  manufacturer TEXT NOT NULL DEFAULT '',
+  model TEXT NOT NULL DEFAULT '',
+  nickname TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS installations (
   id TEXT PRIMARY KEY,
   public_key TEXT NOT NULL,
   user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  previous_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
   nickname TEXT NOT NULL DEFAULT '',
   software_version TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL,
   last_seen_at TEXT NOT NULL,
-  revoked_at TEXT
+  revoked_at TEXT,
+  aircraft_id TEXT REFERENCES aircraft_profiles(id) ON DELETE SET NULL
 );
 CREATE TABLE IF NOT EXISTS flights (
   id TEXT PRIMARY KEY,
   installation_id TEXT NOT NULL REFERENCES installations(id) ON DELETE CASCADE,
+  aircraft_id TEXT REFERENCES aircraft_profiles(id) ON DELETE SET NULL,
   client_flight_id TEXT NOT NULL,
   payload TEXT NOT NULL,
   content_hash TEXT NOT NULL,
   off_block_utc TEXT NOT NULL DEFAULT '',
+  landing_utc TEXT NOT NULL DEFAULT '',
   departure_code TEXT NOT NULL DEFAULT '',
   arrival_code TEXT NOT NULL DEFAULT '',
+  air_time_seconds INTEGER NOT NULL DEFAULT 0,
+  distance_nm REAL NOT NULL DEFAULT 0,
+  max_altitude_ft REAL NOT NULL DEFAULT 0,
+  metrics_backfilled INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL,
   UNIQUE(installation_id, client_flight_id)
 );
@@ -76,27 +100,88 @@ CREATE TABLE IF NOT EXISTS claim_codes (
   expires_at INTEGER NOT NULL,
   used_at INTEGER
 );
+CREATE TABLE IF NOT EXISTS flight_logbook (
+  flight_id TEXT PRIMARY KEY REFERENCES flights(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  aircraft_id TEXT REFERENCES aircraft_profiles(id) ON DELETE SET NULL,
+  role TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT '',
+  confirmed INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS request_limits (
   subject TEXT NOT NULL,
   bucket INTEGER NOT NULL,
   request_count INTEGER NOT NULL,
   PRIMARY KEY(subject, bucket)
 );
+CREATE TABLE IF NOT EXISTS schema_meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_installations_user ON installations(user_id);
 CREATE INDEX IF NOT EXISTS idx_flights_installation ON flights(installation_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_aircraft_profiles_user ON aircraft_profiles(user_id, created_at DESC);
 SQL);
-    $columns = $db->query('PRAGMA table_info(flights)')->fetchAll();
-    $hasContentHash = false;
-    foreach ($columns as $column) {
-        if (($column['name'] ?? '') === 'content_hash') $hasContentHash = true;
+    $db->exec('BEGIN IMMEDIATE');
+    try {
+        $versionStmt = $db->prepare("SELECT value FROM schema_meta WHERE key='version'");
+        $versionStmt->execute();
+        $schemaVersion = (int)($versionStmt->fetchColumn() ?: 0);
+
+        $columns = array_column($db->query('PRAGMA table_info(flights)')->fetchAll(), 'name');
+        $flightColumns = [
+            'content_hash' => "TEXT NOT NULL DEFAULT ''",
+            'aircraft_id' => 'TEXT',
+            'landing_utc' => "TEXT NOT NULL DEFAULT ''",
+            'air_time_seconds' => 'INTEGER NOT NULL DEFAULT 0',
+            'distance_nm' => 'REAL NOT NULL DEFAULT 0',
+            'max_altitude_ft' => 'REAL NOT NULL DEFAULT 0',
+            'metrics_backfilled' => 'INTEGER NOT NULL DEFAULT 0',
+        ];
+        foreach ($flightColumns as $name => $definition) {
+            if (!in_array($name, $columns, true)) $db->exec("ALTER TABLE flights ADD COLUMN $name $definition");
+        }
+
+        $installationColumns = array_column($db->query('PRAGMA table_info(installations)')->fetchAll(), 'name');
+        $installationAdditions = ['revoked_at' => 'TEXT', 'aircraft_id' => 'TEXT', 'previous_user_id' => 'TEXT'];
+        foreach ($installationAdditions as $name => $definition) {
+            if (!in_array($name, $installationColumns, true)) $db->exec("ALTER TABLE installations ADD COLUMN $name $definition");
+        }
+
+        if ($schemaVersion < 3) {
+            $db->exec('UPDATE installations SET previous_user_id=user_id WHERE previous_user_id IS NULL AND user_id IS NOT NULL');
+        }
+        $db->prepare("INSERT INTO schema_meta(key,value) VALUES('version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
+            ->execute(['3']);
+        $db->exec('COMMIT');
+    } catch (Throwable $error) {
+        if ($db->inTransaction()) $db->exec('ROLLBACK');
+        throw $error;
     }
-    if (!$hasContentHash) $db->exec("ALTER TABLE flights ADD COLUMN content_hash TEXT NOT NULL DEFAULT ''");
-    $installationColumns = $db->query('PRAGMA table_info(installations)')->fetchAll();
-    $hasRevokedAt = false;
-    foreach ($installationColumns as $column) {
-        if (($column['name'] ?? '') === 'revoked_at') $hasRevokedAt = true;
+    nx_backfill_flight_metrics($db);
+}
+
+function nx_backfill_flight_metrics(PDO $db): void {
+    $rows = $db->query('SELECT id,payload FROM flights WHERE metrics_backfilled=0')->fetchAll();
+    if (!$rows) return;
+    $update = $db->prepare('UPDATE flights SET landing_utc=?,air_time_seconds=?,distance_nm=?,max_altitude_ft=?,metrics_backfilled=1 WHERE id=? AND metrics_backfilled=0');
+    foreach ($rows as $row) {
+        $flight = json_decode((string)$row['payload'], true);
+        if (!is_array($flight)) {
+            $update->execute(['', 0, 0, 0, $row['id']]);
+            continue;
+        }
+        $distance = (float)($flight['DistanceNM'] ?? 0);
+        $altitude = (float)($flight['MaxAltitudeFt'] ?? 0);
+        $update->execute([
+            substr((string)($flight['LandingUTC'] ?? ''), 0, 40),
+            min(604800, max(0, (int)($flight['AirTimeSeconds'] ?? 0))),
+            is_finite($distance) ? min(30000, max(0, $distance)) : 0,
+            is_finite($altitude) ? min(100000, max(0, $altitude)) : 0,
+            $row['id'],
+        ]);
     }
-    if (!$hasRevokedAt) $db->exec('ALTER TABLE installations ADD COLUMN revoked_at TEXT');
 }
 
 function nx_json(array $payload, int $status = 200): never {

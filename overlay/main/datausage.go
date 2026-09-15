@@ -95,6 +95,7 @@ var (
 	dataUsageConfigPath string
 	dataUsageInitialized bool
 	dataUsageSessionLimitReached bool
+	dataUsageWANOnline bool
 )
 
 func init() {
@@ -112,8 +113,16 @@ func dataUsageMonitorLoop() {
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 	lastSnapshot := time.Now()
+	lastWANCheck := time.Time{}
 	for range ticker.C {
 		refreshDataUsage()
+		if time.Since(lastWANCheck) >= 30*time.Second {
+			online := isWANOnline()
+			dataUsageMu.Lock()
+			dataUsageWANOnline = online
+			dataUsageMu.Unlock()
+			lastWANCheck = time.Now()
+		}
 		if time.Since(lastSnapshot) >= time.Minute {
 			dataUsageMu.Lock()
 			total := uint64(0)
@@ -830,6 +839,9 @@ func handleDataUsageGet(w http.ResponseWriter, r *http.Request) {
 	resp.TotalBytes = resp.UploadBytes + resp.DownloadBytes
 	dataUsageMu.Unlock()
 	resp.WANOnline = isWANOnline()
+	dataUsageMu.Lock()
+	dataUsageWANOnline = resp.WANOnline
+	dataUsageMu.Unlock()
 	resp.RecentEvents = recentDataUsageEvents(40)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")

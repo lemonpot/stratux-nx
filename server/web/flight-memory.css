@@ -25,6 +25,268 @@
   width: 100%;
 }
 
+.profile-form {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(120px, .7fr) minmax(190px, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.profile-form label,
+.aircraft-fields label,
+.device-form label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.profile-form label > span,
+.aircraft-fields label > span,
+.device-form label > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.profile-form input,
+.profile-form select,
+.aircraft-fields input,
+.device-form input,
+.device-form select {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 10px;
+  background: var(--card);
+  color: var(--text);
+}
+
+.aircraft-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.aircraft-profile {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 11px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.aircraft-profile.is-new {
+  border-style: dashed;
+  background: var(--bg);
+}
+
+.aircraft-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.device-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.device-danger-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.pilot-memory-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  overflow: hidden;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.pilot-memory-summary > div {
+  min-width: 0;
+  padding: 15px;
+  border-left: 1px solid var(--border);
+}
+
+.pilot-memory-summary > div:first-child { border-left: 0; }
+.pilot-memory-summary span,
+.pilot-memory-summary strong { display: block; }
+.pilot-memory-summary span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.pilot-memory-summary strong {
+  overflow: hidden;
+  margin-top: 4px;
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.pilot-dna-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.pilot-dna-grid > div {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+}
+
+.pilot-dna-grid span,
+.pilot-dna-grid strong { display: block; }
+.pilot-dna-grid span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.pilot-dna-grid strong {
+  overflow: hidden;
+  margin-top: 4px;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pilot-dna-grid p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+
+.postflight-lead {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.milestone-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.milestone {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #d8d5ff;
+  border-radius: 7px;
+  background: var(--soft);
+}
+
+.milestone > span,
+.milestone > strong { display: block; }
+.milestone > span {
+  color: var(--primary);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.milestone > strong { margin-top: 4px; font-size: 14px; }
+.milestone > p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+.milestone.is-quiet { border-color: var(--border); background: var(--bg); }
+.milestone.is-quiet > span { color: var(--muted); }
+
+.pill.is-confirmed {
+  border-color: #a6e6c4;
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.logbook-record {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.logbook-record > div {
+  min-width: 0;
+  padding: 11px;
+  border-left: 1px solid var(--border);
+}
+
+.logbook-record > div:first-child { border-left: 0; }
+.logbook-record span,
+.logbook-record strong { display: block; }
+.logbook-record span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.logbook-record strong { margin-top: 3px; font-size: 12px; }
+
+.logbook-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.logbook-form > label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.logbook-form > label > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.logbook-form select,
+.logbook-form textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: var(--card);
+  color: var(--text);
+}
+
+.logbook-form select { height: 36px; padding-block: 0; }
+.logbook-notes { grid-column: 1 / -1; }
+.logbook-form .logbook-confirm {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+}
+.logbook-form .logbook-confirm input { margin-top: 2px; }
+.logbook-form .logbook-confirm > span {
+  letter-spacing: 0;
+  text-transform: none;
+}
+.logbook-form > button { justify-self: start; }
+
 .memory-back {
   display: inline-flex;
   margin-bottom: 18px;
@@ -213,7 +475,7 @@
 
 .replay-transport {
   display: grid;
-  grid-template-columns: auto minmax(140px, 1fr) auto auto;
+  grid-template-columns: auto minmax(140px, 1fr) auto auto auto;
   align-items: center;
   gap: 10px;
 }
@@ -258,6 +520,213 @@
   font-size: 11px;
 }
 
+.landing-confidence {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 99px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.landing-confidence.is-high { background: #ecfdf3; color: #067647; }
+.landing-confidence.is-medium { background: #fffaeb; color: #b54708; }
+.landing-confidence.is-low { background: #fff1f3; color: #b4234d; }
+
+.landing-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.landing-metrics > div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+}
+
+.landing-metrics span,
+.landing-metrics strong { display: block; }
+.landing-metrics span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.landing-metrics strong {
+  overflow: hidden;
+  margin-top: 4px;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.landing-chart-wrap,
+.ghost-chart-wrap {
+  position: relative;
+  height: 280px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--card);
+}
+
+#landing-signature-canvas,
+#ghost-landing-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.landing-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.landing-detail-grid > div {
+  padding: 14px;
+  border-radius: 7px;
+  background: var(--bg);
+}
+
+.landing-detail-grid h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.landing-caution { border-left: 3px solid #f79009; }
+
+.landing-observations {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.landing-observations li + li { margin-top: 5px; }
+
+.ghost-empty {
+  padding: 26px;
+  border: 1px dashed var(--border);
+  border-radius: 7px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.ghost-comparisons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ghost-comparison {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.ghost-comparison strong,
+.ghost-comparison span { display: block; }
+.ghost-comparison strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ghost-comparison span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.context-chart-wrap {
+  position: relative;
+  height: 250px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+#context-journey-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.weather-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.weather-summary > div {
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  text-align: center;
+}
+
+.weather-summary strong,
+.weather-summary span { display: block; }
+.weather-summary strong { font-size: 17px; }
+.weather-summary span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.weather-summary .weather-empty {
+  grid-column: 1 / -1;
+  padding: 20px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.weather-reports {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.weather-reports article {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.weather-reports article > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.weather-reports article span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.weather-reports article p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font: 11px/1.5 var(--mono, ui-monospace, monospace);
+  overflow-wrap: anywhere;
+}
+
 .memory-actions {
   display: flex;
   align-items: center;
@@ -292,9 +761,29 @@
   .replay-status.is-success { background: #0d2e25; color: #75d9ad; }
   .replay-status.is-warning { background: #332612; color: #fdbf62; }
   .replay-status.is-error { background: #321826; color: #ff9db8; }
+  .landing-confidence.is-high { background: #0d2e25; color: #75d9ad; }
+  .landing-confidence.is-medium { background: #332612; color: #fdbf62; }
+  .landing-confidence.is-low { background: #321826; color: #ff9db8; }
+  .pill.is-confirmed { border-color: #185c43; background: #0d2e25; color: #75d9ad; }
 }
 
 @media (max-width: 760px) {
+  .profile-form { grid-template-columns: 1fr; }
+  .aircraft-grid { grid-template-columns: 1fr; }
+  .aircraft-fields { grid-template-columns: 1fr; }
+  .device-form { grid-template-columns: 1fr; }
+  .pilot-memory-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pilot-memory-summary > div:nth-child(odd) { border-left: 0; }
+  .pilot-memory-summary > div:nth-child(n+3) { border-top: 1px solid var(--border); }
+  .pilot-memory-summary > div:last-child { grid-column: 1 / -1; }
+  .pilot-dna-grid { grid-template-columns: 1fr; }
+  .milestone-grid { grid-template-columns: 1fr; }
+  .logbook-record { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .logbook-record > div:nth-child(odd) { border-left: 0; }
+  .logbook-record > div:nth-child(n+3) { border-top: 1px solid var(--border); }
+  .logbook-form { grid-template-columns: 1fr; }
+  .logbook-notes,
+  .logbook-form .logbook-confirm { grid-column: auto; }
   .memory-hero { align-items: flex-start; flex-direction: column; }
   .memory-hero-stats { width: 100%; justify-content: space-between; }
   .memory-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -308,4 +797,11 @@
   .replay-transport input[type="range"] { grid-column: 1 / -1; grid-row: 1; }
   .replay-transport .btn { width: 100%; }
   .memory-phase-line { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .landing-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .landing-detail-grid { grid-template-columns: 1fr; }
+  .ghost-comparisons { grid-template-columns: 1fr; }
+  .landing-chart-wrap,
+  .ghost-chart-wrap { height: 240px; }
+  .context-chart-wrap { height: 220px; }
+  .weather-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

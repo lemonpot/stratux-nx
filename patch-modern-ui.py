@@ -16,11 +16,21 @@ if 'css/modern-ui.css' not in s:
     if marker not in s:
         raise SystemExit('Could not find themeStylesheet marker in web/index.html')
     s = s.replace(marker, marker + '\n\t<link rel="stylesheet" href="css/modern-ui.css" />', 1)
+if 'css/guardian.css' not in s:
+    marker = '<link rel="stylesheet" href="css/modern-ui.css" />'
+    if marker not in s:
+        raise SystemExit('Could not find modern-ui.css marker in web/index.html')
+    s = s.replace(marker, marker + '\n\t<link rel="stylesheet" href="css/guardian.css" />', 1)
 if 'js/modern-ui.js' not in s:
     marker = '<script src="plates/js/developer.js"></script>'
     if marker not in s:
         raise SystemExit('Could not find developer.js marker in web/index.html')
     s = s.replace(marker, marker + '\n\t<script src="js/modern-ui.js"></script>', 1)
+if 'plates/js/guardian.js' not in s:
+    marker = '<script src="js/modern-ui.js"></script>'
+    if marker not in s:
+        raise SystemExit('Could not find modern-ui.js marker in web/index.html')
+    s = s.replace(marker, marker + '\n\t<script src="plates/js/guardian.js"></script>', 1)
 p.write_text(s)
 
 # ---------------------------------------------------------------------------
@@ -59,7 +69,7 @@ p.write_text(s)
 # ---------------------------------------------------------------------------
 p = root / "web/stratux.appcache"
 s = p.read_text()
-entries = ['/css/modern-ui.css', '/js/modern-ui.js']
+entries = ['/css/modern-ui.css', '/css/guardian.css', '/js/modern-ui.js', '/plates/js/guardian.js']
 if any(e not in s for e in entries):
     marker = '\nNETWORK:\n'
     if marker not in s:
