@@ -158,9 +158,10 @@ jobs:
             echo "WARNING: no .deb found, OTA package not available"
           else
             DEB_FILE=$(ls ota-update/*.deb | head -1)
-            dpkg-deb -c "$DEB_FILE" | grep -q './usr/share/doc/stratux/copyright'
-            dpkg-deb -c "$DEB_FILE" | grep -q './usr/share/doc/stratux/licenses/INDEX.txt'
-            dpkg-deb -c "$DEB_FILE" | grep -q 'stratux-nx-notices'
+            dpkg-deb -c "$DEB_FILE" > /tmp/stratux-deb-contents.txt
+            grep -q './usr/share/doc/stratux/copyright' /tmp/stratux-deb-contents.txt
+            grep -q './usr/share/doc/stratux/licenses/INDEX.txt' /tmp/stratux-deb-contents.txt
+            grep -q 'stratux-nx-notices' /tmp/stratux-deb-contents.txt
           fi
 
       - name: Show generated files
