@@ -121,6 +121,7 @@ python3 "$SCRIPT_DIR/patch-flightlog-hardening.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-flightlog-live-timing.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-flightlog-timezone.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-flightlog-timezone-compilefix.py" "$TARGET"
+python3 "$SCRIPT_DIR/patch-flight-memory-context.py" "$TARGET"
 
 # OTA update page and Go backend handlers.
 python3 "$SCRIPT_DIR/wire-update.py" "$TARGET"
@@ -155,7 +156,7 @@ python3 "$SCRIPT_DIR/patch-no-cache-headers.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-kill-cache.py" "$TARGET"
 
 if command -v gofmt >/dev/null 2>&1; then
-  gofmt -w "$TARGET/main/datausage.go" "$TARGET/main/datausage_wire.go" "$TARGET/main/datausage_flows.go" "$TARGET/main/flightlog.go" "$TARGET/main/flightlog_sync.go" "$TARGET/main/ahrs_v2.go" "$TARGET/scripts/collect-licenses.go"
+  gofmt -w "$TARGET/main/datausage.go" "$TARGET/main/datausage_wire.go" "$TARGET/main/datausage_flows.go" "$TARGET/main/flightlog.go" "$TARGET/main/flightlog_sync.go" "$TARGET/main/flightlog_context.go" "$TARGET/main/flightlog_weather.go" "$TARGET/main/ahrs_v2.go" "$TARGET/scripts/collect-licenses.go"
 fi
 
 echo "Stratux 2.1-beta1: Internet Data, unrestricted-device policies, global modern UI, settings UX, fixed Stratux navbar brand, selectable Old Stratux AHRS / Adaptive AHRS v2, automatic Flight Log, and GPS-resolved local timezone wired into Stratux source."

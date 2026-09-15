@@ -47,6 +47,8 @@ jobs:
           test -f stratux/main/datausage.go
           test -f stratux/main/flightlog.go
           test -f stratux/main/flightlog_sync.go
+          test -f stratux/main/flightlog_context.go
+          test -f stratux/main/flightlog_weather.go
           test -f stratux/main/ahrs_v2.go
           test -f stratux/LICENSE
           test -f stratux/debian/copyright
@@ -59,11 +61,13 @@ jobs:
           test -f stratux/web/plates/about.html
           test -f stratux/web/plates/js/datausage.js
           test -f stratux/web/plates/js/flightlog.js
+          test -f stratux/web/plates/js/guardian.js
           test -f stratux/web/css/datausage.css
           test -f stratux/web/css/map-nx.css
           test -f stratux/web/css/pages-nx.css
           test -f stratux/web/css/update.css
           test -f stratux/web/css/about.css
+          test -f stratux/web/css/guardian.css
           test -f stratux/web/js/map-nx.js
           test -f stratux/web/plates/update.html
           test -f stratux/web/plates/js/update.js
@@ -76,6 +80,12 @@ jobs:
 
           grep -q "Internet Data" stratux/web/index.html
           grep -q "Flight Log" stratux/web/index.html
+          grep -q "NX Guardian" stratux/web/plates/status.html
+          grep -q "plates/js/guardian.js" stratux/web/index.html
+          grep -q 'captureFlightWeatherText(wm)' stratux/main/gen_gdl90.go
+          grep -q 'captureFlightNEXRADFrame' stratux/main/gen_gdl90.go
+          grep -q 'captureFlightGPSStatusSnapshot' stratux/main/gen_gdl90.go
+          grep -q 'captureFlightReceptionSnapshot' stratux/main/gen_gdl90.go
           grep -q 'handleDataUsagePolicy' stratux/main/datausage.go
           grep -q 'dataUsageLimitKeys' stratux/main/datausage.go
           grep -q 'c.Exempt, c.LimitMB' stratux/main/datausage_wire.go
