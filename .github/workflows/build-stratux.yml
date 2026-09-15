@@ -52,7 +52,7 @@ jobs:
           test -f stratux/debian/copyright
           test -f stratux/debian/stratux-nx-license
           test -f stratux/debian/STRATUX-NX-NOTICES.md
-          test -f stratux/scripts/collect-licenses.py
+          test -f stratux/scripts/collect-licenses.go
 
           test -f stratux/web/plates/datausage.html
           test -f stratux/web/plates/flightlog.html
@@ -80,7 +80,7 @@ jobs:
           grep -q 'sx-sidebar-brand' stratux/web/index.html
           grep -q "state('about'" stratux/web/js/main.js
           grep -q 'Maintainer: Lemonpot' stratux/debian/control.dpkg
-          grep -q 'scripts/collect-licenses.py' stratux/Makefile
+          grep -q 'scripts/collect-licenses.go' stratux/Makefile
           grep -q "ResetInvalid" stratux/main/sensors.go
           grep -q 'NX_OTA_INSTALL' stratux/debian/preinst.dpkg
           grep -q 'NX_OTA_INSTALL' stratux/debian/prerm.dpkg
