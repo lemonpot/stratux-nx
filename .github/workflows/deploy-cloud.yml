@@ -25,6 +25,9 @@ jobs:
           grep -q 'Ghost Landing' server/web/index.php
           grep -q 'Weather Journey' server/web/index.php
           grep -q 'Logbook draft' server/web/index.php
+          grep -q 'account-table flight-table' server/web/index.php
+          grep -q 'account-table device-table' server/web/index.php
+          grep -q 'stratux-nx-theme' server/web/index.php
 
       - name: Package cloud application
         run: tar -C server -czf /tmp/stratuxnx-cloud.tgz .

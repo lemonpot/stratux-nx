@@ -305,7 +305,7 @@ if ($user) {
     $stmt->execute([$user['id']]);
     $aircraftProfiles = $stmt->fetchAll();
     $pilotSummary = nx_pilot_summary((string)$user['id']);
-    $stmt = nx_db()->prepare('SELECT f.id, f.off_block_utc, f.departure_code, f.arrival_code, f.created_at, i.nickname, a.registration aircraft_registration, a.model aircraft_model, a.nickname aircraft_nickname FROM flights f JOIN installations i ON i.id=f.installation_id LEFT JOIN aircraft_profiles a ON a.id=f.aircraft_id AND a.user_id=i.user_id WHERE i.user_id=? ORDER BY COALESCE(NULLIF(f.off_block_utc,""),f.created_at) DESC LIMIT 250');
+    $stmt = nx_db()->prepare('SELECT f.id, f.off_block_utc, f.departure_code, f.arrival_code, f.created_at, f.air_time_seconds, f.distance_nm, i.nickname, a.registration aircraft_registration, a.model aircraft_model, a.nickname aircraft_nickname FROM flights f JOIN installations i ON i.id=f.installation_id LEFT JOIN aircraft_profiles a ON a.id=f.aircraft_id AND a.user_id=i.user_id WHERE i.user_id=? ORDER BY COALESCE(NULLIF(f.off_block_utc,""),f.created_at) DESC LIMIT 250');
     $stmt->execute([$user['id']]);
     $flights = $stmt->fetchAll();
     if ($page === 'flight') {
@@ -361,6 +361,14 @@ function aircraft_label(array $row): string {
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" type="image/png" href="/?asset=icon">
   <title>Stratux NX Account</title>
+  <script>
+    (function () {
+      var saved = localStorage.getItem('stratux-nx-theme');
+      document.documentElement.dataset.theme = saved === 'light' || saved === 'dark'
+        ? saved
+        : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }());
+  </script>
   <?php if ($page === 'flight' && $user): ?>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css" integrity="sha384-ghEeMdcWWzRv/BPeUcX835vcKDGrxvROXisl/Btpv3GeekBUXTSPVcFJpI1Tcrgp" crossorigin="anonymous">
   <?php endif ?>
@@ -368,9 +376,15 @@ function aircraft_label(array $row): string {
   <style>
     :root{--bg:#f6f8fb;--card:#fff;--text:#1a1f36;--muted:#697386;--border:#e3e8ee;--primary:#635bff;--soft:#f0efff;--danger:#b4234d}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.top{height:68px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px}.brand-logo{display:block;width:178px;height:auto}.wrap{max-width:1100px;margin:0 auto;padding:36px 24px}.hero{margin-bottom:24px}.hero h1{font-size:28px;margin:0 0 6px}.hero p,.muted{color:var(--muted)}.card{background:var(--card);border:1px solid var(--border);border-radius:8px;margin:14px 0;overflow:hidden}.head{padding:16px 18px;border-bottom:1px solid var(--border)}.head h2{font-size:16px;margin:0}.body{padding:18px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.device,.flight{border:1px solid var(--border);border-radius:7px;padding:14px}.device strong,.flight strong{display:block}.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.row.space{justify-content:space-between}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 13px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font:600 13px inherit;text-decoration:none;cursor:pointer}.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}.btn.danger{color:var(--danger)}input{height:36px;border:1px solid var(--border);border-radius:6px;padding:0 10px;min-width:210px;background:var(--card);color:var(--text)}.notice{padding:12px 14px;border-radius:6px;background:#fff3f6;color:var(--danger);margin-bottom:16px}.login{max-width:480px;margin:80px auto}.login .btn{width:100%;margin-top:10px}.pill{display:inline-block;padding:3px 7px;border-radius:99px;background:var(--soft);color:#5147e5;font-size:11px;font-weight:600}.empty{padding:22px;color:var(--muted);text-align:center}.footer{display:flex;justify-content:center;gap:16px;margin-top:32px;color:var(--muted);font-size:12px}.footer a{color:inherit}@media(prefers-color-scheme:dark){:root{--bg:#07131f;--card:#0b1b2a;--text:#f6f9fc;--muted:#9eacba;--border:#213449;--soft:#17263c}.pill{color:#a9a4ff}.notice{background:#321826}}@media(max-width:700px){.grid{grid-template-columns:1fr}.top{padding:0 16px}.brand-logo{width:154px}.wrap{padding:24px 16px}.row.space{align-items:flex-start;flex-direction:column}input{width:100%}}
   </style>
+  <style>
+    html[data-theme="light"]{--bg:#f6f8fb;--card:#fff;--text:#1a1f36;--muted:#697386;--border:#e3e8ee;--primary:#635bff;--soft:#f0efff;--danger:#b4234d;color-scheme:light}
+    html[data-theme="dark"]{--bg:#06131f;--card:#0a1c2a;--text:#eef4fa;--muted:#94a4b5;--border:#1d3445;--primary:#7b73ff;--soft:#182440;--danger:#ff7698;color-scheme:dark}
+    .top-actions{display:flex;align-items:center;gap:8px}.theme-toggle{min-width:88px}.logo-for-dark{display:none}
+    html[data-theme="dark"] .logo-for-light{display:none}html[data-theme="dark"] .logo-for-dark{display:block}
+  </style>
 </head>
 <body>
-<header class="top"><a href="/" aria-label="Stratux NX home"><picture><source media="(prefers-color-scheme: dark)" srcset="/?asset=logo-dark"><img class="brand-logo" src="/?asset=logo-light" alt="Stratux NX"></picture></a><?php if ($user): ?><a class="btn" href="/?action=logout">Sign out</a><?php endif ?></header>
+<header class="top"><a href="/" aria-label="Stratux NX home"><img class="brand-logo logo-for-light" src="/?asset=logo-light" alt="Stratux NX"><img class="brand-logo logo-for-dark" src="/?asset=logo-dark" alt="Stratux NX"></a><div class="top-actions"><button id="theme-toggle" class="btn theme-toggle" type="button" aria-label="Switch color theme">Theme</button><?php if ($user): ?><a class="btn" href="/?action=logout">Sign out</a><?php endif ?></div></header>
 <main class="wrap">
 <?php if ($error): ?><div class="notice"><?=h($error)?></div><?php endif ?>
 <?php if ($page === 'privacy'): ?>
@@ -602,6 +616,46 @@ function aircraft_label(array $row): string {
     <div><span>Airports</span><strong><?=intval($pilotSummary['airports'])?></strong></div>
     <div><span>Aircraft</span><strong><?=intval($pilotSummary['aircraft'])?></strong></div>
   </section>
+  <section class="card account-card"><div class="head row space"><div><h2>Flights</h2><span class="muted">Your synchronized flight history, newest first.</span></div><span class="pill"><?=count($flights)?> shown</span></div><div class="account-table-wrap">
+    <table class="account-table flight-table"><thead><tr><th>Date</th><th>Route</th><th>Air time</th><th>Distance</th><th>Aircraft / device</th><th><span class="memory-sr-only">Actions</span></th></tr></thead><tbody>
+      <?php foreach ($flights as $flight): ?><tr>
+        <td data-label="Date"><strong><?=h(flight_time_text($flight['off_block_utc'] ?: $flight['created_at'], true))?></strong></td>
+        <td data-label="Route"><a class="table-primary-link" href="/?page=flight&amp;flight_id=<?=rawurlencode($flight['id'])?>"><?=h(($flight['departure_code'] ?: '---') . ' → ' . ($flight['arrival_code'] ?: '---'))?></a></td>
+        <td data-label="Air time"><?=h(duration_text((int)($flight['air_time_seconds'] ?? 0)))?></td>
+        <td data-label="Distance"><?=h(metric((float)($flight['distance_nm'] ?? 0), ' NM'))?></td>
+        <td data-label="Aircraft / device"><?=h(aircraft_label($flight))?></td>
+        <td class="table-actions"><a class="btn primary" href="/?page=flight&amp;flight_id=<?=rawurlencode($flight['id'])?>">Open</a><form method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="flight_id" value="<?=h($flight['id'])?>"><button class="btn danger is-quiet" name="form_action" value="delete-flight" onclick="return confirm('Delete this cloud copy? The local copy on the device is not removed.')">Delete</button></form></td>
+      </tr><?php endforeach ?>
+      <?php if (!$flights): ?><tr><td colspan="6" class="empty">No synchronized flights yet.</td></tr><?php endif ?>
+    </tbody></table>
+  </div></section>
+
+  <section class="card account-card"><div class="head row space"><div><h2>Aircraft</h2><span class="muted">Create aircraft, then assign them to devices from the table below.</span></div><span class="pill"><?=count($aircraftProfiles)?> saved</span></div>
+    <?php if ($aircraftProfiles): ?><div class="account-table-wrap"><table class="account-table aircraft-table"><thead><tr><th>Registration</th><th>Manufacturer</th><th>Model</th><th>Name</th><th><span class="memory-sr-only">Actions</span></th></tr></thead><tbody>
+      <?php foreach ($aircraftProfiles as $aircraft): $aircraftFormId = 'aircraft-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string)$aircraft['id']); ?><tr>
+        <td data-label="Registration"><input form="<?=h($aircraftFormId)?>" name="registration" value="<?=h($aircraft['registration'])?>" maxlength="16" aria-label="Registration"></td>
+        <td data-label="Manufacturer"><input form="<?=h($aircraftFormId)?>" name="manufacturer" value="<?=h($aircraft['manufacturer'])?>" maxlength="64" aria-label="Manufacturer"></td>
+        <td data-label="Model"><input form="<?=h($aircraftFormId)?>" name="model" value="<?=h($aircraft['model'])?>" maxlength="64" aria-label="Model"></td>
+        <td data-label="Name"><input form="<?=h($aircraftFormId)?>" name="aircraft_nickname" value="<?=h($aircraft['nickname'])?>" maxlength="64" aria-label="Aircraft name"></td>
+        <td class="table-actions"><form id="<?=h($aircraftFormId)?>" method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="aircraft_id" value="<?=h($aircraft['id'])?>"><button class="btn" name="form_action" value="save-aircraft">Save</button><button class="btn danger is-quiet" name="form_action" value="delete-aircraft" onclick="return confirm('Delete this aircraft profile? Existing flights remain stored.')">Delete</button></form></td>
+      </tr><?php endforeach ?>
+    </tbody></table></div><?php endif ?>
+    <div class="aircraft-create"><h3>Add aircraft</h3><form class="aircraft-create-form" method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="form_action" value="save-aircraft"><label><span>Registration</span><input name="registration" maxlength="16" placeholder="C-GABC"></label><label><span>Manufacturer</span><input name="manufacturer" maxlength="64" placeholder="Cessna"></label><label><span>Model</span><input name="model" maxlength="64" placeholder="172M"></label><label><span>Name</span><input name="aircraft_nickname" maxlength="64" placeholder="Optional nickname"></label><button class="btn primary">Add aircraft</button></form></div>
+  </section>
+
+  <section class="card account-card"><div class="head row space"><div><h2>Devices</h2><span class="muted">Rename receivers and assign each one to an aircraft.</span></div><span class="pill"><?=count($devices)?> linked</span></div><div class="account-table-wrap">
+    <table class="account-table device-table"><thead><tr><th>Device</th><th>Last seen / version</th><th>Flights</th><th>Assigned aircraft</th><th><span class="memory-sr-only">Actions</span></th></tr></thead><tbody>
+      <?php foreach ($devices as $device): ?><tr>
+        <td data-label="Device"><form class="compact-control" method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="installation_id" value="<?=h($device['id'])?>"><input name="nickname" value="<?=h($device['nickname'])?>" placeholder="My Stratux NX" aria-label="Device name"><button class="btn" name="form_action" value="rename">Save</button></form><small class="table-secondary"><?=h($device['id'])?></small></td>
+        <td data-label="Last seen / version"><strong><?=h(flight_time_text((string)$device['last_seen_at'], true))?></strong><small class="table-secondary"><?=h($device['software_version'])?></small></td>
+        <td data-label="Flights"><?=intval($device['flight_count'])?></td>
+        <td data-label="Assigned aircraft"><form class="compact-control" method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="installation_id" value="<?=h($device['id'])?>"><select name="aircraft_id" aria-label="Assigned aircraft"><option value="">Not assigned</option><?php foreach ($aircraftProfiles as $aircraft): ?><option value="<?=h($aircraft['id'])?>" <?=$device['aircraft_id'] === $aircraft['id'] ? 'selected' : ''?>><?=h($aircraft['nickname'] ?: trim($aircraft['registration'] . ' ' . $aircraft['model']))?></option><?php endforeach ?></select><button class="btn" name="form_action" value="assign-aircraft">Assign</button></form></td>
+        <td class="table-actions"><form method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="installation_id" value="<?=h($device['id'])?>"><button class="btn is-quiet" name="form_action" value="unlink" onclick="return confirm('Unlink this device? Its cloud flights will remain stored but hidden until it is linked again.')">Unlink</button></form><form method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="installation_id" value="<?=h($device['id'])?>"><button class="btn danger is-quiet" name="form_action" value="revoke" onclick="return confirm('Permanently revoke this installation key? This device will no longer be able to upload until reinstalled.')">Revoke</button></form></td>
+      </tr><?php endforeach ?>
+      <?php if (!$devices): ?><tr><td colspan="5" class="empty">No linked devices yet.</td></tr><?php endif ?>
+    </tbody></table>
+  </div></section>
+
   <section class="card pilot-dna-card"><div class="head row space"><div><h2>Pilot DNA</h2><span class="muted">Private patterns that grow from your own flight history.</span></div><span class="pill">Only you</span></div><div class="body pilot-dna-grid">
     <div><span>Last 30 days</span><strong><?=intval($pilotSummary['recent_flights'] ?? 0)?> flight<?=intval($pilotSummary['recent_flights'] ?? 0) === 1 ? '' : 's'?></strong><p>Your recent flying rhythm.</p></div>
     <div><span>Most visited</span><strong><?=h(($pilotSummary['top_airport'] ?? '') ?: 'Not enough history')?></strong><p>Based on recorded departures and arrivals.</p></div>
@@ -609,80 +663,29 @@ function aircraft_label(array $row): string {
     <div><span>Most flown aircraft</span><strong><?=h(($pilotSummary['top_aircraft'] ?? '') ?: 'Assign an aircraft')?></strong><p>Uses confirmed aircraft assignments.</p></div>
   </div></section>
   <section class="card"><div class="head"><h2><?= $claimCode !== '' ? 'Confirm device link' : 'Link a Stratux NX' ?></h2></div><div class="body"><form class="row" method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="form_action" value="claim"><input name="code" value="<?=h($claimCode)?>" placeholder="ABCD-2345" maxlength="9" required><button class="btn primary"><?= $claimCode !== '' ? 'Link this device' : 'Link device' ?></button><span class="muted"><?= $claimCode !== '' ? 'The secure one-time code was supplied by your Stratux NX.' : 'Generate the one-time code from Flight Log on the device.' ?></span></form></div></section>
-  <section class="card"><div class="head"><h2>Pilot profile</h2></div><div class="body">
-    <form class="profile-form" method="post">
-      <input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>">
-      <input type="hidden" name="form_action" value="save-pilot-profile">
-      <label><span>Name</span><input name="display_name" value="<?=h((string)$user['name'])?>" maxlength="80" required></label>
-      <label><span>Home airport</span><input name="home_airport" value="<?=h((string)$pilotProfile['home_airport'])?>" maxlength="4" placeholder="CYUL"></label>
-      <label><span>Timezone</span><select name="timezone">
-        <?php foreach (array_values(array_unique(array_merge(['UTC'], DateTimeZone::listIdentifiers()))) as $timezone): ?>
-          <option value="<?=h($timezone)?>" <?=$pilotProfile['timezone'] === $timezone ? 'selected' : ''?>><?=h(str_replace('_', ' ', $timezone))?></option>
-        <?php endforeach ?>
-      </select></label>
-      <button class="btn primary">Save pilot profile</button>
-    </form>
-  </div></section>
-  <section class="card"><div class="head row space"><div><h2>Aircraft</h2><span class="muted">Keep flight history organized by the aircraft you fly.</span></div><span class="pill"><?=count($aircraftProfiles)?> saved</span></div><div class="body aircraft-grid">
-    <form class="aircraft-profile is-new" method="post">
-      <input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>">
-      <input type="hidden" name="form_action" value="save-aircraft">
-      <strong>Add aircraft</strong>
-      <div class="aircraft-fields">
-        <label><span>Registration</span><input name="registration" maxlength="16" placeholder="C-GABC"></label>
-        <label><span>Manufacturer</span><input name="manufacturer" maxlength="64" placeholder="Cessna"></label>
-        <label><span>Model</span><input name="model" maxlength="64" placeholder="172M"></label>
-        <label><span>Name</span><input name="aircraft_nickname" maxlength="64" placeholder="Optional nickname"></label>
-      </div>
-      <button class="btn primary">Add aircraft</button>
-    </form>
-    <?php foreach ($aircraftProfiles as $aircraft): ?>
-      <form class="aircraft-profile" method="post">
-        <input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>">
-        <input type="hidden" name="aircraft_id" value="<?=h($aircraft['id'])?>">
-        <strong><?=h($aircraft['nickname'] ?: ($aircraft['registration'] ?: ($aircraft['model'] ?: 'Aircraft')))?></strong>
-        <div class="aircraft-fields">
-          <label><span>Registration</span><input name="registration" value="<?=h($aircraft['registration'])?>" maxlength="16"></label>
-          <label><span>Manufacturer</span><input name="manufacturer" value="<?=h($aircraft['manufacturer'])?>" maxlength="64"></label>
-          <label><span>Model</span><input name="model" value="<?=h($aircraft['model'])?>" maxlength="64"></label>
-          <label><span>Name</span><input name="aircraft_nickname" value="<?=h($aircraft['nickname'])?>" maxlength="64"></label>
-        </div>
-        <div class="row"><button class="btn" name="form_action" value="save-aircraft">Save</button><button class="btn danger" name="form_action" value="delete-aircraft" onclick="return confirm('Delete this aircraft profile? Existing flights remain stored.')">Delete</button></div>
-      </form>
-    <?php endforeach ?>
-  </div></section>
-  <section class="card"><div class="head"><h2>Devices</h2></div><div class="body grid">
-    <?php foreach ($devices as $device): ?>
-      <div class="device">
-        <div class="row space"><div><strong><?=h($device['nickname'] ?: 'Stratux NX')?></strong><span class="muted"><?=h($device['id'])?></span></div><span class="pill"><?=intval($device['flight_count'])?> flights</span></div>
-        <p class="muted">Last seen <?=h($device['last_seen_at'])?> · <?=h($device['software_version'])?></p>
-        <form class="device-form" method="post">
-          <input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>">
-          <input type="hidden" name="installation_id" value="<?=h($device['id'])?>">
-          <label><span>Device name</span><input name="nickname" value="<?=h($device['nickname'])?>" placeholder="My Stratux NX"></label>
-          <button class="btn" name="form_action" value="rename">Save name</button>
-        </form>
-        <form class="device-form" method="post">
-          <input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>">
-          <input type="hidden" name="installation_id" value="<?=h($device['id'])?>">
-          <label><span>Assigned aircraft</span><select name="aircraft_id"><option value="">Not assigned</option><?php foreach ($aircraftProfiles as $aircraft): ?><option value="<?=h($aircraft['id'])?>" <?=$device['aircraft_id'] === $aircraft['id'] ? 'selected' : ''?>><?=h($aircraft['nickname'] ?: trim($aircraft['registration'] . ' ' . $aircraft['model']))?></option><?php endforeach ?></select></label>
-          <button class="btn" name="form_action" value="assign-aircraft">Assign</button>
-        </form>
-        <div class="row device-danger-actions">
-          <form method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="installation_id" value="<?=h($device['id'])?>"><button class="btn" name="form_action" value="unlink" onclick="return confirm('Unlink this device? Its cloud flights will remain stored but hidden until it is linked again.')">Unlink</button></form>
-          <form method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="installation_id" value="<?=h($device['id'])?>"><button class="btn danger" name="form_action" value="revoke" onclick="return confirm('Permanently revoke this installation key? This device will no longer be able to upload until reinstalled.')">Revoke</button></form>
-        </div>
-      </div>
-    <?php endforeach ?>
-    <?php if (!$devices): ?><div class="empty">No linked devices yet.</div><?php endif ?>
-  </div></section>
-  <section class="card"><div class="head"><h2>Synced flights</h2></div><div class="body grid">
-    <?php foreach ($flights as $flight): ?><div class="flight flight-list-card"><div class="row space"><div><strong><?=h(($flight['departure_code'] ?: '---') . ' → ' . ($flight['arrival_code'] ?: '---'))?></strong><span class="muted"><?=h(flight_time_text($flight['off_block_utc'] ?: $flight['created_at'], true))?></span></div><span class="pill"><?=h(aircraft_label($flight))?></span></div><a class="btn primary flight-open" href="/?page=flight&amp;flight_id=<?=rawurlencode($flight['id'])?>">Open Flight Memory</a><form method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="flight_id" value="<?=h($flight['id'])?>"><button class="btn danger" name="form_action" value="delete-flight" onclick="return confirm('Delete this cloud copy? The local copy on the device is not removed.')">Delete cloud copy</button></form></div><?php endforeach ?>
-    <?php if (!$flights): ?><div class="empty">No synchronized flights yet.</div><?php endif ?>
-  </div></section>
+  <section class="card"><div class="head"><h2>Pilot profile</h2></div><div class="body"><form class="profile-form" method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="form_action" value="save-pilot-profile"><label><span>Name</span><input name="display_name" value="<?=h((string)$user['name'])?>" maxlength="80" required></label><label><span>Home airport</span><input name="home_airport" value="<?=h((string)$pilotProfile['home_airport'])?>" maxlength="4" placeholder="CYUL"></label><label><span>Timezone</span><select name="timezone"><?php foreach (array_values(array_unique(array_merge(['UTC'], DateTimeZone::listIdentifiers()))) as $timezone): ?><option value="<?=h($timezone)?>" <?=$pilotProfile['timezone'] === $timezone ? 'selected' : ''?>><?=h(str_replace('_', ' ', $timezone))?></option><?php endforeach ?></select></label><button class="btn primary">Save pilot profile</button></form></div></section>
 <?php endif ?>
 <footer class="footer"><a href="/?page=privacy">Privacy</a><a href="/?page=legal">Legal</a><a href="https://github.com/lemonpot/stratux-nx">Source</a></footer>
 </main>
+<script>
+  (function () {
+    var button = document.getElementById('theme-toggle');
+    if (!button) return;
+    function render() {
+      var dark = document.documentElement.dataset.theme === 'dark';
+      button.textContent = dark ? 'Dark' : 'Light';
+      button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+      button.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    }
+    button.addEventListener('click', function () {
+      var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('stratux-nx-theme', next);
+      render();
+    });
+    render();
+  }());
+</script>
 <?php if ($page === 'flight' && $user && $flightDetail && $flightPayload): ?>
   <script>window.CESIUM_BASE_URL='https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/';</script>
   <script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js" integrity="sha384-D1oR8FyBDsJWkPeydGJTh8nJg5/++9sqchzJuu+oGQPmgbwu3aJmoVj3BTowr6t6" crossorigin="anonymous"></script>
