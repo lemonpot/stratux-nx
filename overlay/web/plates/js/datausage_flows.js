@@ -206,10 +206,13 @@ appControllers.directive('flowMonitor', function($http, $interval) {
                 $http.post('/dataUsage/flow/kill', {id: flow.ID}).then(function() {
                     flow.actionPending = false;
                     flow.RecentlyKilled = true;
+                    if ($scope.showFeedback) {
+                        $scope.showFeedback('Connection to ' + (flow.Service || flow.Hostname || 'this service') + ' stopped.');
+                    }
                     window.setTimeout(function() { $scope.refreshFlows(false); }, 350);
                 }, function(response) {
                     flow.actionPending = false;
-                    $scope.flowError = 'Could not kill this connection: ' + ((response && response.data) || 'unknown error');
+                    $scope.flowError = 'Could not stop this connection: ' + ((response && response.data) || 'unknown error');
                 });
             };
 
