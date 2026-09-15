@@ -47,8 +47,8 @@ if old in s:
 elif new not in s:
     raise SystemExit('Could not make automatic timezone default')
 
-old = '''\tflightCurrentAirport      *flightAirport\n\tflightLastAirportResolve  time.Time\n)'''
-new = '''\tflightCurrentAirport      *flightAirport\n\tflightLastAirportResolve  time.Time\n\tflightTimezoneGrid        flightTimezoneGrid\n\tflightTimezoneDBReady     bool\n\tflightResolvedTimezone    = "UTC"\n\tflightTimezoneSource      = "fallback"\n\tflightTimezoneCandidate   string\n\tflightTimezoneCandidateAt time.Time\n)'''
+old = '''\tflightCurrentAirport      *flightAirport\n\tflightLastAirportResolve  time.Time\n\tflightLastContextSample   time.Time\n)'''
+new = '''\tflightCurrentAirport      *flightAirport\n\tflightLastAirportResolve  time.Time\n\tflightLastContextSample   time.Time\n\tflightTimezoneGrid        flightTimezoneGrid\n\tflightTimezoneDBReady     bool\n\tflightResolvedTimezone    = "UTC"\n\tflightTimezoneSource      = "fallback"\n\tflightTimezoneCandidate   string\n\tflightTimezoneCandidateAt time.Time\n)'''
 if old in s:
     s = s.replace(old, new, 1)
 elif new not in s:
@@ -62,8 +62,8 @@ if old in s:
 elif 'updateFlightResolvedTimezoneLocked(sample)' not in s:
     raise SystemExit('Could not wire automatic timezone resolver into monitor loop')
 
-old = '''\tloadCurrentFlightLocked()\n\tloadAirportDatabaseLocked()\n\tflightSyncInitializeLocked()\n\tflightInitialized = true'''
-new = '''\tloadCurrentFlightLocked()\n\tloadAirportDatabaseLocked()\n\tloadFlightTimezoneGridLocked()\n\tflightSyncInitializeLocked()\n\tif !flightSettings.AutoTimezone {\n\t\tflightResolvedTimezone = flightSettings.Timezone\n\t\tflightTimezoneSource = "manual"\n\t}\n\tflightInitialized = true'''
+old = '''\tloadCurrentFlightLocked()\n\tif flightCurrent != nil {\n\t\tstartFlightWeatherCapture(flightCurrent.ID, flightCurrent.Weather)\n\t}\n\tloadAirportDatabaseLocked()\n\tflightSyncInitializeLocked()\n\tflightInitialized = true'''
+new = '''\tloadCurrentFlightLocked()\n\tif flightCurrent != nil {\n\t\tstartFlightWeatherCapture(flightCurrent.ID, flightCurrent.Weather)\n\t}\n\tloadAirportDatabaseLocked()\n\tloadFlightTimezoneGridLocked()\n\tflightSyncInitializeLocked()\n\tif !flightSettings.AutoTimezone {\n\t\tflightResolvedTimezone = flightSettings.Timezone\n\t\tflightTimezoneSource = "manual"\n\t}\n\tflightInitialized = true'''
 if old in s:
     s = s.replace(old, new, 1)
 elif 'loadFlightTimezoneGridLocked()' not in s:
