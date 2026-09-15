@@ -15,6 +15,147 @@
   border: 0;
 }
 
+.account-card .head {
+  min-height: 62px;
+}
+
+.account-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.account-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.account-table th,
+.account-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.account-table th {
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.account-table tbody tr:last-child td { border-bottom: 0; }
+.account-table tbody tr:hover td { background: var(--soft); }
+.account-table td { font-size: 12px; }
+.account-table td > strong { font-size: 12px; }
+
+.table-primary-link {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.table-primary-link:hover { color: var(--primary); }
+
+.table-secondary {
+  display: block;
+  max-width: 250px;
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-actions,
+.table-actions form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.table-actions { justify-content: flex-end; white-space: nowrap; }
+.table-actions .btn { min-height: 32px; padding: 6px 10px; }
+.btn.is-quiet { border-color: transparent; background: transparent; }
+.btn.is-quiet:hover { border-color: var(--border); background: var(--bg); }
+
+.compact-control {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) auto;
+  gap: 6px;
+  min-width: 210px;
+}
+
+.compact-control input,
+.compact-control select,
+.aircraft-table input,
+.aircraft-create-form input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 9px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+
+.compact-control input:focus,
+.compact-control select:focus,
+.aircraft-table input:focus,
+.aircraft-create-form input:focus {
+  border-color: var(--primary);
+  outline: 3px solid rgba(99, 91, 255, .14);
+}
+
+.device-table td:first-child { min-width: 240px; }
+.device-table td:nth-child(2) { min-width: 170px; }
+.device-table td:nth-child(4) { min-width: 260px; }
+.aircraft-table input { min-width: 110px; }
+
+.aircraft-create {
+  padding: 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.aircraft-create h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
+.aircraft-create-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr)) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.aircraft-create-form label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aircraft-create-form label > span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.aircraft-create-form .btn { height: 34px; }
+
 .flight-list-card {
   display: flex;
   flex-direction: column;
@@ -773,17 +914,57 @@
 .memory-phase span { color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .memory-phase strong { margin-top: 4px; font-size: 13px; }
 
-@media (prefers-color-scheme: dark) {
-  .replay-status.is-success { background: #0d2e25; color: #75d9ad; }
-  .replay-status.is-warning { background: #332612; color: #fdbf62; }
-  .replay-status.is-error { background: #321826; color: #ff9db8; }
-  .landing-confidence.is-high { background: #0d2e25; color: #75d9ad; }
-  .landing-confidence.is-medium { background: #332612; color: #fdbf62; }
-  .landing-confidence.is-low { background: #321826; color: #ff9db8; }
-  .pill.is-confirmed { border-color: #185c43; background: #0d2e25; color: #75d9ad; }
-}
+html[data-theme="dark"] .replay-status.is-success { background: #0d2e25; color: #75d9ad; }
+html[data-theme="dark"] .replay-status.is-warning { background: #332612; color: #fdbf62; }
+html[data-theme="dark"] .replay-status.is-error { background: #321826; color: #ff9db8; }
+html[data-theme="dark"] .landing-confidence.is-high { background: #0d2e25; color: #75d9ad; }
+html[data-theme="dark"] .landing-confidence.is-medium { background: #332612; color: #fdbf62; }
+html[data-theme="dark"] .landing-confidence.is-low { background: #321826; color: #ff9db8; }
+html[data-theme="dark"] .pill.is-confirmed { border-color: #185c43; background: #0d2e25; color: #75d9ad; }
 
 @media (max-width: 760px) {
+  .account-table-wrap { overflow: visible; }
+  .account-table,
+  .account-table tbody,
+  .account-table tr,
+  .account-table td { display: block; width: 100%; }
+  .account-table thead { display: none; }
+  .account-table tr {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .account-table tr:last-child { border-bottom: 0; }
+  .account-table td {
+    display: grid;
+    grid-template-columns: minmax(100px, .7fr) minmax(0, 1.3fr);
+    gap: 10px;
+    padding: 5px 0;
+    border: 0;
+    align-items: center;
+  }
+  .account-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+  }
+  .account-table td.table-actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 7px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .account-table td.table-actions::before { display: none; }
+  .compact-control { min-width: 0; }
+  .device-table td:first-child,
+  .device-table td:nth-child(2),
+  .device-table td:nth-child(4) { min-width: 0; }
+  .aircraft-table input { min-width: 0; }
+  .aircraft-create-form { grid-template-columns: 1fr; }
+  .aircraft-create-form .btn { width: 100%; }
   .profile-form { grid-template-columns: 1fr; }
   .aircraft-grid { grid-template-columns: 1fr; }
   .aircraft-fields { grid-template-columns: 1fr; }
