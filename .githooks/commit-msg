@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+message_file=$1
+clean_file=$(mktemp)
+trap 'rm -f "$clean_file"' EXIT
+
+grep -Eiv '^[[:space:]]*Co-authored-by:.*(Cursor|cursoragent@cursor\.com)' "$message_file" > "$clean_file" || true
+cat "$clean_file" > "$message_file"
