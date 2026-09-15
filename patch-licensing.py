@@ -55,9 +55,9 @@ makefile = makefile_path.read_text()
 license_install = """\t# Install copyright, source and third-party license notices
 \tmkdir -p $(DEBPKG_BASE)/usr/share/doc/stratux/licenses
 \tcp -f debian/copyright $(DEBPKG_BASE)/usr/share/doc/stratux/copyright
-\tpython3 scripts/collect-licenses.py --source . --output $(DEBPKG_BASE)/usr/share/doc/stratux/licenses
+\tgo run scripts/collect-licenses.go --source . --output $(DEBPKG_BASE)/usr/share/doc/stratux/licenses
 """
-if "scripts/collect-licenses.py --source ." not in makefile:
+if "scripts/collect-licenses.go --source ." not in makefile:
     marker = "\tmkdir -p $(DEBPKG_BASE)/lib/systemd/system/\n"
     if marker not in makefile:
         raise SystemExit("Could not find Debian package directory marker")
@@ -68,7 +68,7 @@ for required in (
     debian / "copyright",
     debian / "stratux-nx-license",
     debian / "STRATUX-NX-NOTICES.md",
-    root / "scripts/collect-licenses.py",
+    root / "scripts/collect-licenses.go",
 ):
     if not required.is_file():
         raise SystemExit(f"Required licensing file is missing: {required}")
