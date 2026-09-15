@@ -5,6 +5,36 @@
     </button>
   </div>
 
+  <section class="guardian" ng-controller="GuardianCtrl" ng-class="'is-' + guardian.state">
+    <div class="guardian-overview">
+      <div class="guardian-state-icon"><i class="fa" ng-class="guardianIcon(guardian.state)"></i></div>
+      <div class="guardian-state-copy">
+        <span>NX Guardian</span>
+        <h2>{{guardian.title}}</h2>
+        <p>{{guardian.message}}</p>
+      </div>
+      <button type="button" class="btn btn-default guardian-refresh" ng-click="refreshGuardian()" ng-disabled="guardian.loading">
+        <i class="fa" ng-class="guardian.loading ? 'fa-circle-o-notch fa-spin' : 'fa-refresh'"></i>
+        {{guardian.loading ? 'Checking…' : 'Check again'}}
+      </button>
+    </div>
+    <div class="guardian-checks" ng-if="guardian.checks.length">
+      <article class="guardian-check" ng-repeat="item in guardian.checks track by item.id" ng-class="'is-' + item.state">
+        <div class="guardian-check-icon"><i class="fa" ng-class="guardianIcon(item.state)"></i></div>
+        <div class="guardian-check-copy">
+          <span>{{item.title}}</span>
+          <strong>{{item.value}}</strong>
+          <p>{{item.detail}}</p>
+          <a ng-if="item.action" ng-href="{{item.route}}">{{item.action}} <i class="fa fa-angle-right"></i></a>
+        </div>
+      </article>
+    </div>
+    <div class="guardian-foot">
+      <span ng-if="guardian.checkedAt">Checked {{guardian.checkedAt | date:'mediumTime'}}</span>
+      <span>System readiness only · Stratux NX is supplemental and does not determine flight safety.</span>
+    </div>
+  </section>
+
   <div class="status-summary">
     <div>
       <span>Connection</span>

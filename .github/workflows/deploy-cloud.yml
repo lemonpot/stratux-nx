@@ -16,10 +16,15 @@ jobs:
           php -l server/lib.php
           php -l server/flight-memory.php
           php -l server/web/index.php
+          php -l server/api/v1/flights/upload.php
           php server/tests/flight-memory-test.php
           node --check server/web/flight-memory.js
           bash -n server/deploy-as-root.sh
           test -f server/web/flight-memory.css
+          grep -q 'Landing Signature' server/web/index.php
+          grep -q 'Ghost Landing' server/web/index.php
+          grep -q 'Weather Journey' server/web/index.php
+          grep -q 'Logbook draft' server/web/index.php
 
       - name: Package cloud application
         run: tar -C server -czf /tmp/stratuxnx-cloud.tgz .

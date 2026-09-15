@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -66,6 +67,8 @@ type flightRecord struct {
 	MaxAltitudeFt    float64            `json:"MaxAltitudeFt"`
 	TouchAndGoCount  int                `json:"TouchAndGoCount"`
 	Track            []flightTrackPoint `json:"Track,omitempty"`
+	Context          []flightContextSnapshot `json:"Context,omitempty"`
+	Weather          *flightWeatherMemory `json:"Weather,omitempty"`
 	LastUpdateUTC    string             `json:"LastUpdateUTC"`
 	SyncStatus       string             `json:"SyncStatus,omitempty"`
 	RemoteID         string             `json:"RemoteID,omitempty"`
@@ -153,6 +156,7 @@ var (
 	flightLastPersist         time.Time
 	flightCurrentAirport      *flightAirport
 	flightLastAirportResolve  time.Time
+	flightLastContextSample   time.Time
 )
 
 func init() {
@@ -170,6 +174,8 @@ func flightLogMonitorLoop() {
 	defer ticker.Stop()
 	for range ticker.C {
 		sample := readFlightGPS()
+		contextFlightID := ""
+		contextPhase := ""
 		flightLogMu.Lock()
 		if flightSettings.AutoDetect {
 			updateFlightStateLocked(sample)
@@ -182,7 +188,21 @@ func flightLogMonitorLoop() {
 			persistCurrentFlightLocked()
 			flightLastPersist = time.Now()
 		}
+		if flightCurrent != nil && time.Since(flightLastContextSample) >= flightContextInterval {
+			contextFlightID = flightCurrent.ID
+			contextPhase = flightCurrent.Phase
+			flightLastContextSample = time.Now()
+		}
 		flightLogMu.Unlock()
+		if contextFlightID != "" {
+			snapshot := captureFlightContext(sample, contextPhase)
+			flightLogMu.Lock()
+			if flightCurrent != nil && flightCurrent.ID == contextFlightID {
+				appendFlightContextLocked(snapshot)
+				syncFlightWeatherLocked()
+			}
+			flightLogMu.Unlock()
+		}
 	}
 }
 
@@ -202,6 +222,9 @@ func initializeFlightLog() {
 	loadFlightIndexLocked()
 	sort.SliceStable(flightHistory, func(i, j int) bool { return flightHistory[i].ID > flightHistory[j].ID })
 	loadCurrentFlightLocked()
+	if flightCurrent != nil {
+		startFlightWeatherCapture(flightCurrent.ID, flightCurrent.Weather)
+	}
 	loadAirportDatabaseLocked()
 	flightSyncInitializeLocked()
 	flightInitialized = true
@@ -245,8 +268,7 @@ func loadFlightSettingsLocked() {
 }
 
 func saveFlightSettingsLocked() {
-	b, _ := json.MarshalIndent(flightSettings, "", "  ")
-	_ = os.WriteFile(flightSettingsPath, b, 0644)
+	_ = writeFlightJSONAtomic(flightSettingsPath, flightSettings)
 }
 
 func loadFlightIndexLocked() {
@@ -260,9 +282,40 @@ func loadFlightIndexLocked() {
 	}
 }
 
-func saveFlightIndexLocked() {
-	b, _ := json.MarshalIndent(flightHistory, "", "  ")
-	_ = os.WriteFile(flightIndexPath, b, 0644)
+func saveFlightIndexLocked() error {
+	return writeFlightJSONAtomic(flightIndexPath, flightHistory)
+}
+
+func writeFlightJSONAtomic(path string, value interface{}) error {
+	body, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
+	}
+	temporary := path + ".tmp"
+	file, err := os.OpenFile(temporary, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	if _, err = file.Write(body); err == nil {
+		err = file.Sync()
+	}
+	closeErr := file.Close()
+	if err == nil {
+		err = closeErr
+	}
+	if err != nil {
+		_ = os.Remove(temporary)
+		return err
+	}
+	if err = os.Rename(temporary, path); err != nil {
+		_ = os.Remove(temporary)
+		return err
+	}
+	if directory, openErr := os.Open(filepath.Dir(path)); openErr == nil {
+		_ = directory.Sync()
+		_ = directory.Close()
+	}
+	return nil
 }
 
 func loadCurrentFlightLocked() {
@@ -286,8 +339,8 @@ func persistCurrentFlightLocked() {
 		return
 	}
 	updateFlightDurationsLocked(flightCurrent, flightNowUTC())
-	b, _ := json.MarshalIndent(flightCurrent, "", "  ")
-	_ = os.WriteFile(flightCurrentPath, b, 0644)
+	syncFlightWeatherLocked()
+	_ = writeFlightJSONAtomic(flightCurrentPath, flightCurrent)
 }
 
 func loadAirportDatabaseLocked() {
@@ -373,6 +426,8 @@ func newFlightLocked(sample flightLiveGPS, start time.Time) {
 		OffBlockUTC: start.UTC().Format(time.RFC3339), MaxGroundSpeedKt: sample.GroundSpeedKt,
 		MaxAltitudeFt: sample.AltitudeFt, LastUpdateUTC: sample.TimeUTC, Track: []flightTrackPoint{p},
 	}
+	flightLastContextSample = time.Time{}
+	startFlightWeatherCapture(flightCurrent.ID, nil)
 	flightTaxiBaseAltitude = sample.AltitudeFt
 	flightTaxiBaseSamples = 1
 	flightLastPosition = &p
@@ -551,10 +606,11 @@ func updateFlightDurationsLocked(rec *flightRecord, now time.Time) {
 	}
 }
 
-func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) {
+func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) bool {
 	if flightCurrent == nil {
-		return
+		return false
 	}
+	previousPhase := flightCurrent.Phase
 	flightCurrent.OnBlockUTC = onBlock.UTC().Format(time.RFC3339)
 	flightCurrent.Phase = flightPhaseParked
 	flightCurrent.LastUpdateUTC = sample.TimeUTC
@@ -563,13 +619,32 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) {
 		flightCurrent.ArrivalAirport = nearestAirportLocked(sample.Latitude, sample.Longitude, sample.AltitudeFt, 8.0)
 	}
 	updateFlightDurationsLocked(flightCurrent, onBlock)
-	b, _ := json.MarshalIndent(flightCurrent, "", "  ")
-	_ = os.WriteFile(filepath.Join(flightFilesDir, flightCurrent.ID+".json"), b, 0644)
+	syncFlightWeatherLocked()
+	completedFlightID := flightCurrent.ID
+	completedPath := filepath.Join(flightFilesDir, flightCurrent.ID+".json")
+	if err := writeFlightJSONAtomic(completedPath, flightCurrent); err != nil {
+		flightCurrent.Phase = previousPhase
+		flightCurrent.OnBlockUTC = ""
+		flightCurrent.SyncError = "Unable to save completed flight"
+		persistCurrentFlightLocked()
+		log.Printf("flight log: unable to save completed flight %s: %v", completedFlightID, err)
+		return false
+	}
+	previousHistory := flightHistory
 	flightHistory = append([]flightSummary{summarizeFlight(*flightCurrent)}, flightHistory...)
 	if len(flightHistory) > 500 {
 		flightHistory = flightHistory[:500]
 	}
-	saveFlightIndexLocked()
+	if err := saveFlightIndexLocked(); err != nil {
+		flightHistory = previousHistory
+		_ = os.Remove(completedPath)
+		flightCurrent.Phase = previousPhase
+		flightCurrent.OnBlockUTC = ""
+		flightCurrent.SyncError = "Unable to update flight index"
+		persistCurrentFlightLocked()
+		log.Printf("flight log: unable to update flight index for %s: %v", completedFlightID, err)
+		return false
+	}
 	_ = os.Remove(flightCurrentPath)
 	flightCurrent = nil
 	flightLastPosition = nil
@@ -579,6 +654,8 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) {
 	if flightSyncEnabled {
 		wakeFlightSync()
 	}
+	stopFlightWeatherCapture(completedFlightID)
+	return true
 }
 
 func summarizeFlight(rec flightRecord) flightSummary {
@@ -768,8 +845,15 @@ func handleFlightLogAction(w http.ResponseWriter, r *http.Request) {
 		if flightCurrent.LandingUTC == "" {
 			flightCurrent.LandingUTC = now.Format(time.RFC3339)
 		}
-		finishFlightLocked(now, gps)
+		if !finishFlightLocked(now, gps) {
+			flightLogMu.Unlock()
+			http.Error(w, "flight could not be saved; the recoverable current record was retained", http.StatusInsufficientStorage)
+			return
+		}
 	case "discard":
+		if flightCurrent != nil {
+			stopFlightWeatherCapture(flightCurrent.ID)
+		}
 		flightCurrent = nil
 		flightLastPosition = nil
 		_ = os.Remove(flightCurrentPath)

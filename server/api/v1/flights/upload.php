@@ -16,6 +16,12 @@ if (!is_array($flight['Track'] ?? null) || count($flight['Track']) < 2) {
 if (count($flight['Track']) > 25000) {
     nx_json(['error' => 'flight track exceeds 25000 points'], 413);
 }
+$airTime = filter_var($flight['AirTimeSeconds'] ?? 0, FILTER_VALIDATE_INT);
+$distance = filter_var($flight['DistanceNM'] ?? 0, FILTER_VALIDATE_FLOAT);
+$maximumAltitude = filter_var($flight['MaxAltitudeFt'] ?? 0, FILTER_VALIDATE_FLOAT);
+if ($airTime === false || $airTime < 0 || $airTime > 604800) nx_json(['error' => 'invalid air time'], 422);
+if ($distance === false || !is_finite((float)$distance) || $distance < 0 || $distance > 30000) nx_json(['error' => 'invalid flight distance'], 422);
+if ($maximumAltitude === false || !is_finite((float)$maximumAltitude) || $maximumAltitude < 0 || $maximumAltitude > 100000) nx_json(['error' => 'invalid maximum altitude'], 422);
 
 $db = nx_db();
 $contentHash = hash('sha256', $body);
@@ -31,8 +37,13 @@ if (!$remoteId) {
     $remoteId = nx_uuid();
     $departure = (string)($flight['DepartureAirport']['Code'] ?? '');
     $arrival = (string)($flight['ArrivalAirport']['Code'] ?? '');
-    $db->prepare('INSERT INTO flights(id,installation_id,client_flight_id,payload,content_hash,off_block_utc,departure_code,arrival_code,created_at) VALUES(?,?,?,?,?,?,?,?,?)')
-        ->execute([$remoteId, $installationId, $flight['ID'], $body, $contentHash, (string)($flight['OffBlockUTC'] ?? ''), $departure, $arrival, gmdate(DATE_RFC3339)]);
+    $db->prepare('INSERT INTO flights(id,installation_id,aircraft_id,client_flight_id,payload,content_hash,off_block_utc,landing_utc,departure_code,arrival_code,air_time_seconds,distance_nm,max_altitude_ft,metrics_backfilled,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        ->execute([
+            $remoteId, $installationId, $installation['aircraft_id'] ?? null, $flight['ID'], $body, $contentHash,
+            (string)($flight['OffBlockUTC'] ?? ''), (string)($flight['LandingUTC'] ?? ''), $departure, $arrival,
+            $airTime, (float)$distance, (float)$maximumAltitude, 1,
+            gmdate(DATE_RFC3339),
+        ]);
     $status = 201;
 }
 $db->prepare('UPDATE installations SET last_seen_at=? WHERE id=?')->execute([gmdate(DATE_RFC3339), $installationId]);
