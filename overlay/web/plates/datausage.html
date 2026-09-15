@@ -203,27 +203,38 @@
             <strong>Automatic limit for this device</strong>
             <span>Choose what Stratux NX should do for this device only.</span>
           </div>
+          <div class="data-policy-current" ng-class="'is-' + currentPolicyMode(client)">
+            <i class="fa" ng-class="currentPolicyMode(client) === 'unlimited' ? 'fa-unlock' : (currentPolicyMode(client) === 'custom' ? 'fa-sliders' : 'fa-shield')"></i>
+            <div>
+              <small>Current setting</small>
+              <strong>{{currentPolicyTitle(client)}}</strong>
+              <span>{{currentPolicyDescription(client)}}</span>
+            </div>
+          </div>
           <div class="data-policy-options">
             <button type="button" class="data-policy-option"
                     ng-class="{'is-selected': policyDraft(client).mode === 'standard'}"
                     ng-click="chooseDevicePolicy(client, 'standard')"
-                    ng-disabled="policyDraft(client).pending">
+                    ng-disabled="policyDraft(client).pending"
+                    aria-pressed="{{policyDraft(client).mode === 'standard'}}">
               <i class="fa fa-shield"></i>
-              <span><strong>Standard</strong><small>{{settings.AutoBlockMB}} MB</small></span>
+              <span><strong>Standard</strong><small>{{currentPolicyMode(client) === 'standard' ? 'Currently active' : (settings.AutoBlockMB + ' MB')}}</small></span>
             </button>
             <button type="button" class="data-policy-option"
                     ng-class="{'is-selected': policyDraft(client).mode === 'custom'}"
                     ng-click="chooseDevicePolicy(client, 'custom')"
-                    ng-disabled="policyDraft(client).pending">
+                    ng-disabled="policyDraft(client).pending"
+                    aria-pressed="{{policyDraft(client).mode === 'custom'}}">
               <i class="fa fa-sliders"></i>
-              <span><strong>Custom</strong><small>Choose amount</small></span>
+              <span><strong>Custom</strong><small>{{currentPolicyMode(client) === 'custom' ? ('Currently active · ' + client.LimitMB + ' MB') : 'Choose amount'}}</small></span>
             </button>
             <button type="button" class="data-policy-option"
                     ng-class="{'is-selected': policyDraft(client).mode === 'unlimited'}"
                     ng-click="chooseDevicePolicy(client, 'unlimited')"
-                    ng-disabled="policyDraft(client).pending">
+                    ng-disabled="policyDraft(client).pending"
+                    aria-pressed="{{policyDraft(client).mode === 'unlimited'}}">
               <i class="fa fa-unlock"></i>
-              <span><strong>No limit</strong><small>Never auto-pause</small></span>
+              <span><strong>No limit</strong><small>{{currentPolicyMode(client) === 'unlimited' ? 'Currently active' : 'Never auto-pause'}}</small></span>
             </button>
           </div>
           <div class="data-custom-limit" ng-if="policyDraft(client).mode === 'custom'">
@@ -233,6 +244,12 @@
               <i class="fa" ng-class="policyDraft(client).pending ? 'fa-circle-o-notch fa-spin' : 'fa-check'"></i>
               {{policyDraft(client).pending ? 'Applying…' : 'Apply limit'}}
             </button>
+          </div>
+          <div class="data-policy-feedback" ng-if="policyFeedback(client)"
+               ng-class="'is-' + policyFeedback(client).type"
+               role="status" aria-live="polite">
+            <i class="fa" ng-class="policyFeedback(client).type === 'pending' ? 'fa-circle-o-notch fa-spin' : (policyFeedback(client).type === 'error' ? 'fa-exclamation-circle' : (policyFeedback(client).type === 'info' ? 'fa-info-circle' : 'fa-check-circle'))"></i>
+            <span>{{policyFeedback(client).message}}</span>
           </div>
         </div>
 
