@@ -76,6 +76,10 @@ jobs:
 
           grep -q "Internet Data" stratux/web/index.html
           grep -q "Flight Log" stratux/web/index.html
+          grep -q 'handleDataUsagePolicy' stratux/main/datausage.go
+          grep -q 'dataUsageLimitKeys' stratux/main/datausage.go
+          grep -q 'applyDevicePolicy' stratux/web/plates/js/datausage.js
+          grep -q 'Automatic limit for this device' stratux/web/plates/datausage.html
           grep -q 'href="#/about"' stratux/web/index.html
           grep -q 'sx-sidebar-brand' stratux/web/index.html
           grep -q "state('about'" stratux/web/js/main.js

@@ -3,7 +3,7 @@
    Uses design system tokens for light/dark mode consistency.
    ============================================================ */
 
-.data-flow-panel { overflow: visible; }
+.data-flow-panel { overflow: hidden; }
 .data-flow-header { align-items: flex-start; }
 
 .data-flow-health {
@@ -172,7 +172,7 @@
 
 .data-consumer-row-main {
   display: grid;
-  grid-template-columns: 38px 38px minmax(220px, 1.8fr) minmax(120px, .8fr) minmax(120px, .8fr) 82px;
+  grid-template-columns: 38px 38px minmax(220px, 1.8fr) minmax(120px, .8fr) minmax(120px, .8fr) 94px;
   gap: 10px;
   align-items: center;
 }
@@ -379,7 +379,7 @@
 .data-flow-kill {
   border-radius: var(--sx-radius-xs);
   padding: 7px 6px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -398,8 +398,8 @@
 /* --- Responsive -------------------------------------------------- */
 @media (max-width: 1050px) {
   .data-consumer-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .data-consumer-row-main { grid-template-columns: 34px 36px minmax(180px, 1.6fr) minmax(110px, .8fr) minmax(105px, .8fr) 76px; }
-  .data-consumer-flow-row { grid-template-columns: minmax(220px, 1fr) 80px 80px 64px; }
+  .data-consumer-row-main { grid-template-columns: 34px 36px minmax(180px, 1.6fr) minmax(110px, .8fr) minmax(105px, .8fr) 86px; }
+  .data-consumer-flow-row { grid-template-columns: minmax(220px, 1fr) 80px 80px 100px; }
 }
 
 @media (max-width: 767px) {
@@ -412,7 +412,7 @@
   .data-consumer-list { padding: 0 10px 4px; }
   .data-consumer-row { padding: 10px; }
   .data-consumer-row-main { grid-template-columns: 30px 34px minmax(0, 1fr) 82px; }
-  .data-consumer-flow-row { grid-template-columns: 1fr 68px; }
+  .data-consumer-flow-row { grid-template-columns: 1fr 100px; }
   .data-consumer-hosts { white-space: normal; max-height: 30px; }
   .data-consumer-more { padding-left: 10px; padding-right: 10px; }
 }
