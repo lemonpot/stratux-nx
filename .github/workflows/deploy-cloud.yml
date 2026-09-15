@@ -10,6 +10,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate cloud application
+        run: |
+          set -euo pipefail
+          php -l server/lib.php
+          php -l server/flight-memory.php
+          php -l server/web/index.php
+          php server/tests/flight-memory-test.php
+          node --check server/web/flight-memory.js
+          bash -n server/deploy-as-root.sh
+          test -f server/web/flight-memory.css
+
       - name: Package cloud application
         run: tar -C server -czf /tmp/stratuxnx-cloud.tgz .
 

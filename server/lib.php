@@ -100,11 +100,16 @@ SQL);
 }
 
 function nx_json(array $payload, int $status = 200): never {
+    $body = json_encode($payload, JSON_UNESCAPED_SLASHES);
+    if ($body === false) {
+        $status = 500;
+        $body = '{"error":"response encoding failed"}';
+    }
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
     header('X-Content-Type-Options: nosniff');
-    echo json_encode($payload, JSON_UNESCAPED_SLASHES);
+    echo $body;
     exit;
 }
 
