@@ -1,4 +1,4 @@
-appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
+appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $timeout) {
     $scope.data = {
         TotalBytes: 0,
         UploadBytes: 0,
@@ -21,8 +21,32 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
 
     $scope.Math = window.Math;
     $scope.errorMessage = '';
+    $scope.feedbackMessage = '';
+    $scope.feedbackType = 'success';
     $scope.savingSettings = false;
+    $scope.protectionPending = false;
+    $scope.resetPending = false;
+    $scope.refreshPending = false;
     var settingsLoaded = false;
+    var feedbackTimer = null;
+    var devicePolicyDrafts = {};
+
+    function deviceKey(client) {
+        return String((client && (client.MAC || client.IP)) || '');
+    }
+
+    function showFeedback(message, type) {
+        $scope.feedbackMessage = message;
+        $scope.feedbackType = type || 'success';
+        if (feedbackTimer) $timeout.cancel(feedbackTimer);
+        feedbackTimer = $timeout(function() {
+            $scope.feedbackMessage = '';
+        }, 4500);
+        if (window.StratuxUI && window.StratuxUI.toast) {
+            window.StratuxUI.toast(message, type || 'success', 3000);
+        }
+    }
+    $scope.showFeedback = showFeedback;
 
     $scope.mb = function(value) {
         return Number(value || 0) * 1024 * 1024;
@@ -64,8 +88,18 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
         return Math.min(100, ($scope.data.TotalBytes / limit) * 100);
     };
 
+    $scope.remainingBytes = function() {
+        var remaining = $scope.mb($scope.settings.SessionLimitMB) - Number($scope.data.TotalBytes || 0);
+        return Math.max(0, remaining);
+    };
+
+    $scope.deviceLimitMB = function(client) {
+        if (client && client.Exempt) return 0;
+        return Number((client && client.LimitMB) || $scope.settings.AutoBlockMB || 0);
+    };
+
     $scope.devicePercent = function(client) {
-        var limit = $scope.mb($scope.settings.AutoBlockMB);
+        var limit = $scope.mb($scope.deviceLimitMB(client));
         if (!limit) return 0;
         return Math.min(100, (Number(client.TotalBytes || 0) / limit) * 100);
     };
@@ -79,9 +113,73 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
 
     $scope.deviceProgressClass = function(client) {
         if (client.Blocked) return 'danger';
-        if (Number(client.TotalBytes || 0) >= $scope.mb($scope.settings.AutoBlockMB)) return 'danger';
-        if (Number(client.TotalBytes || 0) >= $scope.mb($scope.settings.WarningMB)) return 'warning';
+        var percent = $scope.devicePercent(client);
+        if (percent >= 100) return 'danger';
+        if (percent >= 75) return 'warning';
         return 'safe';
+    };
+
+    $scope.policyDraft = function(client) {
+        var key = deviceKey(client);
+        if (!devicePolicyDrafts[key]) {
+            devicePolicyDrafts[key] = {
+                mode: client.Exempt ? 'unlimited' : (Number(client.LimitMB || 0) > 0 ? 'custom' : 'standard'),
+                limitMB: Number(client.LimitMB || $scope.settings.AutoBlockMB || 500),
+                pending: false
+            };
+        }
+        return devicePolicyDrafts[key];
+    };
+
+    $scope.chooseDevicePolicy = function(client, mode) {
+        var draft = $scope.policyDraft(client);
+        var previousMode = draft.mode;
+        draft.mode = mode;
+        if (mode === 'custom') {
+            if (!draft.limitMB) draft.limitMB = Number($scope.settings.AutoBlockMB || 500);
+            return;
+        }
+        $scope.applyDevicePolicy(client, previousMode);
+    };
+
+    $scope.applyDevicePolicy = function(client, rollbackMode) {
+        if (!client) return;
+        var draft = $scope.policyDraft(client);
+        var limit = draft.mode === 'custom' ? Number(draft.limitMB) : 0;
+        if (draft.mode === 'custom' && (!limit || limit < 1)) {
+            $scope.errorMessage = 'Enter a device limit of at least 1 MB.';
+            return;
+        }
+        if (draft.mode === 'custom' && limit > Number($scope.settings.SessionLimitMB || 0)) {
+            $scope.errorMessage = 'This device limit cannot be higher than the session limit of ' + $scope.settings.SessionLimitMB + ' MB.';
+            return;
+        }
+        draft.pending = true;
+        $http.post('/dataUsage/policy', {
+            ip: client.IP,
+            mac: client.MAC || '',
+            exempt: draft.mode === 'unlimited',
+            limitMB: limit
+        }).then(function() {
+            draft.pending = false;
+            client.Exempt = draft.mode === 'unlimited';
+            client.LimitMB = draft.mode === 'custom' ? limit : 0;
+            client.Blocked = false;
+            var name = client.Hostname || 'This device';
+            if (draft.mode === 'unlimited') {
+                showFeedback(name + ' now has no automatic data limit.');
+            } else if (draft.mode === 'custom') {
+                showFeedback(name + ' will pause at ' + limit + ' MB.');
+            } else {
+                showFeedback(name + ' now uses the standard ' + $scope.settings.AutoBlockMB + ' MB limit.');
+            }
+            $scope.errorMessage = '';
+            $timeout($scope.refresh, 350);
+        }, function(response) {
+            draft.pending = false;
+            if (rollbackMode) draft.mode = rollbackMode;
+            $scope.errorMessage = 'Could not save the device limit: ' + ((response && response.data) || 'unknown error');
+        });
     };
 
     $scope.eventIcon = function(event) {
@@ -111,6 +209,7 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
     };
 
     $scope.refresh = function() {
+        $scope.refreshPending = true;
         $http.get('/dataUsage', {cache: false}).then(function(response) {
             var d = response.data || {};
             $scope.data = d;
@@ -121,31 +220,42 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
                 settingsLoaded = true;
             }
             $scope.errorMessage = '';
+            $scope.refreshPending = false;
         }, function() {
+            $scope.refreshPending = false;
             $scope.errorMessage = 'Unable to read Internet usage monitor. The service may still be starting.';
         });
     };
 
     $scope.toggleBlock = function(client) {
+        if (!client || client.actionPending) return;
+        var blocked = !client.Blocked;
         client.actionPending = true;
         $http.post('/dataUsage/block', {
             ip: client.IP,
-            blocked: !client.Blocked
+            blocked: blocked
         }).then(function() {
             client.actionPending = false;
-            $scope.refresh();
+            client.Blocked = blocked;
+            var name = client.Hostname || 'This device';
+            showFeedback(blocked ?
+                'Internet paused for ' + name + '. Stratux NX remains available.' :
+                'Internet restored for ' + name + '.');
+            $scope.errorMessage = '';
+            $timeout($scope.refresh, 350);
         }, function(response) {
             client.actionPending = false;
             $scope.errorMessage = 'Could not change Internet access for ' + client.IP + ': ' + (response.data || 'unknown error');
         });
     };
 
-    $scope.saveSettings = function() {
+    $scope.saveSettings = function(message, onError) {
         var warning = Number($scope.settings.WarningMB);
         var block = Number($scope.settings.AutoBlockMB);
         var session = Number($scope.settings.SessionLimitMB);
         if (!warning || !block || !session || warning > block || block > session) {
             $scope.errorMessage = 'Limits must be: Warning ≤ Auto-block ≤ Session limit.';
+            if (onError) onError();
             return;
         }
         $scope.savingSettings = true;
@@ -157,10 +267,30 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
         }).then(function() {
             $scope.savingSettings = false;
             $scope.errorMessage = '';
+            showFeedback(message || 'Protection settings saved. The new limits are active.');
             $scope.refresh();
         }, function(response) {
             $scope.savingSettings = false;
             $scope.errorMessage = 'Could not save safety limits: ' + (response.data || 'unknown error');
+            if (onError) onError();
+        });
+    };
+
+    $scope.toggleProtection = function() {
+        if ($scope.protectionPending || $scope.savingSettings) return;
+        var previous = $scope.settings.AutoBlockEnabled;
+        $scope.settings.AutoBlockEnabled = !$scope.settings.AutoBlockEnabled;
+        $scope.protectionPending = true;
+        $scope.saveSettings($scope.settings.AutoBlockEnabled ?
+            'Automatic data protection is now on.' :
+            'Automatic data protection is now off.', function() {
+                $scope.settings.AutoBlockEnabled = previous;
+            });
+        var stop = $scope.$watch('savingSettings', function(saving) {
+            if (!saving) {
+                $scope.protectionPending = false;
+                stop();
+            }
         });
     };
 
@@ -168,9 +298,13 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
         if (!window.confirm('Start a new data session? Current counters will reset to zero. The historical log will NOT be deleted.')) {
             return;
         }
+        $scope.resetPending = true;
         $http.post('/dataUsage/reset', {}).then(function() {
+            $scope.resetPending = false;
+            showFeedback('New Internet data session started at 0 MB.');
             $scope.refresh();
         }, function(response) {
+            $scope.resetPending = false;
             $scope.errorMessage = 'Could not reset session: ' + (response.data || 'unknown error');
         });
     };
@@ -204,11 +338,13 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
             totalBytes: client.TotalBytes || 0
         };
         persistSavedDevices();
+        showFeedback((client.Hostname || 'Device') + ' saved for future sessions.');
     };
 
     $scope.removeDevice = function(mac) {
         delete $scope.savedDevices[mac];
         persistSavedDevices();
+        showFeedback('Saved device removed.');
     };
 
     $scope.renameDevice = function(mac) {
@@ -218,6 +354,7 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
         if (name !== null && name.trim()) {
             dev.name = name.trim();
             persistSavedDevices();
+            showFeedback('Device renamed to ' + dev.name + '.');
         }
     };
 
@@ -246,5 +383,6 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
     var timer = $interval($scope.refresh, 2000);
     $scope.$on('$destroy', function() {
         $interval.cancel(timer);
+        if (feedbackTimer) $timeout.cancel(feedbackTimer);
     });
 });

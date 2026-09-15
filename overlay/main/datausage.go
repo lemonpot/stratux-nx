@@ -22,54 +22,54 @@ const (
 )
 
 type dataUsageSettings struct {
-	WarningMB        uint64 `json:"warningMB"`
-	AutoBlockMB      uint64 `json:"autoBlockMB"`
-	SessionLimitMB   uint64 `json:"sessionLimitMB"`
-	AutoBlockEnabled bool   `json:"autoBlockEnabled"`
+	WarningMB        uint64 `json:"WarningMB"`
+	AutoBlockMB      uint64 `json:"AutoBlockMB"`
+	SessionLimitMB   uint64 `json:"SessionLimitMB"`
+	AutoBlockEnabled bool   `json:"AutoBlockEnabled"`
 }
 
 type dataUsageClient struct {
-	IP             string  `json:"ip"`
-	MAC            string  `json:"mac"`
-	Hostname       string  `json:"hostname"`
-	Connected      bool    `json:"connected"`
-	Blocked        bool    `json:"blocked"`
-	UploadBytes    uint64  `json:"uploadBytes"`
-	DownloadBytes  uint64  `json:"downloadBytes"`
-	TotalBytes     uint64  `json:"totalBytes"`
-	UploadBps      float64 `json:"uploadBps"`
-	DownloadBps    float64 `json:"downloadBps"`
-	LastSeen       string  `json:"lastSeen"`
-	WarningReached bool    `json:"warningReached"`
+	IP             string  `json:"IP"`
+	MAC            string  `json:"MAC"`
+	Hostname       string  `json:"Hostname"`
+	Connected      bool    `json:"Connected"`
+	Blocked        bool    `json:"Blocked"`
+	UploadBytes    uint64  `json:"UploadBytes"`
+	DownloadBytes  uint64  `json:"DownloadBytes"`
+	TotalBytes     uint64  `json:"TotalBytes"`
+	UploadBps      float64 `json:"UploadBps"`
+	DownloadBps    float64 `json:"DownloadBps"`
+	LastSeen       string  `json:"LastSeen"`
+	WarningReached bool    `json:"WarningReached"`
 }
 
 type dataUsageResponse struct {
-	SessionStart       string              `json:"sessionStart"`
-	SessionSeconds     int64               `json:"sessionSeconds"`
-	TotalBytes         uint64              `json:"totalBytes"`
-	UploadBytes        uint64              `json:"uploadBytes"`
-	DownloadBytes      uint64              `json:"downloadBytes"`
-	UploadBps          float64             `json:"uploadBps"`
-	DownloadBps        float64             `json:"downloadBps"`
-	WANOnline          bool                `json:"wanOnline"`
-	APInterface        string              `json:"apInterface"`
-	WANInterface       string              `json:"wanInterface"`
-	Settings           dataUsageSettings   `json:"settings"`
-	Clients            []dataUsageClient   `json:"clients"`
-	RecentEvents       []dataUsageLogRecord `json:"recentEvents"`
-	PersistentLogPath  string              `json:"persistentLogPath"`
-	MonitoringActive   bool                `json:"monitoringActive"`
-	SessionLimitReached bool               `json:"sessionLimitReached"`
+	SessionStart        string               `json:"SessionStart"`
+	SessionSeconds      int64                `json:"SessionSeconds"`
+	TotalBytes          uint64               `json:"TotalBytes"`
+	UploadBytes         uint64               `json:"UploadBytes"`
+	DownloadBytes       uint64               `json:"DownloadBytes"`
+	UploadBps           float64              `json:"UploadBps"`
+	DownloadBps         float64              `json:"DownloadBps"`
+	WANOnline           bool                 `json:"WANOnline"`
+	APInterface         string               `json:"APInterface"`
+	WANInterface        string               `json:"WANInterface"`
+	Settings            dataUsageSettings    `json:"Settings"`
+	Clients             []dataUsageClient    `json:"Clients"`
+	RecentEvents        []dataUsageLogRecord `json:"RecentEvents"`
+	PersistentLogPath   string               `json:"PersistentLogPath"`
+	MonitoringActive    bool                 `json:"MonitoringActive"`
+	SessionLimitReached bool                 `json:"SessionLimitReached"`
 }
 
 type dataUsageLogRecord struct {
-	Time     string `json:"time"`
-	Type     string `json:"type"`
-	IP       string `json:"ip,omitempty"`
-	MAC      string `json:"mac,omitempty"`
-	Hostname string `json:"hostname,omitempty"`
-	Message  string `json:"message"`
-	Bytes    uint64 `json:"bytes,omitempty"`
+	Time     string `json:"Time"`
+	Type     string `json:"Type"`
+	IP       string `json:"IP,omitempty"`
+	MAC      string `json:"MAC,omitempty"`
+	Hostname string `json:"Hostname,omitempty"`
+	Message  string `json:"Message"`
+	Bytes    uint64 `json:"Bytes,omitempty"`
 }
 
 type dataUsageCounter struct {

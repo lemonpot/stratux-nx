@@ -1,6 +1,9 @@
 <div class="col-sm-12 data-usage-page" ng-cloak>
   <div class="data-page-toolbar">
-    <p>Only forwarded Internet traffic is counted. ADS-B, GPS, AHRS and local ForeFlight traffic are not included.</p>
+    <div>
+      <strong>Internet use in this session</strong>
+      <p>See what is using data and decide when each connected device should pause.</p>
+    </div>
     <div class="data-page-actions">
       <div class="data-connection-pill is-online" ng-if="data.WANOnline">
         <span class="data-dot"></span>
@@ -8,199 +11,276 @@
       </div>
       <div class="data-connection-pill is-offline" ng-if="!data.WANOnline">
         <span class="data-dot"></span>
-        Internet offline
+        No Internet connection
       </div>
-      <button class="btn btn-default" ng-click="resetSession()" title="Reset counters"><i class="fa fa-undo"></i> New session</button>
+      <button class="btn btn-default data-secondary-action" ng-click="resetSession()" ng-disabled="resetPending">
+        <i class="fa" ng-class="resetPending ? 'fa-circle-o-notch fa-spin' : 'fa-refresh'"></i>
+        {{resetPending ? 'Starting…' : 'Start new session'}}
+      </button>
     </div>
   </div>
 
+  <div class="data-feedback" ng-class="'is-' + feedbackType" ng-if="feedbackMessage" role="status" aria-live="polite">
+    <i class="fa fa-check-circle"></i>
+    <span>{{feedbackMessage}}</span>
+  </div>
+
   <div class="data-alert data-alert-danger" ng-if="data.SessionLimitReached">
-    <i class="fa fa-ban"></i>
-    <strong>Session hard limit reached.</strong> Internet access has been blocked for connected clients.
+    <i class="fa fa-pause-circle"></i>
+    <div>
+      <strong>The session limit was reached.</strong>
+      <span>Internet was paused for protected devices. Start a new session to reset usage and restore automatic blocks.</span>
+    </div>
   </div>
 
   <div class="data-error" ng-if="errorMessage">
-    <i class="fa fa-exclamation-triangle"></i> {{errorMessage}}
+    <i class="fa fa-exclamation-triangle"></i>
+    <span>{{errorMessage}}</span>
   </div>
 
   <div class="data-summary-grid">
     <div class="data-stat-card data-stat-primary">
-      <div class="data-stat-label">SESSION TOTAL</div>
+      <div class="data-stat-label">Used this session</div>
       <div class="data-stat-value">{{formatBytes(data.TotalBytes)}}</div>
-      <div class="data-stat-sub">Since {{formatTime(data.SessionStart)}}</div>
+      <div class="data-stat-sub">Started {{formatTime(data.SessionStart)}}</div>
     </div>
     <div class="data-stat-card">
-      <div class="data-stat-label"><i class="fa fa-arrow-down"></i> DOWNLOAD</div>
-      <div class="data-stat-value">{{formatBytes(data.DownloadBytes)}}</div>
-      <div class="data-stat-sub">{{formatRate(data.DownloadBps)}} now</div>
+      <div class="data-stat-label">Remaining before pause</div>
+      <div class="data-stat-value">{{formatBytes(remainingBytes())}}</div>
+      <div class="data-stat-sub">Session limit: {{settings.SessionLimitMB}} MB</div>
     </div>
     <div class="data-stat-card">
-      <div class="data-stat-label"><i class="fa fa-arrow-up"></i> UPLOAD</div>
-      <div class="data-stat-value">{{formatBytes(data.UploadBytes)}}</div>
-      <div class="data-stat-sub">{{formatRate(data.UploadBps)}} now</div>
+      <div class="data-stat-label">Using now</div>
+      <div class="data-stat-value">{{formatRate(data.DownloadBps + data.UploadBps)}}</div>
+      <div class="data-stat-sub">{{formatRate(data.DownloadBps)}} down · {{formatRate(data.UploadBps)}} up</div>
     </div>
     <div class="data-stat-card">
-      <div class="data-stat-label">SESSION TIME</div>
+      <div class="data-stat-label">Session time</div>
       <div class="data-stat-value data-stat-time">{{formatDuration(data.SessionSeconds)}}</div>
-      <div class="data-stat-sub">Monitoring {{data.MonitoringActive ? 'active' : 'inactive'}}</div>
+      <div class="data-stat-sub">{{data.MonitoringActive ? 'Monitoring automatically' : 'Monitor starting'}}</div>
     </div>
   </div>
 
-  <div class="data-panel">
-    <div class="data-panel-header">
+  <section class="data-panel data-protection-panel">
+    <div class="data-panel-header data-protection-header">
       <div>
-        <h3>Safety limits</h3>
-        <div class="data-muted">Automatic protection against unexpected large downloads.</div>
+        <h3>Automatic data protection</h3>
+        <div class="data-muted">Stratux NX can warn you and pause Internet before an unexpected download uses the whole data plan.</div>
       </div>
-      <label class="data-switch-row">
-        <span>Automatic protection</span>
-        <input type="checkbox" ng-model="settings.AutoBlockEnabled">
-      </label>
+      <button class="data-toggle" type="button"
+              ng-class="{'is-on': settings.AutoBlockEnabled}"
+              ng-click="toggleProtection()"
+              ng-disabled="protectionPending || savingSettings"
+              aria-pressed="{{settings.AutoBlockEnabled}}">
+        <span class="data-toggle-track"><span></span></span>
+        <span>{{settings.AutoBlockEnabled ? 'Protection on' : 'Protection off'}}</span>
+      </button>
+    </div>
+
+    <div class="data-protection-state" ng-class="{'is-off': !settings.AutoBlockEnabled}">
+      <i class="fa" ng-class="settings.AutoBlockEnabled ? 'fa-shield' : 'fa-info-circle'"></i>
+      <span ng-if="settings.AutoBlockEnabled">Limits are active. Local access to Stratux NX and ForeFlight is never blocked.</span>
+      <span ng-if="!settings.AutoBlockEnabled">Usage is still measured, but Stratux NX will not pause any device automatically.</span>
     </div>
 
     <div class="data-limit-progress-wrap">
       <div class="data-limit-head">
         <span>Session usage</span>
-        <strong>{{formatBytes(data.TotalBytes)}} / {{settings.SessionLimitMB}} MB</strong>
+        <strong>{{formatBytes(data.TotalBytes)}} of {{settings.SessionLimitMB}} MB</strong>
       </div>
-      <div class="data-progress-track">
+      <div class="data-progress-track" aria-label="Session usage">
         <div class="data-progress-bar" ng-class="limitProgressClass()" ng-style="{'width': sessionPercent() + '%'}"></div>
       </div>
+      <div class="data-progress-caption">{{sessionPercent() | number:0}}% used</div>
     </div>
 
-    <div class="data-settings-grid">
-      <div class="data-field">
-        <label>Warning per device</label>
-        <div class="data-input-group"><input type="number" min="1" ng-model="settings.WarningMB"><span>MB</span></div>
-      </div>
-      <div class="data-field">
-        <label>Auto-block per device</label>
-        <div class="data-input-group"><input type="number" min="1" ng-model="settings.AutoBlockMB"><span>MB</span></div>
-      </div>
-      <div class="data-field">
-        <label>Hard session limit</label>
-        <div class="data-input-group"><input type="number" min="1" ng-model="settings.SessionLimitMB"><span>MB</span></div>
-      </div>
-      <div class="data-field data-field-actions">
-        <button class="btn btn-primary data-btn" ng-click="saveSettings()" ng-disabled="savingSettings">
-          <i class="fa fa-shield"></i> {{savingSettings ? 'Saving...' : 'Save protection'}}
-        </button>
-      </div>
+    <div class="data-limit-steps">
+      <label class="data-limit-step">
+        <span class="data-step-number">1</span>
+        <span class="data-step-copy">
+          <strong>Show a warning</strong>
+          <small>Tell me when one device reaches this amount.</small>
+        </span>
+        <span class="data-simple-input"><input type="number" min="1" ng-model="settings.WarningMB"><b>MB</b></span>
+      </label>
+      <label class="data-limit-step">
+        <span class="data-step-number">2</span>
+        <span class="data-step-copy">
+          <strong>Pause that device</strong>
+          <small>Default limit for each device unless you choose another below.</small>
+        </span>
+        <span class="data-simple-input"><input type="number" min="1" ng-model="settings.AutoBlockMB"><b>MB</b></span>
+      </label>
+      <label class="data-limit-step">
+        <span class="data-step-number">3</span>
+        <span class="data-step-copy">
+          <strong>Pause all protected devices</strong>
+          <small>Maximum total usage for this Internet session.</small>
+        </span>
+        <span class="data-simple-input"><input type="number" min="1" ng-model="settings.SessionLimitMB"><b>MB</b></span>
+      </label>
     </div>
-    <div class="data-limit-note">
-      Default protection: warning at 250 MB/device, block at 500 MB/device, and block all Internet at 1 GB/session.
-    </div>
-  </div>
 
-  <div class="data-panel">
+    <div class="data-panel-footer">
+      <span>Use MB for precise control. 1 GB equals 1024 MB.</span>
+      <button class="btn btn-primary data-save-protection" ng-click="saveSettings()" ng-disabled="savingSettings">
+        <i class="fa" ng-class="savingSettings ? 'fa-circle-o-notch fa-spin' : 'fa-check'"></i>
+        {{savingSettings ? 'Saving…' : 'Save protection settings'}}
+      </button>
+    </div>
+  </section>
+
+  <section class="data-panel">
     <div class="data-panel-header">
       <div>
         <h3>Connected devices</h3>
-        <div class="data-muted">Block only Internet. Access to Stratux NX itself remains available.</div>
+        <div class="data-muted">Give every iPad, phone or computer its own limit. Pausing Internet never disconnects it from Stratux NX.</div>
       </div>
-      <button class="btn btn-default data-btn-small" ng-click="refresh()"><i class="fa fa-refresh"></i> Refresh</button>
+      <button class="btn btn-default data-secondary-action" ng-click="refresh()" ng-disabled="refreshPending">
+        <i class="fa" ng-class="refreshPending ? 'fa-circle-o-notch fa-spin' : 'fa-refresh'"></i>
+        {{refreshPending ? 'Updating…' : 'Refresh'}}
+      </button>
     </div>
 
     <div class="data-empty" ng-if="!data.Clients || data.Clients.length === 0">
       <i class="fa fa-wifi"></i>
-      <strong>No clients detected yet</strong>
-      <span>Connect an iPad or phone to the Stratux NX Wi-Fi.</span>
+      <strong>No devices connected yet</strong>
+      <span>Connect an iPad, phone or computer to the Stratux NX Wi-Fi.</span>
     </div>
 
     <div class="data-device-list" ng-if="data.Clients.length">
-      <div class="data-device-card" ng-repeat="client in data.Clients | orderBy:['!Connected','-TotalBytes']" ng-class="{'is-blocked': client.Blocked}">
+      <article class="data-device-card"
+               ng-repeat="client in data.Clients | orderBy:['!Connected','-TotalBytes']"
+               ng-class="{'is-blocked': client.Blocked, 'is-unlimited': client.Exempt}">
         <div class="data-device-main">
           <div class="data-device-icon"><i class="fa fa-tablet"></i></div>
           <div class="data-device-name-wrap">
             <div class="data-device-name">{{client.Hostname || 'Unknown device'}}</div>
             <div class="data-device-meta">
-              <span class="data-status-badge" ng-class="{'online': client.Connected, 'offline': !client.Connected}">{{client.Connected ? 'CONNECTED' : 'SEEN EARLIER'}}</span>
+              <span class="data-status-badge" ng-class="{'online': client.Connected, 'offline': !client.Connected}">
+                {{client.Connected ? 'Connected' : 'Seen earlier'}}
+              </span>
               <span>{{client.IP}}</span>
               <span ng-if="client.MAC">{{client.MAC}}</span>
-              <span class="data-status-badge unrestricted" ng-if="client.Exempt"><i class="fa fa-star"></i> UNRESTRICTED</span>
             </div>
           </div>
-          <div class="data-device-btns">
-            <button class="btn btn-default btn-xs data-save-btn" ng-click="saveDevice(client)" ng-if="!isDeviceSaved(client.MAC)" title="Save device">
-              <i class="fa fa-bookmark-o"></i>
-            </button>
-            <button class="btn btn-default btn-xs data-save-btn saved" ng-if="isDeviceSaved(client.MAC)" title="Device saved" disabled>
-              <i class="fa fa-bookmark"></i>
-            </button>
-            <button class="btn data-policy-btn" ng-class="client.Exempt ? 'is-exempt' : ''" ng-click="toggleExempt(client)" ng-disabled="client.policyPending">
-              <i class="fa" ng-class="client.Exempt ? 'fa-shield' : 'fa-star-o'"></i>
-              {{client.policyPending ? 'Saving...' : (client.Exempt ? 'LIMITS' : 'EXEMPT')}}
-            </button>
-            <button class="btn data-block-btn" ng-class="client.Blocked ? 'btn-success' : 'btn-danger'" ng-click="toggleBlock(client)" ng-disabled="client.actionPending">
-              <i class="fa" ng-class="client.Blocked ? 'fa-unlock' : 'fa-ban'"></i>
-              {{client.actionPending ? 'Working...' : (client.Blocked ? 'RESTORE' : 'BLOCK')}}
-            </button>
+          <div class="data-access-state" ng-class="{'is-paused': client.Blocked, 'is-free': client.Exempt}">
+            <i class="fa" ng-class="client.Blocked ? 'fa-pause' : (client.Exempt ? 'fa-unlock' : 'fa-check')"></i>
+            <span>
+              <small>Internet</small>
+              <strong>{{client.Blocked ? 'Paused' : (client.Exempt ? 'No limit' : 'Available')}}</strong>
+            </span>
           </div>
         </div>
 
-        <div class="data-device-metrics">
-          <div><span>Total</span><strong>{{formatBytes(client.TotalBytes)}}</strong></div>
-          <div><span>Download</span><strong>{{formatBytes(client.DownloadBytes)}}</strong></div>
-          <div><span>Upload</span><strong>{{formatBytes(client.UploadBytes)}}</strong></div>
-          <div><span>Now</span><strong>{{formatRate(client.DownloadBps + client.UploadBps)}}</strong></div>
+        <div class="data-device-usage">
+          <div>
+            <span>Used this session</span>
+            <strong>{{formatBytes(client.TotalBytes)}}</strong>
+          </div>
+          <div>
+            <span>Using now</span>
+            <strong>{{formatRate(client.DownloadBps + client.UploadBps)}}</strong>
+          </div>
+          <div>
+            <span>Automatic limit</span>
+            <strong>{{client.Exempt ? 'No limit' : (deviceLimitMB(client) + ' MB')}}</strong>
+          </div>
         </div>
 
-        <div class="data-device-progress">
+        <div class="data-device-progress" ng-if="!client.Exempt">
           <div class="data-progress-track">
             <div class="data-progress-bar" ng-class="deviceProgressClass(client)" ng-style="{'width': devicePercent(client) + '%'}"></div>
           </div>
           <div class="data-device-progress-label">
-            <span ng-if="client.Exempt">Unrestricted device</span>
-            <span ng-if="!client.Exempt && !client.Blocked && client.TotalBytes < mb(settings.WarningMB)">Normal usage</span>
-            <span ng-if="!client.Exempt && !client.Blocked && client.TotalBytes >= mb(settings.WarningMB) && client.TotalBytes < mb(settings.AutoBlockMB)">Warning threshold reached</span>
-            <span ng-if="!client.Exempt && client.Blocked">Internet blocked</span>
-            <span>{{Math.min(100, devicePercent(client)) | number:0}}%</span>
+            <span>{{client.Blocked ? 'Internet paused' : ((devicePercent(client) | number:0) + '% of this device limit used')}}</span>
+            <span>{{formatBytes(client.TotalBytes)}} / {{deviceLimitMB(client)}} MB</span>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Live connection inspector -->
+        <div class="data-device-controls">
+          <div class="data-device-control-copy">
+            <strong>Automatic limit for this device</strong>
+            <span>Choose what Stratux NX should do for this device only.</span>
+          </div>
+          <div class="data-policy-options">
+            <button type="button" class="data-policy-option"
+                    ng-class="{'is-selected': policyDraft(client).mode === 'standard'}"
+                    ng-click="chooseDevicePolicy(client, 'standard')"
+                    ng-disabled="policyDraft(client).pending">
+              <i class="fa fa-shield"></i>
+              <span><strong>Standard</strong><small>{{settings.AutoBlockMB}} MB</small></span>
+            </button>
+            <button type="button" class="data-policy-option"
+                    ng-class="{'is-selected': policyDraft(client).mode === 'custom'}"
+                    ng-click="chooseDevicePolicy(client, 'custom')"
+                    ng-disabled="policyDraft(client).pending">
+              <i class="fa fa-sliders"></i>
+              <span><strong>Custom</strong><small>Choose amount</small></span>
+            </button>
+            <button type="button" class="data-policy-option"
+                    ng-class="{'is-selected': policyDraft(client).mode === 'unlimited'}"
+                    ng-click="chooseDevicePolicy(client, 'unlimited')"
+                    ng-disabled="policyDraft(client).pending">
+              <i class="fa fa-unlock"></i>
+              <span><strong>No limit</strong><small>Never auto-pause</small></span>
+            </button>
+          </div>
+          <div class="data-custom-limit" ng-if="policyDraft(client).mode === 'custom'">
+            <label>Pause Internet after</label>
+            <span class="data-simple-input"><input type="number" min="1" ng-model="policyDraft(client).limitMB"><b>MB</b></span>
+            <button class="btn btn-primary" ng-click="applyDevicePolicy(client)" ng-disabled="policyDraft(client).pending">
+              <i class="fa" ng-class="policyDraft(client).pending ? 'fa-circle-o-notch fa-spin' : 'fa-check'"></i>
+              {{policyDraft(client).pending ? 'Applying…' : 'Apply limit'}}
+            </button>
+          </div>
+        </div>
+
+        <div class="data-device-actions">
+          <button class="btn btn-default" ng-click="saveDevice(client)" ng-if="!isDeviceSaved(client.MAC)" ng-disabled="!client.MAC">
+            <i class="fa fa-bookmark-o"></i> Remember device
+          </button>
+          <button class="btn btn-default is-saved" ng-if="isDeviceSaved(client.MAC)" disabled>
+            <i class="fa fa-bookmark"></i> Remembered
+          </button>
+          <button class="btn" ng-class="client.Blocked ? 'btn-success' : 'data-pause-btn'"
+                  ng-click="toggleBlock(client)" ng-disabled="client.actionPending">
+            <i class="fa" ng-class="client.actionPending ? 'fa-circle-o-notch fa-spin' : (client.Blocked ? 'fa-play' : 'fa-pause')"></i>
+            {{client.actionPending ? 'Applying…' : (client.Blocked ? 'Restore Internet' : 'Pause Internet now')}}
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+
   <div ng-include="'plates/datausage_flows.html'"></div>
 
-  <!-- Saved devices section -->
-  <div class="data-panel">
+  <section class="data-panel">
     <div class="data-panel-header">
       <div>
-        <h3>Saved devices</h3>
-        <div class="data-muted">Devices you want to keep track of across sessions.</div>
+        <h3>Remembered devices</h3>
+        <div class="data-muted">Friendly names for devices you regularly use with Stratux NX.</div>
       </div>
     </div>
 
     <div class="data-empty" ng-if="savedDeviceList().length === 0">
       <i class="fa fa-bookmark-o"></i>
-      <strong>No saved devices yet</strong>
-      <span>Click the <i class="fa fa-bookmark-o"></i> icon on any connected device above to save it.</span>
+      <strong>No remembered devices</strong>
+      <span>Use “Remember device” above to keep it here for future sessions.</span>
     </div>
 
-    <div class="data-device-list" ng-if="savedDeviceList().length">
-      <div class="data-device-card" ng-repeat="dev in savedDeviceList() | orderBy:['-isOnline', 'name']">
-        <div class="data-device-main">
-          <div class="data-device-icon"><i class="fa fa-bookmark"></i></div>
-          <div class="data-device-name-wrap">
-            <div class="data-device-name">{{dev.name}}</div>
-            <div class="data-device-meta">
-              <span class="data-status-badge" ng-class="{'online': dev.isOnline, 'offline': !dev.isOnline}">{{dev.isOnline ? 'ONLINE' : 'OFFLINE'}}</span>
-              <span>{{dev.ip}}</span>
-              <span>{{dev.mac}}</span>
-            </div>
-          </div>
-          <div class="data-saved-actions">
-            <button class="btn btn-default btn-xs" ng-click="renameDevice(dev.mac)" title="Rename"><i class="fa fa-pencil"></i></button>
-            <button class="btn btn-default btn-xs" ng-click="removeDevice(dev.mac)" title="Remove"><i class="fa fa-trash-o"></i></button>
-          </div>
+    <div class="data-saved-list" ng-if="savedDeviceList().length">
+      <div class="data-saved-device" ng-repeat="dev in savedDeviceList() | orderBy:['-isOnline', 'name']">
+        <div class="data-device-icon"><i class="fa fa-bookmark"></i></div>
+        <div>
+          <strong>{{dev.name}}</strong>
+          <span>{{dev.isOnline ? 'Connected now' : 'Not connected'}} · {{dev.ip || dev.mac}}</span>
         </div>
-        <div class="data-device-metrics">
-          <div><span>Total this session</span><strong>{{formatBytes(dev.totalBytes)}}</strong></div>
-          <div><span>Last seen</span><strong>{{formatTime(dev.lastSeen)}}</strong></div>
+        <div class="data-saved-actions">
+          <button class="btn btn-default" ng-click="renameDevice(dev.mac)"><i class="fa fa-pencil"></i> Rename</button>
+          <button class="btn btn-default" ng-click="removeDevice(dev.mac)"><i class="fa fa-trash-o"></i> Remove</button>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 </div>
