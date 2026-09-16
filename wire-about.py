@@ -59,6 +59,7 @@ required = [
     root / "web/img/logo-stratux-dark.png",
     root / "web/img/logo-android3.png",
     root / "web/img/logo-apple3.png",
+    root / "web/img/lemonpot.ico",
 ]
 missing = [str(path.relative_to(root)) for path in required if not path.is_file()]
 if missing:

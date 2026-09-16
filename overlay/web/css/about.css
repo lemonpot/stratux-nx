@@ -146,6 +146,43 @@ body.stratux-dark .about-logo-dark {
   line-height: 1.6;
 }
 
+.about-lemonpot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 78px;
+  padding: 18px 24px;
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius);
+  background: var(--sx-card);
+  color: var(--sx-muted);
+  font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: .14em;
+}
+
+.about-lemonpot a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--sx-text) !important;
+  text-decoration: none !important;
+}
+
+.about-lemonpot img {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+}
+
+.about-lemonpot strong {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+
 @media (max-width: 760px) {
   .sx-sidebar-brand {
     height: 92px !important;
@@ -165,5 +202,11 @@ body.stratux-dark .about-logo-dark {
 
   .about-card {
     padding: 18px;
+  }
+
+  .about-lemonpot {
+    flex-direction: column;
+    min-height: 92px;
+    text-align: center;
   }
 }
