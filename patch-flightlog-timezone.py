@@ -294,7 +294,69 @@ p.write_text(s)
 # Styling for resolved timezone card and switch stack.
 p = root / 'web/css/flightlog.css'
 s = p.read_text()
-extra = '''\n.flightlog-switch-stack{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.flightlog-timezone-live{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;padding:14px 18px;background:#f8fafc;border-bottom:1px solid #eef0f2}.flightlog-timezone-live>div{border:1px solid #e5e7eb;background:#fff;border-radius:12px;padding:11px 13px}.flightlog-timezone-live>div:first-child{border-color:#bfdbfe;background:#eff6ff}.flightlog-timezone-live span{display:block;font-size:9px;font-weight:800;letter-spacing:.07em;color:#64748b}.flightlog-timezone-live strong{display:block;margin-top:4px;font-size:17px;color:#111827}.flightlog-timezone-live small{display:block;margin-top:3px;font-size:10px;color:#64748b}.flightlog-field input:disabled{background:#f3f4f6;color:#6b7280;cursor:not-allowed}@media(max-width:700px){.flightlog-switch-stack{display:grid;width:100%;justify-content:stretch}.flightlog-timezone-live{grid-template-columns:1fr;padding:12px 14px}}\n'''
-if '.flightlog-timezone-live{' not in s:
+extra = '''
+.flightlog-switch-stack {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.flightlog-timezone-live {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--sx-border);
+  background: var(--sx-card-soft);
+}
+.flightlog-timezone-live > div {
+  padding: 11px 13px;
+  border: 1px solid var(--sx-border);
+  border-radius: 8px;
+  background: var(--sx-card);
+}
+.flightlog-timezone-live > div:first-child {
+  border-color: var(--sx-primary);
+  background: var(--sx-primary-soft);
+}
+.flightlog-timezone-live span {
+  display: block;
+  color: var(--sx-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .07em;
+}
+.flightlog-timezone-live strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--sx-text);
+  font-size: 17px;
+}
+.flightlog-timezone-live small {
+  display: block;
+  margin-top: 3px;
+  color: var(--sx-muted);
+  font-size: 10px;
+}
+.flightlog-field input:disabled {
+  border-color: var(--sx-border);
+  background: var(--sx-card-soft);
+  color: var(--sx-muted);
+  cursor: not-allowed;
+}
+@media (max-width: 700px) {
+  .flightlog-switch-stack {
+    display: grid;
+    width: 100%;
+    justify-content: stretch;
+  }
+  .flightlog-timezone-live {
+    grid-template-columns: 1fr;
+    padding: 12px 14px;
+  }
+}
+'''
+if '.flightlog-timezone-live' not in s:
     s += extra
 p.write_text(s)

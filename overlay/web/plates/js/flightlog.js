@@ -19,7 +19,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         Settings: {Timezone:'UTC', AutoDetect:true},
         AirportDatabaseReady: false,
         AirportCount: 0,
-        Sync: {Enabled:false, InstallationID:'', Online:false, Pending:0, LastError:''},
+        Sync: {Enabled:false, InstallationID:'', Online:false, Pending:0, LastError:'', Linked:false, AccountName:'', AccountEmail:''},
         StoragePath: ''
     };
     $scope.settings = {Timezone:'UTC', AutoDetect:true};

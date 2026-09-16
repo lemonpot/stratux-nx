@@ -378,7 +378,7 @@
 
 .flightlog-cloud-body {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(150px, .5fr) auto;
+  grid-template-columns: minmax(220px, 1.25fr) minmax(160px, .7fr) minmax(130px, .45fr) auto;
   align-items: center;
   gap: 18px;
   padding: 16px 18px;
@@ -386,6 +386,7 @@
 
 .flightlog-cloud-body span,
 .flightlog-device-id small,
+.flightlog-cloud-account small,
 .flightlog-cloud-pending small {
   display: block;
 }
@@ -398,6 +399,7 @@
 }
 
 .flightlog-device-id strong,
+.flightlog-cloud-account strong,
 .flightlog-cloud-pending strong {
   display: block;
   margin-top: 4px;
@@ -412,10 +414,16 @@
 }
 
 .flightlog-device-id small,
+.flightlog-cloud-account small,
 .flightlog-cloud-pending small {
   margin-top: 4px;
   color: var(--sx-muted);
   font-size: 11px;
+}
+
+.flightlog-cloud-account strong i {
+  margin-right: 4px;
+  color: var(--sx-success);
 }
 
 .flightlog-cloud-actions {
