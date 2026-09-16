@@ -58,12 +58,27 @@
     </div>
 
     <div class="update-action-body">
+      <div class="update-reconnect" ng-if="reconnecting">
+        <i class="fa fa-wifi"></i>
+        <div>
+          <strong>Stratux NX is restarting</strong>
+          <span>Wait for the Stratux Wi-Fi network to return, reconnect this device to it, and reopen this page. Do not remove power. More than one restart is normal.</span>
+        </div>
+      </div>
+
       <!-- Not downloading yet -->
       <div ng-if="!status.downloading && !status.staged">
         <p class="update-action-text">
           <i class="fa fa-info-circle"></i>
           The update will be downloaded and installed automatically. Your Stratux NX will reboot to apply the update. All settings and flight data are preserved.
         </p>
+        <div class="update-install-guide">
+          <i class="fa fa-wifi"></i>
+          <div>
+            <strong>Allow about 5 minutes and keep power connected</strong>
+            <span>The device may restart more than once. When the Stratux Wi-Fi disappears, wait for it to return, reconnect your phone or computer to it, and reopen this page.</span>
+          </div>
+        </div>
         <button class="btn btn-primary btn-block update-install-btn" ng-click="installUpdate()" ng-disabled="installing">
           <i class="fa" ng-class="installing ? 'fa-circle-o-notch fa-spin' : 'fa-download'"></i>
           {{installing ? 'Starting download...' : 'Download and install update'}}
@@ -82,7 +97,7 @@
         <div class="update-progress-track">
           <div class="update-progress-bar" ng-style="{'width': status.download_percent + '%'}"></div>
         </div>
-        <p class="update-muted update-power-note">Do not disconnect from the internet or power off the device.</p>
+        <p class="update-muted update-power-note">Keep power connected. After downloading, Stratux NX may restart more than once during installation.</p>
       </div>
 
       <!-- Download error -->
@@ -105,7 +120,7 @@
           <i class="fa fa-check-circle"></i>
           <div>
             <strong>Update downloaded and verified</strong>
-            <span>Stratux NX will reboot now to apply the update. This takes about 2 minutes.</span>
+            <span>Installation is starting. The device may restart more than once and the full process normally takes about 5 minutes. When the Stratux Wi-Fi returns, reconnect to it and reopen this page.</span>
           </div>
         </div>
       </div>
