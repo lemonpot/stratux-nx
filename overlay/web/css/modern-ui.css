@@ -413,6 +413,20 @@ textarea[disabled],
   border-color: var(--sx-border) !important;
 }
 
+.btn-info {
+  background: var(--sx-card-soft) !important;
+  border-color: var(--sx-border-strong) !important;
+  color: var(--sx-text) !important;
+}
+
+.btn-info:hover,
+.btn-info:focus,
+.btn-info:active {
+  background: var(--sx-card-hover) !important;
+  border-color: var(--sx-primary) !important;
+  color: var(--sx-text) !important;
+}
+
 .btn-primary {
   background: var(--sx-primary) !important;
   border-color: var(--sx-primary) !important;

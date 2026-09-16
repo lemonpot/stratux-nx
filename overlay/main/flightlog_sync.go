@@ -37,6 +37,9 @@ type flightSyncPublicState struct {
 	Pending        int    `json:"Pending"`
 	LastAttemptUTC string `json:"LastAttemptUTC,omitempty"`
 	LastError      string `json:"LastError,omitempty"`
+	Linked         bool   `json:"Linked"`
+	AccountName    string `json:"AccountName,omitempty"`
+	AccountEmail   string `json:"AccountEmail,omitempty"`
 	ClaimCode      string `json:"ClaimCode,omitempty"`
 	ClaimExpiresUTC string `json:"ClaimExpiresUTC,omitempty"`
 	ClaimURL       string `json:"ClaimURL,omitempty"`
@@ -52,6 +55,9 @@ var (
 	flightSyncOnline   bool
 	flightSyncLastTry  string
 	flightSyncLastErr  string
+	flightSyncLinked   bool
+	flightSyncAccountName string
+	flightSyncAccountEmail string
 	flightSyncClaimCode string
 	flightSyncClaimExpiry string
 	flightIdentityPath string
@@ -137,6 +143,9 @@ func flightSyncPublicStateLocked() flightSyncPublicState {
 		Pending:        pending,
 		LastAttemptUTC: flightSyncLastTry,
 		LastError:      flightSyncLastErr,
+		Linked:         flightSyncLinked,
+		AccountName:    flightSyncAccountName,
+		AccountEmail:   flightSyncAccountEmail,
 		ClaimCode:      flightSyncClaimCode,
 		ClaimExpiresUTC: flightSyncClaimExpiry,
 		ClaimURL:       flightClaimURL(flightSyncClaimCode),
@@ -269,6 +278,25 @@ func registerFlightInstallation(identity flightInstallationIdentity) error {
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return flightCloudHTTPError(resp)
 	}
+	var result struct {
+		Account struct {
+			Linked bool   `json:"linked"`
+			Name   string `json:"name"`
+			Email  string `json:"email"`
+		} `json:"account"`
+	}
+	if json.NewDecoder(resp.Body).Decode(&result) != nil {
+		return fmt.Errorf("cloud returned an invalid installation response")
+	}
+	flightLogMu.Lock()
+	flightSyncLinked = result.Account.Linked
+	flightSyncAccountName = strings.TrimSpace(result.Account.Name)
+	flightSyncAccountEmail = strings.TrimSpace(result.Account.Email)
+	if flightSyncLinked {
+		flightSyncClaimCode = ""
+		flightSyncClaimExpiry = ""
+	}
+	flightLogMu.Unlock()
 	return nil
 }
 

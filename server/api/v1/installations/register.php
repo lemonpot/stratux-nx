@@ -21,4 +21,23 @@ if ($existing) {
         ->execute([$installationId, $publicKey, (string)($data['software_version'] ?? ''), $now, $now]);
 }
 
-nx_json(['status' => 'ok', 'installation_id' => $installationId], $existing ? 200 : 201);
+$account = null;
+$stmt = $db->prepare('SELECT u.name, u.email FROM installations i LEFT JOIN users u ON u.id=i.user_id WHERE i.id=?');
+$stmt->execute([$installationId]);
+$owner = $stmt->fetch();
+if ($owner && (string)($owner['email'] ?? '') !== '') {
+    $email = strtolower(trim((string)$owner['email']));
+    [$local, $domain] = array_pad(explode('@', $email, 2), 2, '');
+    $maskedEmail = substr($local, 0, 1) . '***' . ($domain !== '' ? '@' . $domain : '');
+    $account = [
+        'linked' => true,
+        'name' => trim((string)($owner['name'] ?? '')),
+        'email' => $maskedEmail,
+    ];
+}
+
+nx_json([
+    'status' => 'ok',
+    'installation_id' => $installationId,
+    'account' => $account ?? ['linked' => false, 'name' => '', 'email' => ''],
+], $existing ? 200 : 201);
