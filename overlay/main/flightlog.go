@@ -443,6 +443,9 @@ func updateFlightStateLocked(sample flightLiveGPS) {
 	if now.IsZero() {
 		now = time.Now().UTC()
 	}
+	if !flightTrackPointPlausibleLocked(sample, now) {
+		return
+	}
 	speed := sample.GroundSpeedKt
 	absVS := math.Abs(sample.VerticalSpeedFps)
 
@@ -541,6 +544,41 @@ func updateFlightStateLocked(sample flightLiveGPS) {
 	if flightCurrent != nil {
 		updateFlightDurationsLocked(flightCurrent, now)
 	}
+}
+
+func flightTrackPointPlausibleLocked(sample flightLiveGPS, now time.Time) bool {
+	if flightCurrent == nil || flightLastPosition == nil {
+		return true
+	}
+	previousTime := parseFlightTime(flightLastPosition.TimeUTC)
+	distanceNM := flightDistanceNM(
+		flightLastPosition.Latitude,
+		flightLastPosition.Longitude,
+		sample.Latitude,
+		sample.Longitude,
+	)
+	if distanceNM <= 0 {
+		return true
+	}
+	if previousTime.IsZero() || !now.After(previousTime) {
+		return distanceNM <= 0.25
+	}
+
+	elapsedHours := now.Sub(previousTime).Hours()
+	reportedSpeedKt := math.Max(flightLastPosition.GroundSpeedKt, sample.GroundSpeedKt)
+	accuracyNM := math.Max(0, sample.HorizontalAccuracyM) / 1852.0
+	maximumDistanceNM := math.Max(0.35, reportedSpeedKt*elapsedHours*3.0+accuracyNM*2.0+0.10)
+	if distanceNM <= maximumDistanceNM {
+		return true
+	}
+
+	log.Printf(
+		"Flight Log: ignored implausible GPS jump of %.2f NM in %.1f seconds (allowed %.2f NM)",
+		distanceNM,
+		now.Sub(previousTime).Seconds(),
+		maximumDistanceNM,
+	)
+	return false
 }
 
 func appendFlightTrackLocked(sample flightLiveGPS) {
