@@ -117,16 +117,8 @@ body.stratux-dark .navbar.navbar-app {
   font-size: 15px;
 }
 
-.navbar-brand img {
-  border-radius: 6px;
-}
-
-.navbar-brand .sx-brand-logo {
-  width: 26px;
-  height: 26px;
-  margin: -2px 7px 0 0;
-  border-radius: var(--sx-radius-sm);
-  vertical-align: middle;
+.sx-navbar-name {
+  display: inline;
 }
 
 .navbar .btn {
@@ -217,6 +209,7 @@ body.stratux-dark .navbar.navbar-app {
 @media (min-width: 768px) {
   .sidebar-left { width: 240px !important; }
   .app { margin-left: 240px !important; }
+  .sx-navbar-name { display: none; }
 }
 
 
@@ -922,6 +915,16 @@ body.stratux-dark .modal-overlay {
   margin-left: 8px;
   font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
   opacity: 1;
+}
+@media (min-width: 768px) {
+  .sx-version-badge {
+    margin-left: 0;
+  }
+
+  .sx-version-badge::before {
+    content: "Version ";
+    color: var(--sx-muted-2);
+  }
 }
 .sx-update-dot {
   display: inline-block;

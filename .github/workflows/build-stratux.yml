@@ -77,6 +77,9 @@ jobs:
           test -f stratux/web/img/logo-apple3.png
           test -f stratux/web/img/logo-stratux-light.png
           test -f stratux/web/img/logo-stratux-dark.png
+          test -f stratux/web/img/lemonpot.ico
+          grep -q 'class="sx-navbar-name">Stratux NX</span>' stratux/web/index.html
+          grep -q 'BUILT BY PILOTS IN ONTARIO, CANADA' stratux/web/plates/about.html
 
           grep -q "Internet Data" stratux/web/index.html
           grep -q "Flight Log" stratux/web/index.html

@@ -8,8 +8,8 @@ root = pathlib.Path(sys.argv[1])
 # The center navbar is the application brand, not the page title. Mobile
 # Angular UI's ui-content-for/ui-yield-to mechanism keeps the last supplied
 # value around, so a page like Internet Data or Flight Log could leave its
-# name stuck in the navbar after navigating elsewhere. Keep the navbar brand
-# static and put page names only inside each page's own hero/header.
+# name stuck in the navbar after navigating elsewhere. Keep a compact static
+# name for mobile only; desktop already has the full sidebar brand.
 p = root / "web/index.html"
 s = p.read_text()
 old = '<div class="navbar-brand navbar-brand-center" ui-yield-to="title">'
@@ -18,8 +18,8 @@ if old in s:
     s = s.replace(old, new, 1)
 elif new not in s:
     raise SystemExit('Could not find Stratux navbar brand container')
-# Replace any upstream brand content with the NX icon and name. Mobile Angular
-# UI may otherwise turn the original image into a plain-text page title.
+# Replace any upstream brand content with the compact mobile name. Repeating
+# the full logo in both the sidebar and navbar made the desktop shell noisy.
 brand_link = re.search(
     r'(<div class="navbar-brand navbar-brand-center">\s*<a\s+href="#/">).*?(</a>)',
     s,
@@ -28,8 +28,7 @@ brand_link = re.search(
 if not brand_link:
     raise SystemExit('Could not find Stratux navbar brand link')
 s = s[:brand_link.start()] + brand_link.group(1) + (
-    '<img class="sx-brand-logo" src="img/logo-nx.png" alt=""> '
-    'Stratux NX'
+    '<span class="sx-navbar-name">Stratux NX</span>'
 ) + brand_link.group(2) + s[brand_link.end():]
 p.write_text(s)
 
@@ -56,11 +55,11 @@ if 'navbar-brand navbar-brand-center" ui-yield-to="title"' in index:
     raise SystemExit('Navbar is still using dynamic page-title yield')
 if '>\n\t\t\t\t<a href="#/">' not in index and '<a href="#/">' not in index:
     raise SystemExit('Static Stratux home brand link is missing')
-if 'class="sx-brand-logo" src="img/logo-nx.png"' not in index:
-    raise SystemExit('Static Stratux NX navbar logo is missing')
+if 'class="sx-navbar-name">Stratux NX</span>' not in index:
+    raise SystemExit('Compact Stratux NX navbar name is missing')
 for rel in ("web/plates/datausage.html", "web/plates/flightlog.html"):
     p = root / rel
     if p.exists() and 'ui-content-for="title"' in p.read_text():
         raise SystemExit(rel + ' still publishes a sticky navbar title')
 
-print('Navbar brand set to Stratux NX with logo; page titles remain inside page content.')
+print('Navbar simplified for desktop with a compact mobile Stratux NX name.')
