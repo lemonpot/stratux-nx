@@ -3,10 +3,22 @@ angular.module('appControllers').controller('UpdateCtrl', ['$scope', '$http', '$
     $scope.status = {};
     $scope.checking = false;
     $scope.installing = false;
+    $scope.updateInProgress = false;
+    $scope.reconnecting = false;
 
     function loadStatus() {
-      $http.get('/update/status').then(function(resp) {
+      return $http.get('/update/status').then(function(resp) {
+        $scope.reconnecting = false;
         $scope.status = resp.data || {};
+        if ($scope.status.downloading || $scope.status.staged) {
+          $scope.updateInProgress = true;
+        } else if ($scope.status.download_error) {
+          $scope.updateInProgress = false;
+        }
+      }, function() {
+        if ($scope.updateInProgress) {
+          $scope.reconnecting = true;
+        }
       });
     }
 
@@ -25,13 +37,17 @@ angular.module('appControllers').controller('UpdateCtrl', ['$scope', '$http', '$
 
     $scope.installUpdate = function() {
       $scope.installing = true;
+      $scope.updateInProgress = true;
+      $scope.reconnecting = false;
       $http.post('/update/install').then(function(resp) {
         $scope.installing = false;
+        loadStatus();
         if (window.StratuxUI) {
           window.StratuxUI.toast('Update download started', 'success');
         }
       }, function() {
         $scope.installing = false;
+        $scope.updateInProgress = false;
         if (window.StratuxUI) {
           window.StratuxUI.toast('Failed to start update', 'error');
         }
@@ -64,12 +80,13 @@ angular.module('appControllers').controller('UpdateCtrl', ['$scope', '$http', '$
     // Initial load.
     loadStatus();
 
-    // Poll status: fast when downloading, slow otherwise.
+    // Poll immediately after the user starts an update so the progress UI
+    // appears before the device reboots.
     var poller = $interval(function() {
-      if ($scope.status.downloading) {
+      if ($scope.updateInProgress || $scope.status.downloading || $scope.status.staged) {
         loadStatus();
       }
-    }, 2000);
+    }, 1000);
 
     // Also do a slower background poll to catch new updates.
     var bgPoller = $interval(loadStatus, 60000);

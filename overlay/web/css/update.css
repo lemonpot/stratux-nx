@@ -139,6 +139,72 @@ body.stratux-dark .update-hero {
 
 .update-action-text .fa { color: var(--sx-primary); margin-top: 2px; font-size: 15px; }
 
+.update-install-guide,
+.sx-update-guide {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 14px;
+  padding: 13px 14px;
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius-sm);
+  background: var(--sx-card-soft);
+}
+
+.update-install-guide > i,
+.sx-update-guide > i {
+  margin-top: 2px;
+  color: var(--sx-primary);
+  font-size: 17px;
+}
+
+.update-install-guide strong,
+.sx-update-guide strong {
+  display: block;
+  color: var(--sx-text);
+  font-size: 13px;
+}
+
+.update-install-guide span,
+.sx-update-guide span {
+  display: block;
+  margin-top: 3px;
+  color: var(--sx-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.update-reconnect {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--sx-warning);
+  border-radius: var(--sx-radius-sm);
+  background: var(--sx-warning-soft);
+}
+
+.update-reconnect > i {
+  margin-top: 2px;
+  color: var(--sx-warning);
+  font-size: 18px;
+}
+
+.update-reconnect strong {
+  display: block;
+  color: var(--sx-text);
+  font-size: 14px;
+}
+
+.update-reconnect span {
+  display: block;
+  margin-top: 3px;
+  color: var(--sx-text-2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .update-install-btn {
   min-height: 48px !important;
   font-size: 15px !important;
@@ -337,10 +403,17 @@ body.stratux-dark .update-hero {
   border-radius: var(--sx-radius-sm) !important;
 }
 
-.sx-update-progress { height: 8px; border-radius: 4px; overflow: hidden; }
+.sx-update-progress {
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid var(--sx-border);
+  border-radius: 4px;
+  background: var(--sx-card-soft);
+}
 .sx-update-progress-bar {
   height: 100%;
   border-radius: 4px;
+  background: var(--sx-primary);
   transition: width .3s ease;
 }
 .sx-update-progress-label {

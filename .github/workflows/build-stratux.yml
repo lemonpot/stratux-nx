@@ -80,6 +80,9 @@ jobs:
           test -f stratux/web/img/lemonpot.ico
           grep -q 'class="sx-navbar-name">Stratux NX</span>' stratux/web/index.html
           grep -q 'BUILT BY PILOTS IN ONTARIO, CANADA' stratux/web/plates/about.html
+          grep -q 'adapted and maintained by Lemonpot' stratux/web/plates/about.html
+          grep -q 'More than one restart is normal' stratux/web/plates/settings.html
+          grep -q 'updateInProgress' stratux/web/plates/js/update.js
 
           grep -q "Internet Data" stratux/web/index.html
           grep -q "Flight Log" stratux/web/index.html

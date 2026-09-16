@@ -26,6 +26,13 @@ UPDATE_PANEL = '''\
                     </div>
 
                     <div class="sx-update-available" ng-if="status.available.update_available">
+                        <div class="update-reconnect" ng-if="reconnecting">
+                            <i class="fa fa-wifi"></i>
+                            <div>
+                                <strong>Stratux NX is restarting</strong>
+                                <span>Wait for the Stratux Wi-Fi network to return, reconnect this device to it, and reopen this page. Do not remove power. More than one restart is normal.</span>
+                            </div>
+                        </div>
                         <div class="sx-update-info">
                             <i class="fa fa-gift"></i>
                             <div>
@@ -35,6 +42,13 @@ UPDATE_PANEL = '''\
                         </div>
 
                         <div ng-if="!status.downloading && !status.staged && !status.download_error">
+                            <div class="sx-update-guide">
+                                <i class="fa fa-wifi"></i>
+                                <div>
+                                    <strong>Allow about 5 minutes and keep power connected</strong>
+                                    <span>The device may restart more than once. When the Stratux Wi-Fi disappears, wait for it to return, reconnect your phone or computer to it, and reopen this page.</span>
+                                </div>
+                            </div>
                             <button class="btn btn-primary btn-block sx-update-btn" ng-click="installUpdate()" ng-disabled="installing">
                                 <i class="fa" ng-class="installing ? \'fa-circle-o-notch fa-spin\' : \'fa-download\'"></i>
                                 {{installing ? \'Starting...\' : \'Download and install\'}}
@@ -43,12 +57,16 @@ UPDATE_PANEL = '''\
 
                         <div ng-if="status.downloading">
                             <div class="sx-update-progress-label">Downloading... {{status.download_percent}}%</div>
-                            <div class="progress"><div class="progress-bar progress-bar-primary" ng-style="{\'width\': status.download_percent + \'%\'}"></div></div>
-                            <div class="sx-update-hint">Do not disconnect power or internet.</div>
+                            <div class="sx-update-progress"><div class="sx-update-progress-bar" ng-style="{\'width\': status.download_percent + \'%\'}"></div></div>
+                            <div class="sx-update-hint">Keep power connected. Installation begins automatically after the download.</div>
                         </div>
 
-                        <div class="alert alert-success" ng-if="status.staged">
-                            <i class="fa fa-check-circle"></i> Update verified. Rebooting to install...
+                        <div class="sx-update-staged" ng-if="status.staged">
+                            <i class="fa fa-check-circle"></i>
+                            <div>
+                                <strong>Update verified. Installation is starting.</strong>
+                                <span>The device may restart more than once. When the Stratux Wi-Fi returns, reconnect to it and reopen this page. The full process normally takes about 5 minutes.</span>
+                            </div>
                         </div>
 
                         <div class="alert alert-danger" ng-if="status.download_error">
