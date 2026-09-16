@@ -86,6 +86,8 @@ jobs:
           grep -q 'captureFlightNEXRADFrame' stratux/main/gen_gdl90.go
           grep -q 'captureFlightGPSStatusSnapshot' stratux/main/gen_gdl90.go
           grep -q 'captureFlightReceptionSnapshot' stratux/main/gen_gdl90.go
+          grep -q 'flightTrackPointPlausibleLocked' stratux/main/flightlog.go
+          grep -q 'freq_list=2412 2417 2422' stratux/debian/wpa_supplicant.conf.template
           grep -q 'handleDataUsagePolicy' stratux/main/datausage.go
           grep -q 'dataUsageLimitKeys' stratux/main/datausage.go
           grep -q 'c.Exempt, c.LimitMB' stratux/main/datausage_wire.go
