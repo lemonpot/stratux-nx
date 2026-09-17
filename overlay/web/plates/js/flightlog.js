@@ -19,6 +19,8 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         Settings: {Timezone:'UTC', AutoDetect:true},
         AirportDatabaseReady: false,
         AirportCount: 0,
+        StorageError: '',
+        StopCountdownSeconds: 45,
         Sync: {Enabled:false, InstallationID:'', Online:false, Pending:0, LastError:'', Linked:false, AccountName:'', AccountEmail:''},
         StoragePath: ''
     };

@@ -63,7 +63,12 @@ appControllers.controller('GuardianCtrl', function($scope, $http, $interval, $q)
         return check('gps', 'GPS position', 'ready', status.GPS_solution || 'Position fixed', detail, 'Open GPS / AHRS', '#/gps');
     }
 
-    function storageCheck(status) {
+    function storageCheck(status, flightLog) {
+        if (flightLog && flightLog.StorageError) {
+            return check('storage', 'Flight storage', 'critical', 'Recording not protected',
+                flightLog.StorageError + ' Keep the receiver powered and repair or replace its storage before the next flight.',
+                'Open Flight Log', '#/flightlog');
+        }
         var freeMiB = Number(status.DiskBytesFree || 0) / 1048576;
         if (freeMiB < 80) {
             return check('storage', 'Storage', 'critical', freeMiB.toFixed(0) + ' MiB free',
@@ -169,15 +174,17 @@ appControllers.controller('GuardianCtrl', function($scope, $http, $interval, $q)
         $q.all([
             $http.get('/getStatus', {cache: false}),
             $http.get('/getSettings', {cache: false}),
-            $http.get('/update/status', {cache: false})
+            $http.get('/update/status', {cache: false}),
+            $http.get('/flightLog', {cache: false})
         ]).then(function(responses) {
             var status = responses[0].data || {};
             var settings = responses[1].data || {};
             var update = responses[2].data || {};
+            var flightLog = responses[3].data || {};
             var checks = [
                 receiverCheck(status, settings),
                 gpsCheck(status, settings),
-                storageCheck(status),
+                storageCheck(status, flightLog),
                 temperatureCheck(status),
                 clientsCheck(status),
                 updateCheck(update)

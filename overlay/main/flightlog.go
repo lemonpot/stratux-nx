@@ -28,15 +28,15 @@ type flightLogSettings struct {
 }
 
 type flightAirport struct {
-	Code          string  `json:"Code"`
-	Name          string  `json:"Name"`
-	Municipality  string  `json:"Municipality,omitempty"`
-	Country       string  `json:"Country,omitempty"`
-	Type          string  `json:"Type,omitempty"`
-	Latitude      float64 `json:"Latitude"`
-	Longitude     float64 `json:"Longitude"`
-	ElevationFt   float64 `json:"ElevationFt"`
-	DistanceNM    float64 `json:"DistanceNM,omitempty"`
+	Code         string  `json:"Code"`
+	Name         string  `json:"Name"`
+	Municipality string  `json:"Municipality,omitempty"`
+	Country      string  `json:"Country,omitempty"`
+	Type         string  `json:"Type,omitempty"`
+	Latitude     float64 `json:"Latitude"`
+	Longitude    float64 `json:"Longitude"`
+	ElevationFt  float64 `json:"ElevationFt"`
+	DistanceNM   float64 `json:"DistanceNM,omitempty"`
 }
 
 type flightTrackPoint struct {
@@ -50,31 +50,33 @@ type flightTrackPoint struct {
 }
 
 type flightRecord struct {
-	ID               string             `json:"ID"`
-	Phase            string             `json:"Phase"`
-	OffBlockUTC      string             `json:"OffBlockUTC,omitempty"`
-	TakeoffUTC       string             `json:"TakeoffUTC,omitempty"`
-	LandingUTC       string             `json:"LandingUTC,omitempty"`
-	OnBlockUTC       string             `json:"OnBlockUTC,omitempty"`
-	DepartureAirport *flightAirport     `json:"DepartureAirport,omitempty"`
-	ArrivalAirport   *flightAirport     `json:"ArrivalAirport,omitempty"`
-	AirTimeSeconds   int64              `json:"AirTimeSeconds"`
-	BlockTimeSeconds int64              `json:"BlockTimeSeconds"`
-	TaxiOutSeconds   int64              `json:"TaxiOutSeconds"`
-	TaxiInSeconds    int64              `json:"TaxiInSeconds"`
-	DistanceNM       float64            `json:"DistanceNM"`
-	MaxGroundSpeedKt float64            `json:"MaxGroundSpeedKt"`
-	MaxAltitudeFt    float64            `json:"MaxAltitudeFt"`
-	TouchAndGoCount  int                `json:"TouchAndGoCount"`
-	Track            []flightTrackPoint `json:"Track,omitempty"`
+	ID               string                  `json:"ID"`
+	Phase            string                  `json:"Phase"`
+	OffBlockUTC      string                  `json:"OffBlockUTC,omitempty"`
+	TakeoffUTC       string                  `json:"TakeoffUTC,omitempty"`
+	LandingUTC       string                  `json:"LandingUTC,omitempty"`
+	OnBlockUTC       string                  `json:"OnBlockUTC,omitempty"`
+	DepartureAirport *flightAirport          `json:"DepartureAirport,omitempty"`
+	ArrivalAirport   *flightAirport          `json:"ArrivalAirport,omitempty"`
+	AirTimeSeconds   int64                   `json:"AirTimeSeconds"`
+	BlockTimeSeconds int64                   `json:"BlockTimeSeconds"`
+	TaxiOutSeconds   int64                   `json:"TaxiOutSeconds"`
+	TaxiInSeconds    int64                   `json:"TaxiInSeconds"`
+	DistanceNM       float64                 `json:"DistanceNM"`
+	MaxGroundSpeedKt float64                 `json:"MaxGroundSpeedKt"`
+	MaxAltitudeFt    float64                 `json:"MaxAltitudeFt"`
+	TouchAndGoCount  int                     `json:"TouchAndGoCount"`
+	Incomplete       bool                    `json:"Incomplete,omitempty"`
+	EndReason        string                  `json:"EndReason,omitempty"`
+	Track            []flightTrackPoint      `json:"Track,omitempty"`
 	Context          []flightContextSnapshot `json:"Context,omitempty"`
-	Weather          *flightWeatherMemory `json:"Weather,omitempty"`
-	LastUpdateUTC    string             `json:"LastUpdateUTC"`
-	SyncStatus       string             `json:"SyncStatus,omitempty"`
-	RemoteID         string             `json:"RemoteID,omitempty"`
-	UploadedAtUTC    string             `json:"UploadedAtUTC,omitempty"`
-	SyncError        string             `json:"SyncError,omitempty"`
-	ContentHash      string             `json:"ContentHash,omitempty"`
+	Weather          *flightWeatherMemory    `json:"Weather,omitempty"`
+	LastUpdateUTC    string                  `json:"LastUpdateUTC"`
+	SyncStatus       string                  `json:"SyncStatus,omitempty"`
+	RemoteID         string                  `json:"RemoteID,omitempty"`
+	UploadedAtUTC    string                  `json:"UploadedAtUTC,omitempty"`
+	SyncError        string                  `json:"SyncError,omitempty"`
+	ContentHash      string                  `json:"ContentHash,omitempty"`
 }
 
 type flightSummary struct {
@@ -94,6 +96,8 @@ type flightSummary struct {
 	MaxGroundSpeedKt float64        `json:"MaxGroundSpeedKt"`
 	MaxAltitudeFt    float64        `json:"MaxAltitudeFt"`
 	TouchAndGoCount  int            `json:"TouchAndGoCount"`
+	Incomplete       bool           `json:"Incomplete,omitempty"`
+	EndReason        string         `json:"EndReason,omitempty"`
 	LastUpdateUTC    string         `json:"LastUpdateUTC"`
 	SyncStatus       string         `json:"SyncStatus"`
 	RemoteID         string         `json:"RemoteID,omitempty"`
@@ -115,16 +119,18 @@ type flightLiveGPS struct {
 }
 
 type flightLogResponse struct {
-	Phase                string             `json:"Phase"`
-	GPS                  flightLiveGPS      `json:"GPS"`
-	Current              *flightSummary     `json:"Current,omitempty"`
-	CurrentTrack         []flightTrackPoint `json:"CurrentTrack"`
-	CurrentAirport       *flightAirport     `json:"CurrentAirport,omitempty"`
-	Flights              []flightSummary    `json:"Flights"`
-	Settings             flightLogSettings  `json:"Settings"`
-	AirportDatabaseReady bool               `json:"AirportDatabaseReady"`
-	AirportCount         int                `json:"AirportCount"`
-	StoragePath          string             `json:"StoragePath"`
+	Phase                string                `json:"Phase"`
+	GPS                  flightLiveGPS         `json:"GPS"`
+	Current              *flightSummary        `json:"Current,omitempty"`
+	CurrentTrack         []flightTrackPoint    `json:"CurrentTrack"`
+	CurrentAirport       *flightAirport        `json:"CurrentAirport,omitempty"`
+	Flights              []flightSummary       `json:"Flights"`
+	Settings             flightLogSettings     `json:"Settings"`
+	AirportDatabaseReady bool                  `json:"AirportDatabaseReady"`
+	AirportCount         int                   `json:"AirportCount"`
+	StoragePath          string                `json:"StoragePath"`
+	StorageError         string                `json:"StorageError,omitempty"`
+	StopCountdownSeconds int                   `json:"StopCountdownSeconds"`
 	Sync                 flightSyncPublicState `json:"Sync"`
 }
 
@@ -134,29 +140,29 @@ type flightCandidate struct {
 }
 
 var (
-	flightLogMu               sync.Mutex
-	flightSettings            = flightLogSettings{Timezone: "UTC", AutoDetect: true}
-	flightAirports            []flightAirport
-	flightAirportDBReady      bool
-	flightCurrent             *flightRecord
-	flightHistory             []flightSummary
-	flightStorageDir          string
-	flightSettingsPath        string
-	flightIndexPath           string
-	flightCurrentPath         string
-	flightFilesDir            string
-	flightInitialized         bool
-	flightMoveCandidate       flightCandidate
-	flightTakeoffCandidate    flightCandidate
-	flightLandingCandidate    flightCandidate
-	flightStopCandidate       flightCandidate
-	flightTaxiBaseAltitude    float64
-	flightTaxiBaseSamples     int
-	flightLastPosition        *flightTrackPoint
-	flightLastPersist         time.Time
-	flightCurrentAirport      *flightAirport
-	flightLastAirportResolve  time.Time
-	flightLastContextSample   time.Time
+	flightLogMu              sync.Mutex
+	flightSettings           = flightLogSettings{Timezone: "UTC", AutoDetect: true}
+	flightAirports           []flightAirport
+	flightAirportDBReady     bool
+	flightCurrent            *flightRecord
+	flightHistory            []flightSummary
+	flightStorageDir         string
+	flightSettingsPath       string
+	flightIndexPath          string
+	flightCurrentPath        string
+	flightFilesDir           string
+	flightInitialized        bool
+	flightMoveCandidate      flightCandidate
+	flightTakeoffCandidate   flightCandidate
+	flightLandingCandidate   flightCandidate
+	flightStopCandidate      flightCandidate
+	flightTaxiBaseAltitude   float64
+	flightTaxiBaseSamples    int
+	flightLastPosition       *flightTrackPoint
+	flightLastPersist        time.Time
+	flightCurrentAirport     *flightAirport
+	flightLastAirportResolve time.Time
+	flightLastContextSample  time.Time
 )
 
 func init() {
@@ -184,7 +190,7 @@ func flightLogMonitorLoop() {
 			flightCurrentAirport = nearestAirportLocked(sample.Latitude, sample.Longitude, sample.AltitudeFt, 8.0)
 			flightLastAirportResolve = time.Now()
 		}
-		if flightCurrent != nil && time.Since(flightLastPersist) > 15*time.Second {
+		if flightCurrent != nil && time.Since(flightLastPersist) > time.Minute {
 			persistCurrentFlightLocked()
 			flightLastPersist = time.Now()
 		}
@@ -222,6 +228,7 @@ func initializeFlightLog() {
 	loadFlightIndexLocked()
 	sort.SliceStable(flightHistory, func(i, j int) bool { return flightHistory[i].ID > flightHistory[j].ID })
 	loadCurrentFlightLocked()
+	initializeFlightJournalLocked()
 	if flightCurrent != nil {
 		startFlightWeatherCapture(flightCurrent.ID, flightCurrent.Weather)
 	}
@@ -268,7 +275,9 @@ func loadFlightSettingsLocked() {
 }
 
 func saveFlightSettingsLocked() {
-	_ = writeFlightJSONAtomic(flightSettingsPath, flightSettings)
+	if err := writeFlightJSONAtomic(flightSettingsPath, flightSettings); err != nil {
+		setFlightStorageErrorLocked("Cannot save Flight Log settings: " + err.Error())
+	}
 }
 
 func loadFlightIndexLocked() {
@@ -335,12 +344,11 @@ func loadCurrentFlightLocked() {
 
 func persistCurrentFlightLocked() {
 	if flightCurrent == nil {
-		_ = os.Remove(flightCurrentPath)
 		return
 	}
 	updateFlightDurationsLocked(flightCurrent, flightNowUTC())
 	syncFlightWeatherLocked()
-	_ = writeFlightJSONAtomic(flightCurrentPath, flightCurrent)
+	checkpointFlightJournalLocked()
 }
 
 func loadAirportDatabaseLocked() {
@@ -432,12 +440,32 @@ func newFlightLocked(sample flightLiveGPS, start time.Time) {
 	flightTaxiBaseSamples = 1
 	flightLastPosition = &p
 	flightCurrent.DepartureAirport = nearestAirportLocked(sample.Latitude, sample.Longitude, sample.AltitudeFt, 8.0)
-	persistCurrentFlightLocked()
+	beginFlightJournalLocked(flightCurrent)
 }
 
 func updateFlightStateLocked(sample flightLiveGPS) {
 	if !sample.Valid || sample.HorizontalAccuracyM > 250 {
 		return
+	}
+	if flightJournalRecovered {
+		if recoveredFlightNeedsClosure(sample) {
+			last := flightCurrent.Track[len(flightCurrent.Track)-1]
+			if flightCurrent.LandingUTC == "" && flightCurrent.Phase != flightPhaseTaxiIn {
+				flightCurrent.Incomplete = true
+				flightCurrent.EndReason = "interrupted before landing was confirmed"
+			} else {
+				flightCurrent.EndReason = "recovered and closed after restart"
+			}
+			lastSample := flightLiveGPS{
+				Valid: true, TimeUTC: last.TimeUTC, Latitude: last.Latitude, Longitude: last.Longitude,
+				AltitudeFt: last.AltitudeFt, GroundSpeedKt: last.GroundSpeedKt, CourseDeg: last.CourseDeg,
+				VerticalSpeedFps: last.VerticalSpeedFps,
+			}
+			if !finishFlightLocked(parseFlightTime(last.TimeUTC), lastSample) {
+				return
+			}
+		}
+		flightJournalRecovered = false
 	}
 	now := parseFlightTime(sample.TimeUTC)
 	if now.IsZero() {
@@ -597,12 +625,16 @@ func appendFlightTrackLocked(sample flightLiveGPS) {
 		add = true
 	} else {
 		last := flightCurrent.Track[len(flightCurrent.Track)-1]
-		if parseFlightTime(p.TimeUTC).Sub(parseFlightTime(last.TimeUTC)) >= 5*time.Second || flightDistanceNM(last.Latitude, last.Longitude, p.Latitude, p.Longitude) >= 0.05 {
+		if parseFlightTime(p.TimeUTC).After(parseFlightTime(last.TimeUTC)) ||
+			p.Latitude != last.Latitude || p.Longitude != last.Longitude ||
+			p.AltitudeFt != last.AltitudeFt || p.GroundSpeedKt != last.GroundSpeedKt ||
+			p.CourseDeg != last.CourseDeg || p.VerticalSpeedFps != last.VerticalSpeedFps {
 			add = true
 		}
 	}
 	if add {
 		flightCurrent.Track = append(flightCurrent.Track, p)
+		appendFlightJournalPointLocked(p)
 	}
 	flightLastPosition = &p
 }
@@ -649,6 +681,9 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) bool {
 		return false
 	}
 	previousPhase := flightCurrent.Phase
+	if flightCurrent.EndReason == "" {
+		flightCurrent.EndReason = "stopped after landing"
+	}
 	flightCurrent.OnBlockUTC = onBlock.UTC().Format(time.RFC3339)
 	flightCurrent.Phase = flightPhaseParked
 	flightCurrent.LastUpdateUTC = sample.TimeUTC
@@ -661,6 +696,7 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) bool {
 	completedFlightID := flightCurrent.ID
 	completedPath := filepath.Join(flightFilesDir, flightCurrent.ID+".json")
 	if err := writeFlightJSONAtomic(completedPath, flightCurrent); err != nil {
+		setFlightStorageErrorLocked("Cannot save completed flight: " + err.Error())
 		flightCurrent.Phase = previousPhase
 		flightCurrent.OnBlockUTC = ""
 		flightCurrent.SyncError = "Unable to save completed flight"
@@ -674,6 +710,7 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) bool {
 		flightHistory = flightHistory[:500]
 	}
 	if err := saveFlightIndexLocked(); err != nil {
+		setFlightStorageErrorLocked("Cannot update flight history: " + err.Error())
 		flightHistory = previousHistory
 		_ = os.Remove(completedPath)
 		flightCurrent.Phase = previousPhase
@@ -683,6 +720,7 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) bool {
 		log.Printf("flight log: unable to update flight index for %s: %v", completedFlightID, err)
 		return false
 	}
+	finishFlightJournalLocked(flightCurrent)
 	_ = os.Remove(flightCurrentPath)
 	flightCurrent = nil
 	flightLastPosition = nil
@@ -697,7 +735,7 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) bool {
 }
 
 func summarizeFlight(rec flightRecord) flightSummary {
-	return flightSummary{ID: rec.ID, Phase: rec.Phase, OffBlockUTC: rec.OffBlockUTC, TakeoffUTC: rec.TakeoffUTC, LandingUTC: rec.LandingUTC, OnBlockUTC: rec.OnBlockUTC, DepartureAirport: rec.DepartureAirport, ArrivalAirport: rec.ArrivalAirport, AirTimeSeconds: rec.AirTimeSeconds, BlockTimeSeconds: rec.BlockTimeSeconds, TaxiOutSeconds: rec.TaxiOutSeconds, TaxiInSeconds: rec.TaxiInSeconds, DistanceNM: rec.DistanceNM, MaxGroundSpeedKt: rec.MaxGroundSpeedKt, MaxAltitudeFt: rec.MaxAltitudeFt, TouchAndGoCount: rec.TouchAndGoCount, LastUpdateUTC: rec.LastUpdateUTC, SyncStatus: rec.SyncStatus, RemoteID: rec.RemoteID, UploadedAtUTC: rec.UploadedAtUTC, SyncError: rec.SyncError, ContentHash: rec.ContentHash}
+	return flightSummary{ID: rec.ID, Phase: rec.Phase, OffBlockUTC: rec.OffBlockUTC, TakeoffUTC: rec.TakeoffUTC, LandingUTC: rec.LandingUTC, OnBlockUTC: rec.OnBlockUTC, DepartureAirport: rec.DepartureAirport, ArrivalAirport: rec.ArrivalAirport, AirTimeSeconds: rec.AirTimeSeconds, BlockTimeSeconds: rec.BlockTimeSeconds, TaxiOutSeconds: rec.TaxiOutSeconds, TaxiInSeconds: rec.TaxiInSeconds, DistanceNM: rec.DistanceNM, MaxGroundSpeedKt: rec.MaxGroundSpeedKt, MaxAltitudeFt: rec.MaxAltitudeFt, TouchAndGoCount: rec.TouchAndGoCount, Incomplete: rec.Incomplete, EndReason: rec.EndReason, LastUpdateUTC: rec.LastUpdateUTC, SyncStatus: rec.SyncStatus, RemoteID: rec.RemoteID, UploadedAtUTC: rec.UploadedAtUTC, SyncError: rec.SyncError, ContentHash: rec.ContentHash}
 }
 
 func nearestAirportLocked(lat, lon, altitudeFt, maxNM float64) *flightAirport {
@@ -784,7 +822,17 @@ func handleFlightLog(w http.ResponseWriter, r *http.Request) {
 		airportCopy = &c
 	}
 	syncState := flightSyncPublicStateLocked()
-	resp := flightLogResponse{Phase: phase, GPS: gps, Current: current, CurrentTrack: track, CurrentAirport: airportCopy, Flights: history, Settings: settings, AirportDatabaseReady: flightAirportDBReady, AirportCount: len(flightAirports), StoragePath: flightStorageDir, Sync: syncState}
+	stopCountdown := 45
+	if flightCurrent != nil && flightCurrent.Phase == flightPhaseTaxiIn && !flightStopCandidate.since.IsZero() {
+		stopCountdown -= int(parseFlightTime(gps.TimeUTC).Sub(flightStopCandidate.since).Seconds())
+		if stopCountdown < 0 {
+			stopCountdown = 0
+		}
+		if stopCountdown > 45 {
+			stopCountdown = 45
+		}
+	}
+	resp := flightLogResponse{Phase: phase, GPS: gps, Current: current, CurrentTrack: track, CurrentAirport: airportCopy, Flights: history, Settings: settings, AirportDatabaseReady: flightAirportDBReady, AirportCount: len(flightAirports), StoragePath: flightStorageDir, StorageError: flightStorageError, StopCountdownSeconds: stopCountdown, Sync: syncState}
 	flightLogMu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
@@ -862,7 +910,9 @@ func handleFlightLogAction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	initializeFlightLog()
-	var req struct{ Action string `json:"action"` }
+	var req struct {
+		Action string `json:"action"`
+	}
 	if json.NewDecoder(r.Body).Decode(&req) != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
@@ -883,6 +933,7 @@ func handleFlightLogAction(w http.ResponseWriter, r *http.Request) {
 		if flightCurrent.LandingUTC == "" {
 			flightCurrent.LandingUTC = now.Format(time.RFC3339)
 		}
+		flightCurrent.EndReason = "closed manually"
 		if !finishFlightLocked(now, gps) {
 			flightLogMu.Unlock()
 			http.Error(w, "flight could not be saved; the recoverable current record was retained", http.StatusInsufficientStorage)
@@ -891,6 +942,7 @@ func handleFlightLogAction(w http.ResponseWriter, r *http.Request) {
 	case "discard":
 		if flightCurrent != nil {
 			stopFlightWeatherCapture(flightCurrent.ID)
+			discardFlightJournalLocked(flightCurrent.ID)
 		}
 		flightCurrent = nil
 		flightLastPosition = nil
