@@ -49,6 +49,8 @@ jobs:
           test -f stratux/main/flightlog_sync.go
           test -f stratux/main/flightlog_context.go
           test -f stratux/main/flightlog_weather.go
+          test -f stratux/main/flightlog_journal.go
+          test -f stratux/main/flightlog_journal_test.go
           test -f stratux/main/ahrs_v2.go
           test -f stratux/LICENSE
           test -f stratux/debian/copyright
@@ -94,6 +96,8 @@ jobs:
           grep -q 'captureFlightGPSStatusSnapshot' stratux/main/gen_gdl90.go
           grep -q 'captureFlightReceptionSnapshot' stratux/main/gen_gdl90.go
           grep -q 'flightTrackPointPlausibleLocked' stratux/main/flightlog.go
+          grep -q 'appendFlightJournalPointLocked' stratux/main/flightlog.go
+          grep -q 'StorageError' stratux/main/flightlog.go
           grep -q 'freq_list=2412 2417 2422' stratux/debian/wpa_supplicant.conf.template
           grep -q 'WPA_CONFIG="/etc/wpa_supplicant/wpa_supplicant.conf"' stratux/debian/postinst.dpkg
           grep -q 'handleDataUsagePolicy' stratux/main/datausage.go

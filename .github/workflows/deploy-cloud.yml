@@ -17,6 +17,7 @@ jobs:
           php -l server/flight-memory.php
           php -l server/web/index.php
           php -l server/api/v1/flights/upload.php
+          grep -Fq "count(\$flight['Track']) > 50000" server/api/v1/flights/upload.php
           php server/tests/flight-memory-test.php
           node --check server/web/flight-memory.js
           bash -n server/deploy-as-root.sh

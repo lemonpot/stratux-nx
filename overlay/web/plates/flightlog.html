@@ -1,5 +1,9 @@
 <div class="col-sm-12 flightlog-page" ng-cloak>
   <div class="flightlog-error" ng-if="errorMessage"><i class="fa fa-exclamation-triangle"></i> {{errorMessage}}</div>
+  <div class="flightlog-storage-error" ng-if="data.StorageError">
+    <i class="fa fa-exclamation-triangle"></i>
+    <div><strong>Flight recording storage needs attention</strong><span>{{data.StorageError}} Flight data remains in memory, but it is not protected against a power loss until storage is writable again.</span></div>
+  </div>
 
   <div class="flightlog-grid flightlog-grid-4">
     <div class="flightlog-stat flightlog-stat-primary">
@@ -175,6 +179,16 @@
         <div><span>On block</span><strong>{{dualTime(data.Current.OnBlockUTC)}}</strong></div>
       </div>
 
+      <div class="flightlog-finalization-note" ng-if="data.Phase !== 'TAXI_IN'">
+        <i class="fa fa-info-circle"></i>
+        <span>After landing, the flight closes automatically once GPS speed remains at or below 2 kt for 45 continuous seconds.</span>
+      </div>
+      <div class="flightlog-finalization-note is-counting" ng-if="data.Phase === 'TAXI_IN'">
+        <i class="fa fa-clock-o"></i>
+        <span ng-if="data.StopCountdownSeconds >= 45">Landing detected. Stop the aircraft to begin the 45-second flight-closing timer.</span>
+        <span ng-if="data.StopCountdownSeconds < 45">Aircraft stopped. Closing and protecting this flight in {{data.StopCountdownSeconds}} seconds.</span>
+      </div>
+
       <div class="flightlog-track-card" ng-if="currentTrackPath">
         <div class="flightlog-track-head"><strong>Live GPS track</strong><span>{{data.CurrentTrack.length}} displayed points</span></div>
         <svg class="flightlog-track" viewBox="0 0 1000 360" preserveAspectRatio="none" aria-label="Current flight GPS track">
@@ -224,7 +238,7 @@
 
     <div class="flightlog-history" ng-if="data.Flights.length">
       <button type="button" class="flightlog-history-row" ng-repeat="flight in data.Flights track by flight.ID" ng-click="selectFlight(flight)">
-        <div class="flightlog-history-route"><strong>{{airportCode(flight.DepartureAirport)}} <i class="fa fa-long-arrow-right"></i> {{airportCode(flight.ArrivalAirport)}}</strong><span>{{formatLocalDate(flight.TakeoffUTC || flight.OffBlockUTC)}}</span><em class="flightlog-sync-badge" ng-class="syncStatusClass(flight.SyncStatus)">{{syncStatusLabel(flight.SyncStatus)}}</em></div>
+        <div class="flightlog-history-route"><strong>{{airportCode(flight.DepartureAirport)}} <i class="fa fa-long-arrow-right"></i> {{airportCode(flight.ArrivalAirport)}}</strong><span>{{formatLocalDate(flight.TakeoffUTC || flight.OffBlockUTC)}}</span><em class="flightlog-recovery-badge" ng-if="flight.Incomplete">Recovered · incomplete</em><em class="flightlog-sync-badge" ng-class="syncStatusClass(flight.SyncStatus)">{{syncStatusLabel(flight.SyncStatus)}}</em></div>
         <div><span>AIR</span><strong>{{formatDuration(flight.AirTimeSeconds)}}</strong></div>
         <div><span>BLOCK</span><strong>{{formatDuration(flight.BlockTimeSeconds)}}</strong></div>
         <div><span>TAXI</span><strong>{{formatDuration((flight.TaxiOutSeconds || 0) + (flight.TaxiInSeconds || 0))}}</strong></div>

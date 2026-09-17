@@ -19,6 +19,39 @@
   font-size: 13px;
 }
 
+.flightlog-storage-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 13px 14px;
+  border: 1px solid var(--sx-danger);
+  border-radius: var(--sx-radius-sm);
+  background: var(--sx-danger-soft);
+}
+
+.flightlog-storage-error > i {
+  margin-top: 2px;
+  color: var(--sx-danger);
+}
+
+.flightlog-storage-error strong,
+.flightlog-storage-error span {
+  display: block;
+}
+
+.flightlog-storage-error strong {
+  color: var(--sx-text);
+  font-size: 13px;
+}
+
+.flightlog-storage-error span {
+  margin-top: 3px;
+  color: var(--sx-text-2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 /* --- Grid -------------------------------------------------------- */
 .flightlog-grid { display: grid; gap: 12px; }
 .flightlog-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -253,6 +286,31 @@
   font-variant-numeric: tabular-nums;
 }
 
+.flightlog-finalization-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--sx-border);
+  border-radius: var(--sx-radius-sm);
+  background: var(--sx-card-soft);
+  color: var(--sx-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.flightlog-finalization-note > i {
+  margin-top: 2px;
+  color: var(--sx-primary);
+}
+
+.flightlog-finalization-note.is-counting {
+  border-color: var(--sx-primary);
+  background: var(--sx-primary-soft);
+  color: var(--sx-text-2);
+}
+
 
 /* --- Track map --------------------------------------------------- */
 .flightlog-track-card {
@@ -338,7 +396,8 @@
 }
 
 .flightlog-cloud-state,
-.flightlog-sync-badge {
+.flightlog-sync-badge,
+.flightlog-recovery-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -354,7 +413,14 @@
 }
 
 .flightlog-cloud-state { padding: 7px 10px; }
-.flightlog-sync-badge { padding: 4px 7px; vertical-align: middle; }
+.flightlog-sync-badge,
+.flightlog-recovery-badge { padding: 4px 7px; vertical-align: middle; }
+
+.flightlog-recovery-badge {
+  border-color: rgba(245, 158, 11, .24);
+  background: var(--sx-warning-soft);
+  color: var(--sx-warning-text);
+}
 
 .flightlog-cloud-state.online,
 .flightlog-sync-badge.uploaded {
