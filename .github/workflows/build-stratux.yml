@@ -227,6 +227,22 @@ jobs:
           compression-level: 0
           if-no-files-found: error
 
+      - name: Prepare SD card image for release
+        run: |
+          set -euo pipefail
+          IMG_DIR="stratux/image_build/pi-gen/deploy"
+          mkdir -p release-images
+          for f in "$IMG_DIR"/*.img "$IMG_DIR"/*.img.xz "$IMG_DIR"/*.img.gz "$IMG_DIR"/*.zip; do
+            [ -f "$f" ] && cp "$f" release-images/
+          done
+          if [ -z "$(ls release-images/ 2>/dev/null)" ]; then
+            echo "No .img files found in deploy, listing contents:"
+            ls -lhR "$IMG_DIR"
+          else
+            echo "SD card images ready for release:"
+            ls -lh release-images/
+          fi
+
       - name: Publish permanent release and source
         if: hashFiles('ota-update/*.deb') != ''
         env:
@@ -240,10 +256,19 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "Stratux NX ${NX_RELEASE_VERSION}" \
-              --notes "Stratux NX OTA package and complete corresponding source for this binary release." \
+              --notes "Stratux NX OTA package, full SD card image, and corresponding source for this release.
+
+          ## Downloads
+          - **\`.deb\`** — OTA update (install from the Stratux NX web interface)
+          - **\`.img.xz\`** — Full SD card image (flash with Raspberry Pi Imager or balenaEtcher)
+          - **\`-corresponding-source.tar.gz\`** — Complete source code for this build" \
               --prerelease
           fi
-          gh release upload "$TAG" "$DEB_FILE" "$NX_SOURCE_ARCHIVE" \
+          UPLOAD_FILES=("$DEB_FILE" "$NX_SOURCE_ARCHIVE")
+          for f in release-images/*; do
+            [ -f "$f" ] && UPLOAD_FILES+=("$f")
+          done
+          gh release upload "$TAG" "${UPLOAD_FILES[@]}" \
             --repo "$GITHUB_REPOSITORY" \
             --clobber
 
