@@ -18,14 +18,6 @@ if new_dpkg not in source and logged_dpkg not in source:
         raise SystemExit("Could not find boot-time dpkg command")
     source = source.replace(old_dpkg, new_dpkg, 1)
 
-old_install_order = '''\t\t# Move the deb to /tmp and re-enable overlay BEFORE calling dpkg.
-\t\t# The dpkg postinst runs 'systemctl daemon-reload && systemctl start stratux'
-\t\t# which will kill this ExecStartPre process via daemon-reload. By cleaning up
-\t\t# first the system is in a consistent state even if dpkg kills this script.
-\t\tUPDATE_TEMP_FILE="/tmp/$(basename "${UPDATE_PACKAGE_FILE}")"
-\t\tmv "${UPDATE_PACKAGE_FILE}" "${UPDATE_TEMP_FILE}"
-\t\t/sbin/overlayctl enable
-\t\tif NX_OTA_INSTALL=1 dpkg -i --force-depends "${UPDATE_TEMP_FILE}"; then'''
 new_install_order = '''\t\t# Keep the overlay disabled while dpkg writes to the real ext4 root.
 \t\t# NX_OTA_INSTALL prevents package scripts from stopping or restarting this
 \t\t# service while dpkg is running from ExecStartPre.
@@ -33,10 +25,46 @@ new_install_order = '''\t\t# Keep the overlay disabled while dpkg writes to the 
 \t\tmv "${UPDATE_PACKAGE_FILE}" "${UPDATE_TEMP_FILE}"
 \t\tINSTALL_LOG="${TEMP_DIRECTORY}/last-install.log"
 \t\tif NX_OTA_INSTALL=1 dpkg -i --force-depends "${UPDATE_TEMP_FILE}" >>"${INSTALL_LOG}" 2>&1; then'''
+# Match both old upstream (/sbin/overlayctl enable) and new upstream (rm -f /overlay/disable).
+old_install_orders = [
+    '''\t\t# Move the deb to /tmp and re-enable overlay BEFORE calling dpkg.
+\t\t# The dpkg postinst runs 'systemctl daemon-reload && systemctl start stratux'
+\t\t# which will kill this ExecStartPre process via daemon-reload. By cleaning up
+\t\t# first the system is in a consistent state even if dpkg kills this script.
+\t\tUPDATE_TEMP_FILE="/tmp/$(basename "${UPDATE_PACKAGE_FILE}")"
+\t\tmv "${UPDATE_PACKAGE_FILE}" "${UPDATE_TEMP_FILE}"
+\t\t/sbin/overlayctl enable
+\t\tif NX_OTA_INSTALL=1 dpkg -i --force-depends "${UPDATE_TEMP_FILE}"; then''',
+    '''\t\t# Move the deb to /tmp and re-enable overlay BEFORE calling dpkg.
+\t\t# The dpkg postinst runs 'systemctl daemon-reload && systemctl start stratux'
+\t\t# which will kill this ExecStartPre process via daemon-reload. By cleaning up
+\t\t# first the system is in a consistent state even if dpkg kills this script.
+\t\tUPDATE_TEMP_FILE="/tmp/$(basename "${UPDATE_PACKAGE_FILE}")"
+\t\tmv "${UPDATE_PACKAGE_FILE}" "${UPDATE_TEMP_FILE}"
+\t\t# Not 'overlayctl enable': with the overlay off it mistakes / for its lower layer
+\t\t# and remounts it read-only before the install runs.
+\t\trm -f /overlay/disable
+\t\tif dpkg -i --force-depends "${UPDATE_TEMP_FILE}"; then''',
+    '''\t\t# Move the deb to /tmp and re-enable overlay BEFORE calling dpkg.
+\t\t# The dpkg postinst runs 'systemctl daemon-reload && systemctl start stratux'
+\t\t# which will kill this ExecStartPre process via daemon-reload. By cleaning up
+\t\t# first the system is in a consistent state even if dpkg kills this script.
+\t\tUPDATE_TEMP_FILE="/tmp/$(basename "${UPDATE_PACKAGE_FILE}")"
+\t\tmv "${UPDATE_PACKAGE_FILE}" "${UPDATE_TEMP_FILE}"
+\t\t# Not 'overlayctl enable': with the overlay off it mistakes / for its lower layer
+\t\t# and remounts it read-only before the install runs.
+\t\trm -f /overlay/disable
+\t\tif NX_OTA_INSTALL=1 dpkg -i --force-depends "${UPDATE_TEMP_FILE}"; then''',
+]
 if new_install_order not in source:
-    if old_install_order not in source:
+    matched = False
+    for old_install_order in old_install_orders:
+        if old_install_order in source:
+            source = source.replace(old_install_order, new_install_order, 1)
+            matched = True
+            break
+    if not matched:
         raise SystemExit("Could not keep overlay disabled during package install")
-    source = source.replace(old_install_order, new_install_order, 1)
 
 old_stage_reboot = '''/sbin/overlayctl disable
 \t\t\twLog "Package staged. Rebooting to install on bare ext4..."
