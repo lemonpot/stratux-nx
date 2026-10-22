@@ -240,6 +240,7 @@ func initializeFlightLog() {
 
 func chooseFlightStorageDir() string {
 	candidates := []string{
+		"/opt/stratux-data/flight-log",
 		"/boot/firmware/stratux-flight-log",
 		"/boot/stratux-flight-log",
 		"/var/log/stratux-flight-log",

@@ -115,6 +115,9 @@ body.stratux-dark .navbar.navbar-app {
   font-weight: 600;
   letter-spacing: -.01em;
   font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sx-navbar-name {
@@ -909,15 +912,16 @@ body.stratux-dark .modal-overlay {
 
 /* === VERSION BADGE & UPDATE DOT =================================== */
 .sx-version-badge {
+  display: none;
   font-size: 10px;
   font-weight: 600;
   color: var(--sx-muted);
-  margin-left: 8px;
   font-family: "SF Mono", "Fira Code", ui-monospace, monospace;
   opacity: 1;
 }
 @media (min-width: 768px) {
   .sx-version-badge {
+    display: inline;
     margin-left: 0;
   }
 

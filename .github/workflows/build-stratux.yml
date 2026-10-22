@@ -115,6 +115,9 @@ jobs:
           grep -q 'NX_OTA_INSTALL' stratux/debian/prerm.dpkg
           grep -q 'NX_OTA_INSTALL' stratux/debian/postinst.dpkg
           grep -q 'last-install.log' stratux/debian/stratux-pre-start.sh
+          grep -q '/opt/stratux-data/flight-log' stratux/main/flightlog.go
+          grep -q '/opt/stratux-data/data-monitor' stratux/main/datausage.go
+          test -f stratux/image_build/stage2/10-stratux/files/stratux-persistent-data.service
 
           echo "Complete Stratux NX source verified"
 

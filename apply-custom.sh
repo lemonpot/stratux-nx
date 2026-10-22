@@ -90,6 +90,34 @@ if new not in s:
 # Conntrack accounting must be enabled before client connections are created.
 if '90-stratux-data-monitor.conf' not in s:
     s += '''\n\n# Internet Data monitor: keep byte/packet counters on new conntrack entries.\nmkdir -p ${ROOTFS_DIR}/etc/sysctl.d\necho "net.netfilter.nf_conntrack_acct=1" > ${ROOTFS_DIR}/etc/sysctl.d/90-stratux-data-monitor.conf\n'''
+
+# Persistent ext4 storage for flight data (survives power loss without FAT corruption).
+if 'stratux-persistent-data.service' not in s:
+    s += '''\n\n# Persistent ext4 storage: mount a journaled directory for flight data so power
+# loss never corrupts flight logs (FAT /boot/firmware is kept as fallback only).
+install -m 644 files/stratux-persistent-data.service ${ROOTFS_DIR}/etc/systemd/system/
+ln -sf /etc/systemd/system/stratux-persistent-data.service ${ROOTFS_DIR}/etc/systemd/system/multi-user.target.wants/stratux-persistent-data.service
+
+# Auto-repair FAT boot partition on every boot (safety net for power loss).
+cat > ${ROOTFS_DIR}/etc/systemd/system/fsck-boot-fat.service << "FSCK_EOF"
+[Unit]
+Description=Auto-repair FAT boot partition before mount
+DefaultDependencies=no
+Before=boot-firmware.mount
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/fsck.fat -a /dev/mmcblk0p1
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=boot-firmware.mount
+FSCK_EOF
+ln -sf /etc/systemd/system/fsck-boot-fat.service ${ROOTFS_DIR}/etc/systemd/system/boot-firmware.mount.wants/fsck-boot-fat.service
+mkdir -p ${ROOTFS_DIR}/etc/systemd/system/boot-firmware.mount.wants
+'''
 p.write_text(s)
 PY
 

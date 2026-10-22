@@ -162,6 +162,7 @@ func initializeDataUsage() {
 
 func chooseDataUsageStorageDir() string {
 	candidates := []string{
+		"/opt/stratux-data/data-monitor",
 		"/boot/firmware/stratux-data-monitor",
 		"/boot/stratux-data-monitor",
 		"/var/log/stratux-data-monitor",
