@@ -104,7 +104,7 @@ jobs:
           grep -q 'dataUsageLimitKeys' stratux/main/datausage.go
           grep -q 'c.Exempt, c.LimitMB' stratux/main/datausage_wire.go
           grep -q 'applyDevicePolicy' stratux/web/plates/js/datausage.js
-          grep -q 'Automatic limit for this device' stratux/web/plates/datausage.html
+          grep -q 'data-device-table' stratux/web/plates/datausage.html
           grep -q 'href="#/about"' stratux/web/index.html
           grep -q 'sx-sidebar-brand' stratux/web/index.html
           grep -q "state('about'" stratux/web/js/main.js
@@ -118,6 +118,8 @@ jobs:
           grep -q '/opt/stratux-data/flight-log' stratux/main/flightlog.go
           grep -q '/opt/stratux-data/data-monitor' stratux/main/datausage.go
           test -f stratux/image_build/stage2/10-stratux/files/stratux-persistent-data.service
+          grep -q 'StorageFreeBytes' stratux/main/flightlog.go
+          grep -q 'Flight storage' stratux/web/plates/status.html
 
           echo "Complete Stratux NX source verified"
 
