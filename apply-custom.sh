@@ -115,8 +115,8 @@ StandardError=journal
 [Install]
 WantedBy=boot-firmware.mount
 FSCK_EOF
-ln -sf /etc/systemd/system/fsck-boot-fat.service ${ROOTFS_DIR}/etc/systemd/system/boot-firmware.mount.wants/fsck-boot-fat.service
 mkdir -p ${ROOTFS_DIR}/etc/systemd/system/boot-firmware.mount.wants
+ln -sf /etc/systemd/system/fsck-boot-fat.service ${ROOTFS_DIR}/etc/systemd/system/boot-firmware.mount.wants/fsck-boot-fat.service
 '''
 p.write_text(s)
 PY
