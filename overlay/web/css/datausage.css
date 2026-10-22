@@ -301,7 +301,9 @@
 body.stratux-dark .data-inet-badge.is-ok { background: rgba(26,127,55,.2); }
 body.stratux-dark .data-inet-badge.is-paused { background: rgba(198,40,40,.2); }
 body.stratux-dark .data-inet-badge.is-free { background: rgba(26,86,219,.2); }
-.data-device-row-actions .btn { padding: 3px 8px; }
+.data-device-row-actions .btn { padding: 4px 10px; border-radius: 4px; line-height: 1; }
+.data-device-row-actions .data-pause-btn { border: 1px solid rgba(220,38,38,.26); background: var(--sx-danger-soft); color: var(--sx-danger-text); }
+.data-device-row-actions .btn-success { color: #fff; }
 .data-device-detail { margin: 12px 0; padding: 14px; border: 1px solid var(--sx-border); border-radius: 8px; background: var(--sx-card); }
 .data-device-detail-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 .data-device-detail-header strong { flex: 1; }
