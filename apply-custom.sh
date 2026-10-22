@@ -156,6 +156,9 @@ python3 "$SCRIPT_DIR/patch-flight-memory-context.py" "$TARGET"
 python3 "$SCRIPT_DIR/wire-update.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-ota-installer.py" "$TARGET"
 
+# Show flight storage info on the status page (ext4 persistent storage).
+python3 "$SCRIPT_DIR/patch-status-flight-storage.py" "$TARGET"
+
 # Embed Software Update panel into Settings and improve Settings UX.
 python3 "$SCRIPT_DIR/patch-settings-update.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-settings-ux-v2.py" "$TARGET"
