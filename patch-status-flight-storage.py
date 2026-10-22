@@ -17,7 +17,7 @@ new = """var MiBFree = status.DiskBytesFree/1048576;
 
 			if (!$scope._flightStoragePending) {
 				$scope._flightStoragePending = true;
-				$http.get(URL_FLIGHTLOG_GET || '/flightLog').then(function(r) {
+				$http.get('/flightLog').then(function(r) {
 					var d = r.data || {};
 					if (d.StorageFreeBytes !== undefined) {
 						$scope.FlightStorageFree = (d.StorageFreeBytes / 1048576).toFixed(1);

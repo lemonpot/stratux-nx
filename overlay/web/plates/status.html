@@ -125,7 +125,7 @@
       <div class="panel-body status-key-values">
         <div><span>CPU temperature</span><strong>{{CPUTemp}}</strong></div>
         <div><span>System storage</span><strong>{{DiskSpace}} MiB free</strong></div>
-        <div><span>Flight storage</span><strong>{{FlightStorageFree}} MiB free / {{FlightStorageTotal}} MiB</strong></div>
+        <div><span>Flight storage</span><strong ng-if="FlightStorageFree">{{FlightStorageFree}} MiB free / {{FlightStorageTotal}} MiB</strong><strong ng-if="!FlightStorageFree" class="text-muted">Not available</strong></div>
         <div ng-class="{'section_invisible': !visible_uat}"><span>UAT frames</span><strong>{{UAT_messages_total}}</strong></div>
         <div ng-class="{'section_invisible': !visible_es}"><span>1090ES frames</span><strong>{{ES_messages_total}}</strong></div>
         <div ng-class="{'section_invisible': !visible_ais}"><span>AIS frames</span><strong>{{AIS_messages_total}}</strong></div>

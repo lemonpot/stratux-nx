@@ -175,4 +175,27 @@ if 'NX_OTA_INSTALL' not in source:
 
 postinst.write_text(source)
 
+# Embed persistent storage service setup into postinst so OTA-updated
+# devices get ext4 flight storage even if they were flashed with an older image.
+service_file = root / "image_build" / "stage2" / "10-stratux" / "files" / "stratux-persistent-data.service"
+if service_file.exists():
+    service_content = service_file.read_text().replace("'", "'\\''")
+    # Add the service installer after the existing postinst content
+    postinst_source = postinst.read_text()
+    installer_block = '''
+# Install persistent ext4 flight storage service if not present.
+PERSIST_SVC="/etc/systemd/system/stratux-persistent-data.service"
+if [ ! -f "$PERSIST_SVC" ] || ! grep -q ".migrated" "$PERSIST_SVC" 2>/dev/null; then
+\tcat > "$PERSIST_SVC" << 'NXSVCEOF'
+''' + service_file.read_text().rstrip() + '''
+NXSVCEOF
+\tsystemctl daemon-reload
+\tsystemctl enable stratux-persistent-data.service 2>/dev/null || true
+fi
+'''
+    if 'stratux-persistent-data.service' not in postinst_source:
+        postinst_source = postinst_source.rstrip() + '\n' + installer_block
+        postinst.write_text(postinst_source)
+        print("Embedded persistent storage service installer into postinst")
+
 print("Boot-time OTA installer hardened.")
