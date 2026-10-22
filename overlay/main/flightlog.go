@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ricochet2200/go-disk-usage/du"
 )
 
 const (
@@ -129,6 +131,8 @@ type flightLogResponse struct {
 	AirportDatabaseReady bool                  `json:"AirportDatabaseReady"`
 	AirportCount         int                   `json:"AirportCount"`
 	StoragePath          string                `json:"StoragePath"`
+	StorageFreeBytes     uint64                `json:"StorageFreeBytes"`
+	StorageTotalBytes    uint64                `json:"StorageTotalBytes"`
 	StorageError         string                `json:"StorageError,omitempty"`
 	StopCountdownSeconds int                   `json:"StopCountdownSeconds"`
 	Sync                 flightSyncPublicState `json:"Sync"`
@@ -833,7 +837,13 @@ func handleFlightLog(w http.ResponseWriter, r *http.Request) {
 			stopCountdown = 45
 		}
 	}
-	resp := flightLogResponse{Phase: phase, GPS: gps, Current: current, CurrentTrack: track, CurrentAirport: airportCopy, Flights: history, Settings: settings, AirportDatabaseReady: flightAirportDBReady, AirportCount: len(flightAirports), StoragePath: flightStorageDir, StorageError: flightStorageError, StopCountdownSeconds: stopCountdown, Sync: syncState}
+	var storageFree, storageTotal uint64
+	if flightStorageDir != "" {
+		usage := du.NewDiskUsage(flightStorageDir)
+		storageFree = usage.Free()
+		storageTotal = usage.Size()
+	}
+	resp := flightLogResponse{Phase: phase, GPS: gps, Current: current, CurrentTrack: track, CurrentAirport: airportCopy, Flights: history, Settings: settings, AirportDatabaseReady: flightAirportDBReady, AirportCount: len(flightAirports), StoragePath: flightStorageDir, StorageFreeBytes: storageFree, StorageTotalBytes: storageTotal, StorageError: flightStorageError, StopCountdownSeconds: stopCountdown, Sync: syncState}
 	flightLogMu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")

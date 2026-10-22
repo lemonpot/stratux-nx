@@ -148,125 +148,89 @@
       <span>Connect an iPad, phone or computer to the Stratux NX Wi-Fi.</span>
     </div>
 
-    <div class="data-device-list" ng-if="data.Clients.length">
-      <article class="data-device-card"
-               ng-repeat="client in data.Clients | orderBy:['!Connected','-TotalBytes']"
-               ng-class="{'is-blocked': client.Blocked, 'is-unlimited': client.Exempt}">
-        <div class="data-device-main">
-          <div class="data-device-icon"><i class="fa fa-tablet"></i></div>
-          <div class="data-device-name-wrap">
-            <div class="data-device-name">{{client.Hostname || 'Unknown device'}}</div>
-            <div class="data-device-meta">
-              <span class="data-status-badge" ng-class="{'online': client.Connected, 'offline': !client.Connected}">
-                {{client.Connected ? 'Connected' : 'Seen earlier'}}
-              </span>
-              <span>{{client.IP}}</span>
-              <span ng-if="client.MAC">{{client.MAC}}</span>
-            </div>
-          </div>
-          <div class="data-access-state" ng-class="{'is-paused': client.Blocked, 'is-free': client.Exempt}">
-            <i class="fa" ng-class="client.Blocked ? 'fa-pause' : (client.Exempt ? 'fa-unlock' : 'fa-check')"></i>
-            <span>
-              <small>Internet</small>
-              <strong>{{client.Blocked ? 'Paused' : (client.Exempt ? 'No limit' : 'Available')}}</strong>
+    <table class="data-device-table" ng-if="data.Clients.length">
+      <thead>
+        <tr>
+          <th>Device</th>
+          <th class="text-right">Used</th>
+          <th class="text-right hidden-xs">Now</th>
+          <th class="text-right">Limit</th>
+          <th>Internet</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="client in data.Clients | orderBy:['!Connected','-TotalBytes']"
+            ng-class="{'is-blocked': client.Blocked, 'is-unlimited': client.Exempt}"
+            ng-click="selectedClient = (selectedClient === client ? null : client)">
+          <td>
+            <strong>{{client.Hostname || 'Unknown'}}</strong>
+            <small class="data-device-ip">{{client.IP}}</small>
+          </td>
+          <td class="text-right"><strong>{{formatBytes(client.TotalBytes)}}</strong></td>
+          <td class="text-right hidden-xs">{{formatRate(client.DownloadBps + client.UploadBps)}}</td>
+          <td class="text-right">{{client.Exempt ? '∞' : (deviceLimitMB(client) + ' MB')}}</td>
+          <td>
+            <span class="data-inet-badge" ng-class="{'is-paused': client.Blocked, 'is-ok': !client.Blocked && !client.Exempt, 'is-free': client.Exempt}">
+              {{client.Blocked ? 'Paused' : (client.Exempt ? 'No limit' : 'OK')}}
             </span>
-          </div>
-        </div>
-
-        <div class="data-device-usage">
-          <div>
-            <span>Used this session</span>
-            <strong>{{formatBytes(client.TotalBytes)}}</strong>
-          </div>
-          <div>
-            <span>Using now</span>
-            <strong>{{formatRate(client.DownloadBps + client.UploadBps)}}</strong>
-          </div>
-          <div>
-            <span>Automatic limit</span>
-            <strong>{{client.Exempt ? 'No limit' : (deviceLimitMB(client) + ' MB')}}</strong>
-          </div>
-        </div>
-
-        <div class="data-device-progress" ng-if="!client.Exempt">
-          <div class="data-progress-track">
-            <div class="data-progress-bar" ng-class="deviceProgressClass(client)" ng-style="{'width': devicePercent(client) + '%'}"></div>
-          </div>
-          <div class="data-device-progress-label">
-            <span>{{client.Blocked ? 'Internet paused' : ((devicePercent(client) | number:0) + '% of this device limit used')}}</span>
-            <span>{{formatBytes(client.TotalBytes)}} / {{deviceLimitMB(client)}} MB</span>
-          </div>
-        </div>
-
-        <div class="data-device-controls">
-          <div class="data-device-control-copy">
-            <strong>Automatic limit for this device</strong>
-            <span>Choose what Stratux NX should do for this device only.</span>
-          </div>
-          <div class="data-policy-current" ng-class="'is-' + currentPolicyMode(client)">
-            <i class="fa" ng-class="currentPolicyMode(client) === 'unlimited' ? 'fa-unlock' : (currentPolicyMode(client) === 'custom' ? 'fa-sliders' : 'fa-shield')"></i>
-            <div>
-              <small>Current setting</small>
-              <strong>{{currentPolicyTitle(client)}}</strong>
-              <span>{{currentPolicyDescription(client)}}</span>
-            </div>
-          </div>
-          <div class="data-policy-options">
-            <button type="button" class="data-policy-option"
-                    ng-class="{'is-selected': policyDraft(client).mode === 'standard'}"
-                    ng-click="chooseDevicePolicy(client, 'standard')"
-                    ng-disabled="policyDraft(client).pending"
-                    aria-pressed="{{policyDraft(client).mode === 'standard'}}">
-              <i class="fa fa-shield"></i>
-              <span><strong>Standard</strong><small>{{currentPolicyMode(client) === 'standard' ? 'Currently active' : (settings.AutoBlockMB + ' MB')}}</small></span>
+          </td>
+          <td class="data-device-row-actions">
+            <button class="btn btn-xs" ng-class="client.Blocked ? 'btn-success' : 'data-pause-btn'"
+                    ng-click="toggleBlock(client); $event.stopPropagation()" ng-disabled="client.actionPending">
+              <i class="fa" ng-class="client.actionPending ? 'fa-circle-o-notch fa-spin' : (client.Blocked ? 'fa-play' : 'fa-pause')"></i>
             </button>
-            <button type="button" class="data-policy-option"
-                    ng-class="{'is-selected': policyDraft(client).mode === 'custom'}"
-                    ng-click="chooseDevicePolicy(client, 'custom')"
-                    ng-disabled="policyDraft(client).pending"
-                    aria-pressed="{{policyDraft(client).mode === 'custom'}}">
-              <i class="fa fa-sliders"></i>
-              <span><strong>Custom</strong><small>{{currentPolicyMode(client) === 'custom' ? ('Currently active · ' + client.LimitMB + ' MB') : 'Choose amount'}}</small></span>
-            </button>
-            <button type="button" class="data-policy-option"
-                    ng-class="{'is-selected': policyDraft(client).mode === 'unlimited'}"
-                    ng-click="chooseDevicePolicy(client, 'unlimited')"
-                    ng-disabled="policyDraft(client).pending"
-                    aria-pressed="{{policyDraft(client).mode === 'unlimited'}}">
-              <i class="fa fa-unlock"></i>
-              <span><strong>No limit</strong><small>{{currentPolicyMode(client) === 'unlimited' ? 'Currently active' : 'Never auto-pause'}}</small></span>
-            </button>
-          </div>
-          <div class="data-custom-limit" ng-if="policyDraft(client).mode === 'custom'">
-            <label>Pause Internet after</label>
-            <span class="data-simple-input"><input type="number" min="1" ng-model="policyDraft(client).limitMB"><b>MB</b></span>
-            <button class="btn btn-primary" ng-click="applyDevicePolicy(client)" ng-disabled="policyDraft(client).pending">
-              <i class="fa" ng-class="policyDraft(client).pending ? 'fa-circle-o-notch fa-spin' : 'fa-check'"></i>
-              {{policyDraft(client).pending ? 'Applying…' : 'Apply limit'}}
-            </button>
-          </div>
-          <div class="data-policy-feedback" ng-if="policyFeedback(client)"
-               ng-class="'is-' + policyFeedback(client).type"
-               role="status" aria-live="polite">
-            <i class="fa" ng-class="policyFeedback(client).type === 'pending' ? 'fa-circle-o-notch fa-spin' : (policyFeedback(client).type === 'error' ? 'fa-exclamation-circle' : (policyFeedback(client).type === 'info' ? 'fa-info-circle' : 'fa-check-circle'))"></i>
-            <span>{{policyFeedback(client).message}}</span>
-          </div>
-        </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-        <div class="data-device-actions">
-          <button class="btn btn-default" ng-click="saveDevice(client)" ng-if="!isDeviceSaved(client.MAC)" ng-disabled="!client.MAC">
-            <i class="fa fa-bookmark-o"></i> Remember device
+    <div class="data-device-detail" ng-if="selectedClient">
+      <div class="data-device-detail-header">
+        <strong>{{selectedClient.Hostname || 'Unknown device'}}</strong>
+        <small>{{selectedClient.IP}} <span ng-if="selectedClient.MAC">· {{selectedClient.MAC}}</span></small>
+        <button class="btn btn-xs btn-default" ng-click="selectedClient = null"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="data-device-detail-body">
+        <div class="data-policy-options">
+          <button type="button" class="data-policy-option"
+                  ng-class="{'is-selected': policyDraft(selectedClient).mode === 'standard'}"
+                  ng-click="chooseDevicePolicy(selectedClient, 'standard')"
+                  ng-disabled="policyDraft(selectedClient).pending">
+            <i class="fa fa-shield"></i>
+            <span><strong>Standard</strong><small>{{settings.AutoBlockMB}} MB</small></span>
           </button>
-          <button class="btn btn-default is-saved" ng-if="isDeviceSaved(client.MAC)" disabled>
+          <button type="button" class="data-policy-option"
+                  ng-class="{'is-selected': policyDraft(selectedClient).mode === 'custom'}"
+                  ng-click="chooseDevicePolicy(selectedClient, 'custom')"
+                  ng-disabled="policyDraft(selectedClient).pending">
+            <i class="fa fa-sliders"></i>
+            <span><strong>Custom</strong><small>Choose amount</small></span>
+          </button>
+          <button type="button" class="data-policy-option"
+                  ng-class="{'is-selected': policyDraft(selectedClient).mode === 'unlimited'}"
+                  ng-click="chooseDevicePolicy(selectedClient, 'unlimited')"
+                  ng-disabled="policyDraft(selectedClient).pending">
+            <i class="fa fa-unlock"></i>
+            <span><strong>No limit</strong><small>Never auto-pause</small></span>
+          </button>
+        </div>
+        <div class="data-custom-limit" ng-if="policyDraft(selectedClient).mode === 'custom'">
+          <label>Pause after</label>
+          <span class="data-simple-input"><input type="number" min="1" ng-model="policyDraft(selectedClient).limitMB"><b>MB</b></span>
+          <button class="btn btn-primary btn-sm" ng-click="applyDevicePolicy(selectedClient)" ng-disabled="policyDraft(selectedClient).pending">
+            {{policyDraft(selectedClient).pending ? 'Applying…' : 'Apply'}}
+          </button>
+        </div>
+        <div class="data-device-detail-actions">
+          <button class="btn btn-default btn-sm" ng-click="saveDevice(selectedClient)" ng-if="!isDeviceSaved(selectedClient.MAC)" ng-disabled="!selectedClient.MAC">
+            <i class="fa fa-bookmark-o"></i> Remember
+          </button>
+          <button class="btn btn-default btn-sm is-saved" ng-if="isDeviceSaved(selectedClient.MAC)" disabled>
             <i class="fa fa-bookmark"></i> Remembered
           </button>
-          <button class="btn" ng-class="client.Blocked ? 'btn-success' : 'data-pause-btn'"
-                  ng-click="toggleBlock(client)" ng-disabled="client.actionPending">
-            <i class="fa" ng-class="client.actionPending ? 'fa-circle-o-notch fa-spin' : (client.Blocked ? 'fa-play' : 'fa-pause')"></i>
-            {{client.actionPending ? 'Applying…' : (client.Blocked ? 'Restore Internet' : 'Pause Internet now')}}
-          </button>
         </div>
-      </article>
+      </div>
     </div>
   </section>
 

@@ -13,6 +13,13 @@ ExecStart=/bin/sh -c "\
   mkdir -p /overlay/pivot/stratux-persistent/data-monitor && \
   mkdir -p /opt/stratux-data && \
   mount --bind /overlay/pivot/stratux-persistent /opt/stratux-data && \
+  if [ -d /boot/firmware/stratux-flight-log ] && [ ! -f /opt/stratux-data/flight-log/.migrated ]; then \
+    cp -a /boot/firmware/stratux-flight-log/* /opt/stratux-data/flight-log/ 2>/dev/null; \
+    cp -a /boot/firmware/stratux-data-monitor/* /opt/stratux-data/data-monitor/ 2>/dev/null; \
+    touch /opt/stratux-data/flight-log/.migrated; \
+  fi && \
+  mkdir -p /boot/firmware/stratux-flight-log && \
+  mkdir -p /boot/firmware/stratux-data-monitor && \
   mount --bind /opt/stratux-data/flight-log /boot/firmware/stratux-flight-log && \
   mount --bind /opt/stratux-data/data-monitor /boot/firmware/stratux-data-monitor"
 
