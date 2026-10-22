@@ -1,0 +1,20 @@
+[Unit]
+Description=Mount persistent ext4 storage for Stratux flight data
+DefaultDependencies=no
+After=local-fs.target boot-firmware.mount
+Before=stratux.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c "\
+  mount -o remount,rw /overlay/pivot && \
+  mkdir -p /overlay/pivot/stratux-persistent/flight-log && \
+  mkdir -p /overlay/pivot/stratux-persistent/data-monitor && \
+  mkdir -p /opt/stratux-data && \
+  mount --bind /overlay/pivot/stratux-persistent /opt/stratux-data && \
+  mount --bind /opt/stratux-data/flight-log /boot/firmware/stratux-flight-log && \
+  mount --bind /opt/stratux-data/data-monitor /boot/firmware/stratux-data-monitor"
+
+[Install]
+WantedBy=multi-user.target
