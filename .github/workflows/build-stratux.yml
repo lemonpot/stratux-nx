@@ -120,6 +120,13 @@ jobs:
           test -f stratux/image_build/stage2/10-stratux/files/stratux-persistent-data.service
           grep -q 'StorageFreeBytes' stratux/main/flightlog.go
           grep -q 'Flight storage' stratux/web/plates/status.html
+          grep -q 'func flightStorageIsPhysical' stratux/main/flightlog.go
+          grep -q 'func recoverFlightJournalsLocked' stratux/main/flightlog_journal.go
+          if grep -q '/tmp/stratux-flight-log' stratux/main/flightlog.go; then exit 1; fi
+          grep -q 'mountpoint -q /overlay/pivot' stratux/image_build/stage2/10-stratux/files/stratux-persistent-data.service
+          grep -q 'stratux-persistent-data.service' stratux/debian/postinst.dpkg
+          test "$(tail -n 1 stratux/debian/postinst.dpkg)" = "exit 0"
+          bash -n stratux/debian/postinst.dpkg
 
           echo "Complete Stratux NX source verified"
 

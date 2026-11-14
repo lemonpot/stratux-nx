@@ -17,7 +17,7 @@ old = '''\tcase flightPhaseAirborne:\n\t\tnearby := nearestAirportLocked(sample.
 new = '''\tcase flightPhaseAirborne:\n\t\t// Only resolve an airport at plausible approach speeds. That keeps cruise CPU\n\t\t// cost tiny even with the worldwide offline airport database.\n\t\tvar nearby *flightAirport\n\t\tif speed <= 65 {\n\t\t\tnearby = nearestAirportLocked(sample.Latitude, sample.Longitude, sample.AltitudeFt, 5.0)\n\t\t}\n\t\theightAboveAirport := 99999.0\n\t\tif nearby != nil {\n\t\t\theightAboveAirport = math.Abs(sample.AltitudeFt - nearby.ElevationFt)\n\t\t}\n\t\t// GPS-only touchdown estimate: low AGL, approach speed and a flattened\n\t\t// vertical rate. The recorded landing time is the first qualifying sample.\n\t\tlandingEvidence := (nearby != nil && speed <= 60 && heightAboveAirport <= 55 && absVS <= 3.0) || speed <= 20'''
 if old in s:
     s = s.replace(old, new, 1)
-elif new not in s:
+elif new not in s and 'func flightLandingEvidenceLocked(' not in s:
     raise SystemExit('Could not optimize airborne airport resolution')
 
 # Shorter persistence window after first touchdown evidence keeps the timestamp close

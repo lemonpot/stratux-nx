@@ -179,22 +179,23 @@ postinst.write_text(source)
 # devices get ext4 flight storage even if they were flashed with an older image.
 service_file = root / "image_build" / "stage2" / "10-stratux" / "files" / "stratux-persistent-data.service"
 if service_file.exists():
-    service_content = service_file.read_text().replace("'", "'\\''")
-    # Add the service installer after the existing postinst content
     postinst_source = postinst.read_text()
+    # Always rewrite the unit so OTA updates also replace older versions of it.
+    # The OTA install runs on bare ext4 and reboots, so linking is enough.
     installer_block = '''
-# Install persistent ext4 flight storage service if not present.
+# Stratux NX: keep flight data on physical ext4 storage, never in the RAM overlay.
 PERSIST_SVC="/etc/systemd/system/stratux-persistent-data.service"
-if [ ! -f "$PERSIST_SVC" ] || ! grep -q ".migrated" "$PERSIST_SVC" 2>/dev/null; then
-\tcat > "$PERSIST_SVC" << 'NXSVCEOF'
+cat > "$PERSIST_SVC" << 'NXSVCEOF'
 ''' + service_file.read_text().rstrip() + '''
 NXSVCEOF
-\tsystemctl daemon-reload
-\tsystemctl enable stratux-persistent-data.service 2>/dev/null || true
-fi
+mkdir -p /etc/systemd/system/multi-user.target.wants
+ln -sf "$PERSIST_SVC" /etc/systemd/system/multi-user.target.wants/stratux-persistent-data.service
 '''
     if 'stratux-persistent-data.service' not in postinst_source:
-        postinst_source = postinst_source.rstrip() + '\n' + installer_block
+        body = postinst_source.rstrip()
+        if not body.endswith('\nexit 0'):
+            raise SystemExit("Could not find final exit in postinst")
+        postinst_source = body[:-len('exit 0')] + installer_block.lstrip('\n') + 'exit 0\n'
         postinst.write_text(postinst_source)
         print("Embedded persistent storage service installer into postinst")
 

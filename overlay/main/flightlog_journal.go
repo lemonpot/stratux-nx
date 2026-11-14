@@ -13,7 +13,26 @@ import (
 	"time"
 )
 
-const flightJournalEntriesPerSegment = 60
+const (
+	flightJournalEntriesPerSegment = 60
+	flightArchivedJournalsDir      = "archived-journals"
+	flightRecoveryResumeWindow     = 10 * time.Minute
+)
+
+type flightRecoveryOutcome int
+
+const (
+	flightRecoveryInAir flightRecoveryOutcome = iota
+	flightRecoveryLanded
+	flightRecoveryGround
+)
+
+type flightRecoveryAnalysis struct {
+	outcome    flightRecoveryOutcome
+	landing    flightTrackPoint
+	onBlockUTC string
+	lastSample flightLiveGPS
+}
 
 type flightJournalEntry struct {
 	Kind       string            `json:"kind"`
@@ -28,6 +47,7 @@ var (
 	flightJournalSegment        int
 	flightJournalSegmentEntries int
 	flightJournalRecovered      bool
+	flightRecoveredAt           time.Time
 	flightStorageError          string
 )
 
@@ -37,23 +57,166 @@ func initializeFlightJournalLocked() {
 		setFlightStorageErrorLocked(fmt.Sprintf("Flight storage is not writable: %v", err))
 		return
 	}
-	recovered := recoverLatestFlightJournalLocked()
-	if recovered != nil {
-		if flightCurrent == nil || parseFlightTime(recovered.LastUpdateUTC).After(parseFlightTime(flightCurrent.LastUpdateUTC)) {
-			flightCurrent = recovered
-			if len(recovered.Track) > 0 {
-				last := recovered.Track[len(recovered.Track)-1]
-				flightLastPosition = &last
-			}
-			flightJournalRecovered = true
-		} else {
-			flightJournalSegment = 0
-			flightJournalSegmentEntries = 0
+	if legacy := flightCurrent; legacy != nil {
+		flightCurrent = nil
+		flightLastPosition = nil
+		if !flightHistoryContains(legacy.ID) && !flightJournalKnownLocked(legacy.ID) {
+			adoptLegacyFlightIntoJournalLocked(legacy)
 		}
 	}
-	if flightCurrent != nil && flightJournalSegment == 0 {
-		adoptLegacyFlightIntoJournalLocked(flightCurrent)
+	recoverFlightJournalsLocked()
+}
+
+// Every unfinished journal is resolved from its own recorded points. Only the
+// newest one may stay open, so a restart in flight can resume once GPS returns.
+func recoverFlightJournalsLocked() {
+	directories, err := os.ReadDir(flightJournalRoot)
+	if err != nil {
+		setFlightStorageErrorLocked(fmt.Sprintf("Cannot read flight journals: %v", err))
+		return
 	}
+	sort.Slice(directories, func(i, j int) bool { return directories[i].Name() < directories[j].Name() })
+	type unfinishedJournal struct {
+		record      *flightRecord
+		nextSegment int
+	}
+	var unfinished []unfinishedJournal
+	for _, directory := range directories {
+		if !directory.IsDir() {
+			continue
+		}
+		record, ended, nextSegment := readFlightJournalLocked(filepath.Join(flightJournalRoot, directory.Name()))
+		if record == nil {
+			continue
+		}
+		if ended {
+			restoreCompletedFlightFromJournalLocked(record)
+			continue
+		}
+		if flightHistoryContains(record.ID) {
+			continue
+		}
+		unfinished = append(unfinished, unfinishedJournal{record: record, nextSegment: nextSegment})
+	}
+	for i, journal := range unfinished {
+		flightCurrent = journal.record
+		flightJournalSegment = journal.nextSegment
+		flightJournalSegmentEntries = 0
+		flightJournalRecovered = true
+		flightRecoveredAt = time.Now()
+		if len(journal.record.Track) > 0 {
+			last := journal.record.Track[len(journal.record.Track)-1]
+			flightLastPosition = &last
+		}
+		if i == len(unfinished)-1 && analyzeRecoveredFlightLocked(journal.record).outcome != flightRecoveryLanded {
+			log.Printf("flight log: unfinished flight %s recovered; waiting for GPS before closing it", journal.record.ID)
+			return
+		}
+		if !closeRecoveredFlightLocked() {
+			return
+		}
+	}
+}
+
+func analyzeRecoveredFlightLocked(record *flightRecord) flightRecoveryAnalysis {
+	if record == nil || record.TakeoffUTC == "" || len(record.Track) == 0 {
+		return flightRecoveryAnalysis{outcome: flightRecoveryGround}
+	}
+	track := record.Track
+	last := track[len(track)-1]
+	analysis := flightRecoveryAnalysis{
+		outcome:    flightRecoveryInAir,
+		onBlockUTC: last.TimeUTC,
+		lastSample: flightLiveGPS{
+			Valid: true, TimeUTC: last.TimeUTC, Latitude: last.Latitude, Longitude: last.Longitude,
+			AltitudeFt: last.AltitudeFt, GroundSpeedKt: last.GroundSpeedKt, CourseDeg: last.CourseDeg,
+			VerticalSpeedFps: last.VerticalSpeedFps,
+		},
+	}
+	for i := len(track) - 1; i >= 0 && track[i].GroundSpeedKt <= 2; i-- {
+		analysis.onBlockUTC = track[i].TimeUTC
+	}
+	if record.LandingUTC != "" {
+		analysis.outcome = flightRecoveryLanded
+		analysis.landing = last
+		landingTime := parseFlightTime(record.LandingUTC)
+		for _, point := range track {
+			if !parseFlightTime(point.TimeUTC).Before(landingTime) {
+				analysis.landing = point
+				break
+			}
+		}
+	} else {
+		start := len(track)
+		for start > 0 && flightLandingEvidenceLocked(track[start-1]) {
+			start--
+		}
+		if start < len(track) && parseFlightTime(last.TimeUTC).Sub(parseFlightTime(track[start].TimeUTC)) >= flightLandingConfirmDuration {
+			analysis.outcome = flightRecoveryLanded
+			analysis.landing = track[start]
+		}
+	}
+	if analysis.outcome == flightRecoveryLanded && parseFlightTime(analysis.onBlockUTC).Before(parseFlightTime(analysis.landing.TimeUTC)) {
+		analysis.onBlockUTC = analysis.landing.TimeUTC
+	}
+	return analysis
+}
+
+// Closes the recovered flightCurrent using only times recorded in its journal.
+func closeRecoveredFlightLocked() bool {
+	record := flightCurrent
+	if record == nil {
+		flightJournalRecovered = false
+		return true
+	}
+	analysis := analyzeRecoveredFlightLocked(record)
+	switch analysis.outcome {
+	case flightRecoveryGround:
+		log.Printf("flight log: archived ground-only journal %s (no takeoff recorded)", record.ID)
+		stopFlightWeatherCapture(record.ID)
+		archiveFlightJournalLocked(record.ID)
+		_ = os.Remove(flightCurrentPath)
+		flightCurrent = nil
+		flightLastPosition = nil
+		return true
+	case flightRecoveryLanded:
+		if record.LandingUTC == "" {
+			record.LandingUTC = analysis.landing.TimeUTC
+		}
+		if record.ArrivalAirport == nil {
+			record.ArrivalAirport = nearestAirportLocked(analysis.landing.Latitude, analysis.landing.Longitude, analysis.landing.AltitudeFt, 8.0)
+		}
+		record.Incomplete = false
+		record.EndReason = "recovered after power loss"
+	default:
+		record.Incomplete = true
+		record.EndReason = "power lost before landing was recorded"
+	}
+	log.Printf("flight log: closing recovered flight %s (%s) at %s", record.ID, record.EndReason, analysis.onBlockUTC)
+	return finishFlightLocked(parseFlightTime(analysis.onBlockUTC), analysis.lastSample)
+}
+
+func recoveredFlightCanResume(sample flightLiveGPS) bool {
+	if flightCurrent == nil || len(flightCurrent.Track) == 0 {
+		return false
+	}
+	last := flightCurrent.Track[len(flightCurrent.Track)-1]
+	lastTime := parseFlightTime(last.TimeUTC)
+	sampleTime := parseFlightTime(sample.TimeUTC)
+	if lastTime.IsZero() || sampleTime.IsZero() {
+		return false
+	}
+	gap := sampleTime.Sub(lastTime)
+	if gap < 0 || gap > flightRecoveryResumeWindow {
+		return false
+	}
+	switch flightCurrent.Phase {
+	case flightPhaseAirborne:
+		return sample.GroundSpeedKt > 35
+	case flightPhaseTaxiOut:
+		return true
+	}
+	return false
 }
 
 func setFlightStorageErrorLocked(message string) {
@@ -148,11 +311,23 @@ func finishFlightJournalLocked(rec *flightRecord) {
 	flightJournalRecovered = false
 }
 
-func discardFlightJournalLocked(flightID string) {
+// Journals are never deleted; discarded or ground-only ones are set aside.
+func archiveFlightJournalLocked(flightID string) {
 	if flightID != "" && flightJournalRoot != "" {
-		if err := os.RemoveAll(flightJournalDirectory(flightID)); err != nil {
-			setFlightStorageErrorLocked(fmt.Sprintf("Cannot discard flight journal: %v", err))
+		archiveRoot := filepath.Join(flightStorageDir, flightArchivedJournalsDir)
+		target := filepath.Join(archiveRoot, flightID)
+		if _, err := os.Stat(target); err == nil {
+			target += "." + strconv.FormatInt(time.Now().UnixNano(), 10)
 		}
+		err := os.MkdirAll(archiveRoot, 0755)
+		if err == nil {
+			err = os.Rename(flightJournalDirectory(flightID), target)
+		}
+		if err != nil && !os.IsNotExist(err) {
+			setFlightStorageErrorLocked(fmt.Sprintf("Cannot archive flight journal: %v", err))
+		}
+		syncFlightDirectory(flightJournalRoot)
+		syncFlightDirectory(archiveRoot)
 	}
 	flightJournalSegment = 0
 	flightJournalSegmentEntries = 0
@@ -211,35 +386,6 @@ func appendFlightJournalLocked(entry flightJournalEntry) {
 		return
 	}
 	flightJournalSegmentEntries++
-}
-
-func recoverLatestFlightJournalLocked() *flightRecord {
-	directories, err := os.ReadDir(flightJournalRoot)
-	if err != nil {
-		setFlightStorageErrorLocked(fmt.Sprintf("Cannot read flight journals: %v", err))
-		return nil
-	}
-	sort.Slice(directories, func(i, j int) bool { return directories[i].Name() > directories[j].Name() })
-	for _, directory := range directories {
-		if !directory.IsDir() {
-			continue
-		}
-		record, ended, nextSegment := readFlightJournalLocked(filepath.Join(flightJournalRoot, directory.Name()))
-		if ended && record != nil {
-			restoreCompletedFlightFromJournalLocked(record)
-			continue
-		}
-		if record == nil {
-			continue
-		}
-		if flightHistoryContains(record.ID) {
-			continue
-		}
-		flightJournalSegment = nextSegment
-		flightJournalSegmentEntries = 0
-		return record
-	}
-	return nil
 }
 
 func flightHistoryContains(flightID string) bool {
@@ -370,24 +516,4 @@ func recalculateRecoveredFlight(record *flightRecord) {
 	last := record.Track[len(record.Track)-1]
 	record.LastUpdateUTC = last.TimeUTC
 	updateFlightDurationsLocked(record, parseFlightTime(last.TimeUTC))
-}
-
-func recoveredFlightNeedsClosure(sample flightLiveGPS) bool {
-	if !flightJournalRecovered || flightCurrent == nil || len(flightCurrent.Track) == 0 {
-		return false
-	}
-	last := flightCurrent.Track[len(flightCurrent.Track)-1]
-	lastTime := parseFlightTime(last.TimeUTC)
-	sampleTime := parseFlightTime(sample.TimeUTC)
-	if lastTime.IsZero() || sampleTime.IsZero() {
-		return false
-	}
-	gap := sampleTime.Sub(lastTime)
-	if gap <= 0 {
-		return false
-	}
-	if flightCurrent.Phase == flightPhaseTaxiIn && flightCurrent.LandingUTC != "" && last.GroundSpeedKt <= 2 {
-		return gap >= 15*time.Second
-	}
-	return gap >= 10*time.Minute
 }

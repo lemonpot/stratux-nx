@@ -238,7 +238,7 @@
 
     <div class="flightlog-history" ng-if="data.Flights.length">
       <button type="button" class="flightlog-history-row" ng-repeat="flight in data.Flights track by flight.ID" ng-click="selectFlight(flight)">
-        <div class="flightlog-history-route"><strong>{{airportCode(flight.DepartureAirport)}} <i class="fa fa-long-arrow-right"></i> {{airportCode(flight.ArrivalAirport)}}</strong><span>{{formatLocalDate(flight.TakeoffUTC || flight.OffBlockUTC)}}</span><em class="flightlog-recovery-badge" ng-if="flight.Incomplete">Recovered · incomplete</em><em class="flightlog-sync-badge" ng-class="syncStatusClass(flight.SyncStatus)">{{syncStatusLabel(flight.SyncStatus)}}</em></div>
+        <div class="flightlog-history-route"><strong>{{airportCode(flight.DepartureAirport)}} <i class="fa fa-long-arrow-right"></i> {{airportCode(flight.ArrivalAirport)}}</strong><span>{{formatLocalDate(flight.TakeoffUTC || flight.OffBlockUTC)}}</span><em class="flightlog-recovery-badge" ng-if="flight.Incomplete" title="{{flight.EndReason}}">Recovered · incomplete</em><em class="flightlog-sync-badge" ng-class="syncStatusClass(flight.SyncStatus)">{{syncStatusLabel(flight.SyncStatus)}}</em></div>
         <div><span>AIR</span><strong>{{formatDuration(flight.AirTimeSeconds)}}</strong></div>
         <div><span>BLOCK</span><strong>{{formatDuration(flight.BlockTimeSeconds)}}</strong></div>
         <div><span>TAXI</span><strong>{{formatDuration((flight.TaxiOutSeconds || 0) + (flight.TaxiInSeconds || 0))}}</strong></div>

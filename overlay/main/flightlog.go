@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/ricochet2200/go-disk-usage/du"
@@ -22,6 +23,8 @@ const (
 	flightPhaseTaxiOut  = "TAXI_OUT"
 	flightPhaseAirborne = "AIRBORNE"
 	flightPhaseTaxiIn   = "TAXI_IN"
+
+	flightLandingConfirmDuration = 4 * time.Second
 )
 
 type flightLogSettings struct {
@@ -198,7 +201,7 @@ func flightLogMonitorLoop() {
 			persistCurrentFlightLocked()
 			flightLastPersist = time.Now()
 		}
-		if flightCurrent != nil && time.Since(flightLastContextSample) >= flightContextInterval {
+		if flightCurrent != nil && !flightJournalRecovered && time.Since(flightLastContextSample) >= flightContextInterval {
 			contextFlightID = flightCurrent.ID
 			contextPhase = flightCurrent.Phase
 			flightLastContextSample = time.Now()
@@ -228,30 +231,46 @@ func initializeFlightLog() {
 	flightCurrentPath = filepath.Join(flightStorageDir, "current-flight.json")
 	flightFilesDir = filepath.Join(flightStorageDir, "flights")
 	_ = os.MkdirAll(flightFilesDir, 0755)
+	importLegacyFlightDataLocked()
 	loadFlightSettingsLocked()
 	loadFlightIndexLocked()
+	reconcileFlightIndexLocked()
 	sort.SliceStable(flightHistory, func(i, j int) bool { return flightHistory[i].ID > flightHistory[j].ID })
+	loadAirportDatabaseLocked()
 	loadCurrentFlightLocked()
 	initializeFlightJournalLocked()
 	if flightCurrent != nil {
 		startFlightWeatherCapture(flightCurrent.ID, flightCurrent.Weather)
 	}
-	loadAirportDatabaseLocked()
 	flightSyncInitializeLocked()
 	flightInitialized = true
 	flightLogMu.Unlock()
 }
 
+// Flight data must survive power loss, so only physical filesystems qualify.
+var flightStorageCandidates = []string{
+	"/opt/stratux-data/flight-log",
+	"/boot/firmware/stratux-flight-log",
+	"/boot/stratux-flight-log",
+}
+
+// Older releases may have written flights here; they are imported, never moved.
+var flightLegacyStorageDirs = []string{
+	"/opt/stratux-data/flight-log",
+	"/boot/firmware/stratux-flight-log",
+	"/boot/stratux-flight-log",
+	"/overlay/pivot/opt/stratux-data/flight-log",
+	"/overlay/pivot/stratux-persistent/flight-log",
+	"/stratux-persistent/flight-log",
+	"/var/log/stratux-flight-log",
+}
+
 func chooseFlightStorageDir() string {
-	candidates := []string{
-		"/opt/stratux-data/flight-log",
-		"/boot/firmware/stratux-flight-log",
-		"/boot/stratux-flight-log",
-		"/var/log/stratux-flight-log",
-		"/tmp/stratux-flight-log",
-	}
-	for _, dir := range candidates {
+	for _, dir := range flightStorageCandidates {
 		if err := os.MkdirAll(dir, 0755); err != nil {
+			continue
+		}
+		if !flightStorageIsPhysical(dir) {
 			continue
 		}
 		test := filepath.Join(dir, ".write-test")
@@ -260,7 +279,116 @@ func chooseFlightStorageDir() string {
 			return dir
 		}
 	}
-	return "/tmp/stratux-flight-log"
+	setFlightStorageErrorLocked("No writable physical storage found for the Flight Log")
+	return flightStorageCandidates[1]
+}
+
+func flightStorageIsPhysical(dir string) bool {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(dir, &stat); err != nil {
+		return false
+	}
+	switch int64(stat.Type) {
+	case 0x01021994, 0x794c7630, 0x858458f6: // tmpfs, overlayfs, ramfs
+		return false
+	}
+	return true
+}
+
+func importLegacyFlightDataLocked() {
+	target, err := filepath.EvalSymlinks(flightStorageDir)
+	if err != nil {
+		return
+	}
+	targetInfo, err := os.Stat(target)
+	if err != nil {
+		return
+	}
+	for _, source := range flightLegacyStorageDirs {
+		info, err := os.Stat(source)
+		if err != nil || !info.IsDir() || os.SameFile(info, targetInfo) || !flightStorageIsPhysical(source) {
+			continue
+		}
+		for _, name := range []string{"installation.json", "cloud-sync.json", "settings.json"} {
+			copyFlightFileIfMissing(filepath.Join(source, name), filepath.Join(flightStorageDir, name))
+		}
+		completed, _ := filepath.Glob(filepath.Join(source, "flights", "*.json"))
+		for _, path := range completed {
+			copyFlightFileIfMissing(path, filepath.Join(flightFilesDir, filepath.Base(path)))
+		}
+		journals, _ := os.ReadDir(filepath.Join(source, "journals"))
+		for _, journal := range journals {
+			id := journal.Name()
+			if !journal.IsDir() || flightJournalKnownLocked(id) {
+				continue
+			}
+			segments, _ := filepath.Glob(filepath.Join(source, "journals", id, "*.ndjson"))
+			for _, path := range segments {
+				copyFlightFileIfMissing(path, filepath.Join(flightStorageDir, "journals", id, filepath.Base(path)))
+			}
+		}
+	}
+}
+
+func flightJournalKnownLocked(flightID string) bool {
+	for _, path := range []string{
+		filepath.Join(flightStorageDir, "journals", flightID),
+		filepath.Join(flightStorageDir, flightArchivedJournalsDir, flightID),
+		filepath.Join(flightFilesDir, flightID+".json"),
+	} {
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+func copyFlightFileIfMissing(source, target string) {
+	if _, err := os.Stat(target); err == nil {
+		return
+	}
+	body, err := os.ReadFile(source)
+	if err != nil {
+		return
+	}
+	mode := os.FileMode(0644)
+	if info, statErr := os.Stat(source); statErr == nil {
+		mode = info.Mode().Perm()
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+		setFlightStorageErrorLocked("Cannot import flight data: " + err.Error())
+		return
+	}
+	if err := writeFlightFileAtomic(target, body, mode); err != nil {
+		setFlightStorageErrorLocked("Cannot import flight data: " + err.Error())
+		return
+	}
+	log.Printf("flight log: imported %s", source)
+}
+
+func reconcileFlightIndexLocked() {
+	files, _ := filepath.Glob(filepath.Join(flightFilesDir, "*.json"))
+	changed := false
+	for _, path := range files {
+		id := strings.TrimSuffix(filepath.Base(path), ".json")
+		if flightHistoryContains(id) {
+			continue
+		}
+		body, err := os.ReadFile(path)
+		var record flightRecord
+		if err != nil || json.Unmarshal(body, &record) != nil || record.ID != id {
+			continue
+		}
+		flightHistory = append(flightHistory, summarizeFlight(record))
+		changed = true
+	}
+	if !changed {
+		return
+	}
+	sort.SliceStable(flightHistory, func(i, j int) bool { return flightHistory[i].ID > flightHistory[j].ID })
+	if err := saveFlightIndexLocked(); err != nil {
+		setFlightStorageErrorLocked("Cannot rebuild flight history: " + err.Error())
+	}
 }
 
 func loadFlightSettingsLocked() {
@@ -305,8 +433,12 @@ func writeFlightJSONAtomic(path string, value interface{}) error {
 	if err != nil {
 		return err
 	}
+	return writeFlightFileAtomic(path, body, 0644)
+}
+
+func writeFlightFileAtomic(path string, body []byte, mode os.FileMode) error {
 	temporary := path + ".tmp"
-	file, err := os.OpenFile(temporary, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(temporary, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
 	if err != nil {
 		return err
 	}
@@ -325,11 +457,15 @@ func writeFlightJSONAtomic(path string, value interface{}) error {
 		_ = os.Remove(temporary)
 		return err
 	}
-	if directory, openErr := os.Open(filepath.Dir(path)); openErr == nil {
+	syncFlightDirectory(filepath.Dir(path))
+	return nil
+}
+
+func syncFlightDirectory(path string) {
+	if directory, err := os.Open(path); err == nil {
 		_ = directory.Sync()
 		_ = directory.Close()
 	}
-	return nil
 }
 
 func loadCurrentFlightLocked() {
@@ -449,26 +585,17 @@ func newFlightLocked(sample flightLiveGPS, start time.Time) {
 }
 
 func updateFlightStateLocked(sample flightLiveGPS) {
+	if flightJournalRecovered && time.Since(flightRecoveredAt) >= flightRecoveryResumeWindow {
+		if !closeRecoveredFlightLocked() {
+			return
+		}
+	}
 	if !sample.Valid || sample.HorizontalAccuracyM > 250 {
 		return
 	}
 	if flightJournalRecovered {
-		if recoveredFlightNeedsClosure(sample) {
-			last := flightCurrent.Track[len(flightCurrent.Track)-1]
-			if flightCurrent.LandingUTC == "" && flightCurrent.Phase != flightPhaseTaxiIn {
-				flightCurrent.Incomplete = true
-				flightCurrent.EndReason = "interrupted before landing was confirmed"
-			} else {
-				flightCurrent.EndReason = "recovered and closed after restart"
-			}
-			lastSample := flightLiveGPS{
-				Valid: true, TimeUTC: last.TimeUTC, Latitude: last.Latitude, Longitude: last.Longitude,
-				AltitudeFt: last.AltitudeFt, GroundSpeedKt: last.GroundSpeedKt, CourseDeg: last.CourseDeg,
-				VerticalSpeedFps: last.VerticalSpeedFps,
-			}
-			if !finishFlightLocked(parseFlightTime(last.TimeUTC), lastSample) {
-				return
-			}
+		if !recoveredFlightCanResume(sample) && !closeRecoveredFlightLocked() {
+			return
 		}
 		flightJournalRecovered = false
 	}
@@ -480,7 +607,6 @@ func updateFlightStateLocked(sample flightLiveGPS) {
 		return
 	}
 	speed := sample.GroundSpeedKt
-	absVS := math.Abs(sample.VerticalSpeedFps)
 
 	if flightCurrent == nil {
 		if speed >= 3 {
@@ -532,14 +658,11 @@ func updateFlightStateLocked(sample flightLiveGPS) {
 		}
 
 	case flightPhaseAirborne:
-		nearby := nearestAirportLocked(sample.Latitude, sample.Longitude, sample.AltitudeFt, 8.0)
-		altitudePlausible := nearby != nil && math.Abs(sample.AltitudeFt-nearby.ElevationFt) < 1800
-		landingEvidence := (speed <= 35 && absVS <= 4.0 && altitudePlausible) || speed <= 20
-		if landingEvidence {
+		if flightLandingEvidenceLocked(pointFromGPS(sample)) {
 			if flightLandingCandidate.since.IsZero() {
 				flightLandingCandidate = flightCandidate{since: now, point: pointFromGPS(sample)}
 			}
-			if now.Sub(flightLandingCandidate.since) >= 10*time.Second {
+			if now.Sub(flightLandingCandidate.since) >= flightLandingConfirmDuration {
 				flightCurrent.LandingUTC = flightLandingCandidate.since.UTC().Format(time.RFC3339)
 				flightCurrent.Phase = flightPhaseTaxiIn
 				p := flightLandingCandidate.point
@@ -577,6 +700,19 @@ func updateFlightStateLocked(sample flightLiveGPS) {
 	if flightCurrent != nil {
 		updateFlightDurationsLocked(flightCurrent, now)
 	}
+}
+
+// GPS-only touchdown estimate: low AGL, approach speed and a flattened vertical
+// rate. Airports are only resolved at approach speeds to keep cruise CPU low.
+func flightLandingEvidenceLocked(point flightTrackPoint) bool {
+	if point.GroundSpeedKt <= 20 {
+		return true
+	}
+	if point.GroundSpeedKt > 60 {
+		return false
+	}
+	nearby := nearestAirportLocked(point.Latitude, point.Longitude, point.AltitudeFt, 5.0)
+	return nearby != nil && math.Abs(point.AltitudeFt-nearby.ElevationFt) <= 55 && math.Abs(point.VerticalSpeedFps) <= 3.0
 }
 
 func flightTrackPointPlausibleLocked(sample flightLiveGPS, now time.Time) bool {
@@ -693,7 +829,7 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) bool {
 	flightCurrent.Phase = flightPhaseParked
 	flightCurrent.LastUpdateUTC = sample.TimeUTC
 	flightCurrent.SyncStatus = flightSyncCompletedStatusLocked()
-	if flightCurrent.ArrivalAirport == nil {
+	if flightCurrent.ArrivalAirport == nil && !flightCurrent.Incomplete {
 		flightCurrent.ArrivalAirport = nearestAirportLocked(sample.Latitude, sample.Longitude, sample.AltitudeFt, 8.0)
 	}
 	updateFlightDurationsLocked(flightCurrent, onBlock)
@@ -711,9 +847,6 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) bool {
 	}
 	previousHistory := flightHistory
 	flightHistory = append([]flightSummary{summarizeFlight(*flightCurrent)}, flightHistory...)
-	if len(flightHistory) > 500 {
-		flightHistory = flightHistory[:500]
-	}
 	if err := saveFlightIndexLocked(); err != nil {
 		setFlightStorageErrorLocked("Cannot update flight history: " + err.Error())
 		flightHistory = previousHistory
@@ -941,6 +1074,14 @@ func handleFlightLogAction(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "no active flight", http.StatusBadRequest)
 			return
 		}
+		if flightJournalRecovered {
+			if !closeRecoveredFlightLocked() {
+				flightLogMu.Unlock()
+				http.Error(w, "flight could not be saved; the recoverable current record was retained", http.StatusInsufficientStorage)
+				return
+			}
+			break
+		}
 		if flightCurrent.LandingUTC == "" {
 			flightCurrent.LandingUTC = now.Format(time.RFC3339)
 		}
@@ -953,7 +1094,7 @@ func handleFlightLogAction(w http.ResponseWriter, r *http.Request) {
 	case "discard":
 		if flightCurrent != nil {
 			stopFlightWeatherCapture(flightCurrent.ID)
-			discardFlightJournalLocked(flightCurrent.ID)
+			archiveFlightJournalLocked(flightCurrent.ID)
 		}
 		flightCurrent = nil
 		flightLastPosition = nil

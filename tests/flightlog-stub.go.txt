@@ -1,0 +1,41 @@
+package main
+
+import (
+	"sync"
+	"time"
+)
+
+const flightContextInterval = 45 * time.Second
+
+type flightContextSnapshot struct{}
+type flightWeatherMemory struct{}
+type flightSyncPublicState struct{}
+
+var flightSyncEnabled bool
+
+var mySituation struct {
+	muGPS                 *sync.Mutex
+	GPSTime               time.Time
+	GPSLatitude           float32
+	GPSLongitude          float32
+	GPSAltitudeMSL        float32
+	GPSGroundSpeed        float64
+	GPSTrueCourse         float32
+	GPSVerticalSpeed      float32
+	GPSHorizontalAccuracy float32
+}
+
+func isGPSValid() bool { return false }
+
+func captureFlightContext(sample flightLiveGPS, phase string) flightContextSnapshot {
+	return flightContextSnapshot{}
+}
+
+func appendFlightContextLocked(snapshot flightContextSnapshot)             {}
+func syncFlightWeatherLocked()                                             {}
+func startFlightWeatherCapture(flightID string, existing *flightWeatherMemory) {}
+func stopFlightWeatherCapture(flightID string)                             {}
+func flightSyncPublicStateLocked() flightSyncPublicState                   { return flightSyncPublicState{} }
+func flightSyncCompletedStatusLocked() string                              { return "local" }
+func wakeFlightSync()                                                      {}
+func flightSyncInitializeLocked()                                          {}
