@@ -1,0 +1,124 @@
+<!--{"path": "/starlink/", "crumb": "Starlink data", "priority": "0.9", "title": "Starlink Mini in a small airplane: plans, data usage and how to make 50 GB last", "description": "Which Starlink plan works in flight, where 50 GB of aviation data goes (OS updates, photo backup, video, speed tests) and how to limit each device with free settings and Stratux NX."}-->
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Starlink Mini in a small airplane: plans, data usage and how to make 50 GB last","author":{"@type":"Organization","name":"Lemonpot"},"publisher":{"@type":"Organization","name":"Lemonpot"},"datePublished":"2026-11-15","dateModified":"2026-11-15","mainEntityOfPage":"https://stratuxnx.com/starlink/","image":"https://stratuxnx.com/assets/img/ui-data-devices.webp"}</script>
+<section class="page-hero">
+  <div class="container">
+    <!--crumbs-->
+    <h1>Starlink Mini in the cockpit: <span class="gradient-text">make your data last</span></h1>
+    <p class="lead">Starlink makes it possible to have Internet in a small airplane, but the aviation plans for the Mini include 50 GB a month. This guide covers which plan applies in flight, what uses up the data, and how to keep each device under control.</p>
+    <p class="updated">Plan details checked November 2026. Starlink changes plans often, so confirm on starlink.com before you fly.</p>
+  </div>
+</section>
+
+<div class="container doc">
+  <article class="prose">
+    <h2 id="plans" style="margin-top:0">Which Starlink plan works in flight</h2>
+    <p>Starlink's Roam plans support in-motion use up to 100 mph (87 knots), which rules out flight in most aircraft. For flight, Starlink sells General Aviation plans for the Starlink Mini:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Plan</th><th>Speed limit</th><th>Monthly price</th><th>Data</th></tr></thead>
+        <tbody>
+          <tr><td>General Aviation Local 50GB</td><td>Up to 300 mph</td><td>$200</td><td>50 GB, extra in 50 GB blocks for $25</td></tr>
+          <tr><td>General Aviation Global 50GB</td><td>Up to 450 mph, adds ocean coverage</td><td>$1,000</td><td>50 GB, extra in 50 GB blocks for $100</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">Source: <a href="https://starlink.com/support/article/daa249a4-c33f-e66e-46a9-ecbeae8f24ef" rel="noopener">Starlink Help Center, Introduction to Starlink Aviation</a>. See also <a href="https://www.aopa.org/news-and-media/all-news/2026/march/04/starlink-raises-prices-for-ga-pilots" rel="noopener">AOPA's coverage of the change</a>.</p>
+    <p>Starlink requires the Mini to be used as a carry-on device inside the cabin, not mounted on the airframe. This use is not certified or approved by the FAA. In the US, the portable electronic device rule (<a href="https://www.ecfr.gov/current/title-14/chapter-I/subchapter-F/part-91/subpart-A/section-91.21" rel="noopener">14 CFR 91.21</a>, explained in FAA Advisory Circular 91.21-1D) applies to IFR flights and to air carrier and commercial operations. The pilot in command decides whether the device interferes with the aircraft's systems. Check the rules that apply to your aircraft and country.</p>
+
+    <h2 id="where">Where 50 GB goes</h2>
+    <p>Most of the data isn't used by the EFB. Phones, tablets and laptops treat Wi-Fi as unlimited and start large background downloads as soon as they join one. Typical amounts:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>What</th><th>Typical data</th></tr></thead>
+        <tbody>
+          <tr><td>Phone, tablet or laptop system update</td><td>Several GB each</td></tr>
+          <tr><td>Photo library or cloud backup catching up</td><td>Hundreds of MB to several GB</td></tr>
+          <tr><td>Video streaming</td><td>About 0.7 GB per hour in SD, 3 GB per hour in HD</td></tr>
+          <tr><td>One speed test</td><td>Up to about 1 GB</td></tr>
+          <tr><td>The Starlink router itself</td><td>About 1 to 5 GB a month</td></tr>
+          <tr><td>EFB weather updates, messages, email</td><td>Usually tens of MB per hour</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">Video, speed test and router figures from <a href="https://starlink.com/support/article/b3de8ce8-3123-38ab-6061-4f477106a7b4" rel="noopener">Starlink's data usage guidance</a>.</p>
+    <p>A pilot reported on <a href="https://www.beechtalk.com/forums/viewtopic.php?f=34&amp;start=420&amp;t=231282" rel="noopener">BeechTalk</a> using about 2 GB in one hour with only an iPhone and an iPad running ForeFlight, a two-minute video call and a few emails. At that rate a 50 GB plan lasts about 25 flight hours. With a passenger or two, it can go much faster.</p>
+
+    <h2 id="free-settings">Free settings that help</h2>
+    <p>Before anything else, mark the Starlink network as a limited connection on every device. This stops most background downloads.</p>
+    <ul>
+      <li><b>iPhone and iPad</b>: Settings → Wi-Fi → tap ⓘ next to the network → turn on <b>Low Data Mode</b>.</li>
+      <li><b>Mac</b>: System Settings → Wi-Fi → Details next to the network → turn on <b>Low Data Mode</b>.</li>
+      <li><b>Android</b>: Wi-Fi settings → the network → <b>Metered</b> (the name varies by phone).</li>
+      <li><b>Windows</b>: Settings → Network → Wi-Fi → the network → <b>Metered connection</b>.</li>
+    </ul>
+    <p>Also: set a strong password on the Starlink Wi-Fi, don't run speed tests in flight, and ask passengers to download videos before the flight.</p>
+    <p>These settings help, but they depend on each device and each person. They don't show you who used what, and they don't stop a device that ignores them.</p>
+
+    <h2 id="nx">How Stratux NX limits each device</h2>
+    <p>With Stratux NX, the Stratux joins the Starlink Wi-Fi and your devices join the Stratux Wi-Fi, as they already do for ADS-B. All Internet traffic then goes through the Stratux, which can measure and limit it per device.</p>
+    <div class="flow" role="img" aria-label="Starlink Mini connects to Stratux NX, which shares Internet with the pilot iPad without limit, pauses a passenger iPhone at 500 MB and limits a laptop to 250 MB">
+      <div class="flow-node"><svg><use href="#i-wifi"/></svg><b>Starlink Mini</b><span>Wi-Fi, 2.4 GHz band</span></div>
+      <div class="flow-arrow"><svg><use href="#i-arrow"/></svg></div>
+      <div class="flow-node nx"><svg><use href="#i-shield"/></svg><b>Stratux NX</b><span>AP+Client mode: measures, warns and pauses</span></div>
+      <div class="flow-arrow"><svg><use href="#i-arrow"/></svg></div>
+      <div class="flow-devices">
+        <div class="flow-dev"><b>Pilot iPad</b><em class="free">No limit</em></div>
+        <div class="flow-dev"><b>Passenger iPhone</b><em class="paused">Paused at 500 MB</em></div>
+        <div class="flow-dev"><b>Laptop</b><em class="ok">250 MB limit</em></div>
+      </div>
+      <div class="flow-note">A paused device loses Internet only. It stays on the Stratux Wi-Fi, so its EFB keeps receiving traffic and weather.</div>
+    </div>
+
+    <figure class="shot">
+      <div class="window"><div class="window-bar"><i></i><i></i><i></i><span>Internet Data · connected devices</span></div><img src="/assets/img/ui-data-devices.webp" alt="Connected devices: passenger iPhone paused at its 500 MB limit, pilot iPad with no limit, laptop at 97 MB of 250 MB" width="1440" height="690" loading="lazy"></div>
+      <figcaption>Each device gets its own limit. The pilot's iPad can have none. (Sample data.)</figcaption>
+    </figure>
+
+    <h3>What you can set</h3>
+    <ul>
+      <li><b>A warning</b> when a device reaches an amount you choose.</li>
+      <li><b>A pause</b> when a device reaches its limit. You can set a default and a different limit per device.</li>
+      <li><b>A session limit</b> for everyone together, so one flight can't use the whole month.</li>
+      <li><b>Exceptions</b> for devices that should never be paused, like the pilot's iPad.</li>
+    </ul>
+
+    <figure class="shot">
+      <div class="window"><div class="window-bar"><i></i><i></i><i></i><span>Internet Data · automatic protection</span></div><img src="/assets/img/ui-data-protection.webp" alt="Automatic data protection settings: warning at 250 MB, pause at 500 MB, session limit 2048 MB" width="1440" height="1470" loading="lazy"></div>
+      <figcaption>Three numbers: warn, pause the device, pause everyone. (Sample data.)</figcaption>
+    </figure>
+
+    <h3>See where the data went</h3>
+    <p>The Internet Data page ranks the apps and services that used the most data in the session, so you can see if it was a system update, a photo backup or a video.</p>
+    <figure class="shot">
+      <div class="window"><div class="window-bar"><i></i><i></i><i></i><span>Internet Data · where the data went</span></div><img src="/assets/img/ui-data-ranking.webp" alt="Ranking of services by data used: Apple Software Update 402 MB, iCloud Photos 118 MB, YouTube 96 MB, ForeFlight 61 MB" width="1450" height="1625" loading="lazy"></div>
+      <figcaption>In this sample session, a system update used more than half of the data. (Sample data.)</figcaption>
+    </figure>
+
+    <h2 id="setup">Set it up</h2>
+    <ol>
+      <li><a href="/download/">Install Stratux NX</a> on your Stratux.</li>
+      <li>Make sure the Starlink Mini's 2.4 GHz Wi-Fi is on. Set a password on it.</li>
+      <li>On the Stratux page, open <b>Settings</b>, set <b>WiFi Mode</b> to <b>AP+Client</b> and join the Starlink network.</li>
+      <li>Open <b>Internet Data</b> and set the warning, pause and session limits. Mark the pilot's iPad as an exception if you want.</li>
+      <li>Have everyone join the <b>Stratux</b> Wi-Fi, not the Starlink one.</li>
+    </ol>
+
+    <h2 id="limits">Limitations</h2>
+    <ul>
+      <li>Stratux NX only sees devices connected to the Stratux. A device joined directly to the Starlink Wi-Fi isn't counted or limited.</li>
+      <li>The Starlink app remains the official count for your plan. Stratux NX shows what went through the Stratux.</li>
+      <li>The Raspberry Pi's Wi-Fi is slower than Starlink. It's fine for weather, messages and email for a few people, but not for several video streams.</li>
+      <li>It works the same way with a phone hotspot or a cellular router.</li>
+    </ul>
+  </article>
+  <aside class="toc">
+    <b>On this page</b>
+    <a href="#plans">Which plan works in flight</a>
+    <a href="#where">Where 50 GB goes</a>
+    <a href="#free-settings">Free settings that help</a>
+    <a href="#nx">Limits per device</a>
+    <a href="#setup">Set it up</a>
+    <a href="#limits">Limitations</a>
+    <a class="btn btn-sm btn-primary" href="/download/"><svg><use href="#i-download"/></svg>Download free</a>
+  </aside>
+</div>

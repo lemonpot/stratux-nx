@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}">
+  <link rel="canonical" href="{{url}}">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#04070f">
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/img/favicon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Stratux NX">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:url" content="{{url}}">
+  <meta property="og:image" content="https://stratuxnx.com/assets/img/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/styles.css?v={{version}}">
+{{jsonld}}
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.810 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.650.5.5 5.650.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.870-1.360-3.870-1.360-.52-1.330-1.280-1.680-1.280-1.680-1.040-.71.08-.7.08-.7 1.150.08 1.760 1.190 1.760 1.190 1.030 1.760 2.690 1.250 3.350.96.1-.75.4-1.250.73-1.540-2.550-.29-5.240-1.280-5.240-5.680 0-1.260.45-2.280 1.190-3.090-.12-.29-.52-1.460.11-3.050 0 0 .97-.31 3.170 1.180a11 11 0 0 1 5.770 0c2.200-1.490 3.170-1.180 3.170-1.180.63 1.590.23 2.760.11 3.050.74.81 1.190 1.830 1.190 3.090 0 4.410-2.690 5.380-5.250 5.670.41.36.78 1.060.78 2.140v3.170c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.650 18.350.5 12 .5Z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+    <symbol id="i-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98"/><path d="m15.41 6.51-6.82 3.98"/></symbol>
+    <symbol id="i-landing" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17 13.5 8.5l-5 5L2 7"/><path d="M16 17h6v-6"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.080V12a10 10 0 1 1-5.930-9.140"/><path d="M22 4 12 14.010l-3-3"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-chip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></symbol>
+    <symbol id="i-tablet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+    <symbol id="i-tool" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.920 1-3 1s-2.130-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.920 1-3 1s-2.130-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.460 3-3.210 3-5.500A5.500 5.500 0 0 0 16.500 3c-1.760 0-3 .5-4.500 2-1.500-1.500-2.740-2-4.500-2A5.500 5.500 0 0 0 2 8.500c0 2.300 1.500 4.050 3 5.500l7 7Z"/></symbol>
+  </defs>
+</svg>
+
+<div class="aurora"><div class="grid-bg"></div></div>
+
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="/" aria-label="Stratux NX home"><img src="/assets/img/mark.png" alt="" width="40" height="24">Stratux <span class="nx">NX</span></a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/starlink/">Starlink</a>
+      <a href="/flight-log/">Flight log</a>
+      <a href="/apps/">EFB apps</a>
+      <a href="/build/">Build</a>
+      <a href="/compare/">Compare</a>
+      <a href="/faq/">FAQ</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-sm" href="https://github.com/lemonpot/stratux-nx" rel="noopener"><svg><use href="#i-github"/></svg>GitHub</a>
+      <a class="btn btn-sm" href="https://app.stratuxnx.com/">Sign in</a>
+      <a class="btn btn-sm btn-primary" href="/download/"><svg><use href="#i-download"/></svg>Download free</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false"><svg width="20" height="20"><use href="#i-menu"/></svg></button>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="/starlink/">Starlink data</a>
+    <a href="/flight-log/">Flight log</a>
+    <a href="/apps/">EFB apps</a>
+    <a href="/build/">Build a Stratux</a>
+    <a href="/compare/">Compare</a>
+    <a href="/faq/">FAQ</a>
+    <a href="https://github.com/lemonpot/stratux-nx" rel="noopener">GitHub</a>
+    <a href="https://app.stratuxnx.com/">Sign in</a>
+    <a class="btn btn-primary" href="/download/">Download free</a>
+  </div>
+</header>
+
+<main id="top">
+{{content}}
+</main>
+
+<footer>
+  <div class="container">
+    <div class="foot">
+      <div class="about">
+        <a class="brand" href="/"><img src="/assets/img/mark.png" alt="" width="40" height="24">Stratux <span class="nx">NX</span></a>
+        <p>Free, open-source software for Stratux ADS-B receivers. An independent distribution maintained by <a href="https://lemonpot.ai/" rel="noopener" style="display:inline;color:var(--soft)">Lemonpot</a>.</p>
+      </div>
+      <div>
+        <h5>Get started</h5>
+        <a href="/download/">Download &amp; install</a>
+        <a href="/build/">Build a Stratux</a>
+        <a href="/apps/">EFB app setup</a>
+        <a href="https://app.stratuxnx.com/">Cloud sign in</a>
+      </div>
+      <div>
+        <h5>Guides</h5>
+        <a href="/starlink/">Starlink data in the cockpit</a>
+        <a href="/flight-log/">Block time vs air time</a>
+        <a href="/compare/">Stratux vs Sentry vs Stratus</a>
+        <a href="/faq/">FAQ</a>
+      </div>
+      <div>
+        <h5>Open source</h5>
+        <a href="https://github.com/lemonpot/stratux-nx" rel="noopener">GitHub</a>
+        <a href="https://github.com/lemonpot/stratux-nx/releases" rel="noopener">All releases</a>
+        <a href="https://github.com/lemonpot/stratux-nx/issues" rel="noopener">Report an issue</a>
+        <a href="https://github.com/stratux/stratux" rel="noopener">Upstream Stratux</a>
+      </div>
+    </div>
+    <div class="legal">
+      <p>Stratux NX provides supplemental situational awareness only. It is not certified avionics and must not be used as the sole source of navigation, traffic, weather, attitude, terrain or flight information.</p>
+      <p>Stratux NX is an independent distribution and is not an official upstream Stratux release. Starlink, ForeFlight, Garmin Pilot, SkyDemon, Sentry, Stratus, Raspberry Pi and other names are trademarks of their respective owners and are used only to describe compatibility. Cockpit and ramp photos are illustrative; screenshots are from the real Stratux NX interface.</p>
+      <p>© <span id="year">2026</span> Lemonpot. Stratux NX source is available under the BSD 3-Clause license; Stratux and third-party components remain under their own licenses.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="/assets/site.js?v={{version}}" defer></script>
+</body>
+</html>

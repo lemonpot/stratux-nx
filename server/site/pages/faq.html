@@ -1,0 +1,30 @@
+<!--{"path": "/faq/", "crumb": "FAQ", "priority": "0.7", "faq": true, "title": "Stratux NX FAQ: cost, hardware, EFB apps, Starlink, updates and privacy", "description": "Answers about Stratux NX: is it free, what hardware it needs, which EFB apps work, Europe and the US, Starlink, updates, power loss, privacy and how to go back to standard Stratux."}-->
+<section class="page-hero">
+  <div class="container">
+    <!--crumbs-->
+    <h1>Frequently asked <span class="gradient-text">questions</span></h1>
+    <p class="lead">Can't find your answer? <a href="https://github.com/lemonpot/stratux-nx/issues" rel="noopener" style="color:#7dd3fc">Ask on GitHub</a>.</p>
+  </div>
+</section>
+
+<section style="padding-top:40px">
+  <div class="container">
+    <div class="faq">
+      <details open><summary>Is Stratux NX free?</summary><p>Yes. Stratux NX is free and open source, with no subscription. The optional cloud account is free too. You only need Stratux hardware, which you can build or buy.</p></details>
+      <details><summary>Is Stratux NX certified avionics?</summary><p>No. Like Stratux, it provides supplemental situational awareness only. Never use it as your only source of navigation, traffic, weather, attitude or terrain information. Adaptive AHRS v2 is a beta feature; always cross-check attitude with your aircraft instruments.</p></details>
+      <details><summary>What hardware do I need?</summary><p>The same hardware as a standard Stratux: a Raspberry Pi, a 1090 MHz radio (plus a 978 MHz radio in the US), a GPS, antennas, a microSD card and a USB power supply. See the build guide at stratuxnx.com/build.</p></details>
+      <details><summary>Which EFB apps work with it?</summary><p>Any app that reads GDL90 over Wi-Fi, including ForeFlight, Garmin Pilot on iPad and iPhone, SkyDemon, FltPlan Go, WingX, FlyQ, iFly, Avare and others. Garmin Pilot on Android does not support Stratux. Setup steps for each app are at stratuxnx.com/apps.</p></details>
+      <details><summary>Do I need Internet in the aircraft?</summary><p>No. Traffic, weather, the flight log and the airport database all work offline. Internet is only used for online updates, map tiles and uploading flights to the optional cloud.</p></details>
+      <details><summary>Does it work in Europe and outside the US?</summary><p>Yes. 1090 MHz ADS-B traffic, GPS, the flight log and the data limits work everywhere. With an 868 MHz radio you can also receive OGN / FLARM-compatible traffic, which is common in Europe. 978 MHz UAT traffic and FIS-B weather are only broadcast in the United States.</p></details>
+      <details><summary>Does Stratux make my aircraft visible to others?</summary><p>No. A Stratux only receives. It does not transmit your position and does not replace an ADS-B Out transponder.</p></details>
+      <details><summary>Can I use it with a Starlink Mini?</summary><p>Yes. Set WiFi Mode to AP+Client in Settings and join the Starlink network on 2.4 GHz. Stratux NX then shares the connection with your devices and can warn, pause or limit each one. Check that your Starlink plan allows use in flight; Roam plans are limited to 100 mph.</p></details>
+      <details><summary>Which times does the flight log record?</summary><p>Off-block, takeoff, landing and on-block for every flight, plus block time, air time, taxi out and taxi in. Times are stored in UTC and shown in local time. Touch-and-goes are counted.</p></details>
+      <details><summary>What happens to a flight if the power is cut?</summary><p>Flights are written to the SD card as they happen. The flight is recovered on the next boot. If the power was cut in the air, the flight is kept and marked as incomplete.</p></details>
+      <details><summary>Who can see my flights?</summary><p>Only you. When your Stratux has Internet, it uploads flights privately. They stay invisible until you enter the receiver's link code in your account at app.stratuxnx.com, and then only your account sees them. You choose which flights to share with a link.</p></details>
+      <details><summary>How do I update Stratux NX?</summary><p>Open Settings, then Software Update. With Internet it downloads and installs the latest release. Without Internet, upload the update file (.deb) from the GitHub release. Updates keep your settings and flights.</p></details>
+      <details><summary>Can I go back to standard Stratux?</summary><p>Yes. Keep your old card as a backup and put it back in, or flash an upstream Stratux release. Stratux NX doesn't change the hardware.</p></details>
+      <details><summary>Who makes Stratux NX?</summary><p>Stratux NX is an independent distribution maintained by Lemonpot. It is built on the community-maintained stratux/stratux project, which continues the original work by Christopher Young and contributors. It is not an official upstream Stratux release.</p></details>
+      <details><summary>Where do I report a problem or ask for a feature?</summary><p>Open an issue at github.com/lemonpot/stratux-nx. Include what you see on the Stratux status page and the version from the About page.</p></details>
+    </div>
+  </div>
+</section>

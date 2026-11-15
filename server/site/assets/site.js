@@ -64,7 +64,7 @@
       var date = new Date(release.published_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
       setAll('page', function (el) { el.href = release.html_url; });
-      setAll('pill', function (el) { el.textContent = 'Stratux NX ' + version.split('.').slice(0, 2).join('.') + ' is out · ' + date; });
+      setAll('pill', function (el) { el.textContent = 'Latest release: ' + version.split('.').slice(0, 2).join('.') + ' · ' + date; });
       setAll('tag', function (el) { el.textContent = release.name || ('Stratux NX ' + version); });
       setAll('tagshort', function (el) { el.textContent = 'Release ' + version; });
       setAll('meta', function (el) {

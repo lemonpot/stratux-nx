@@ -1,0 +1,80 @@
+<!--{"path": "/build/", "crumb": "Build a Stratux", "priority": "0.8", "title": "How to build a Stratux ADS-B receiver: parts list and setup (2026)", "description": "Build your own Stratux ADS-B receiver: Raspberry Pi, 1090 and 978 MHz radios, GPS, antennas, case and power. Which radios you need in the US and Europe, assembly tips and free software."}-->
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"How to build a Stratux ADS-B receiver: parts list and setup","author":{"@type":"Organization","name":"Lemonpot"},"publisher":{"@type":"Organization","name":"Lemonpot"},"datePublished":"2026-11-15","dateModified":"2026-11-15","mainEntityOfPage":"https://stratuxnx.com/build/"}</script>
+<section class="page-hero">
+  <div class="container">
+    <!--crumbs-->
+    <h1>How to build <span class="gradient-text">a Stratux</span></h1>
+    <p class="lead">A Stratux is a Raspberry Pi with one or two small radios, a GPS and a case. A standard build needs no soldering and takes an afternoon. This page lists the parts, which radios you need where you fly, and how to put it together.</p>
+  </div>
+</section>
+
+<div class="container doc">
+  <article class="prose">
+    <h2 id="parts" style="margin-top:0">Parts list</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Part</th><th>What it does</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><b>Raspberry Pi</b></td><td>The computer that runs the software</td><td>The 3B and 3B+ are the usual choice. A Pi 4 works but runs hotter and uses more power.</td></tr>
+          <tr><td><b>microSD card</b></td><td>Holds the software and your flights</td><td>16 GB or larger, from a known brand.</td></tr>
+          <tr><td><b>1090 MHz radio</b></td><td>Receives 1090ES ADS-B traffic</td><td>An RTL-SDR USB radio. Useful everywhere.</td></tr>
+          <tr><td><b>978 MHz radio</b></td><td>Receives UAT traffic and FIS-B weather</td><td>United States only.</td></tr>
+          <tr><td><b>868 MHz radio</b> (optional)</td><td>Receives OGN / FLARM-compatible traffic</td><td>Mainly useful in Europe, where gliders and light aircraft use it.</td></tr>
+          <tr><td><b>Antennas</b></td><td>One per radio</td><td>Each antenna must match its radio's frequency.</td></tr>
+          <tr><td><b>GPS</b></td><td>Your position, and accurate time for the flight log</td><td>A USB GPS with WAAS/SBAS. Recent u-blox chips (8, 9 or 10) work best.</td></tr>
+          <tr><td><b>Case and fan</b></td><td>Protects the Pi and keeps it cool</td><td>Keep the vents clear in a hot cockpit.</td></tr>
+          <tr><td><b>AHRS board</b> (optional)</td><td>Attitude for synthetic vision in some apps</td><td>A backup aid only, not for IFR.</td></tr>
+          <tr><td><b>Power</b></td><td>A USB battery pack or a cockpit USB supply</td><td>At least 2.5 A, 3 A for a Pi 4. Weak supplies cause reboots.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="region">Which radios you need</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Where you fly</th><th>Radios</th><th>What you get</th></tr></thead>
+        <tbody>
+          <tr><td>United States</td><td>1090 + 978 MHz</td><td>All ADS-B traffic and FIS-B weather (METARs, TAFs, NEXRAD, TFRs, and more)</td></tr>
+          <tr><td>Europe</td><td>1090 + 868 MHz</td><td>ADS-B traffic plus OGN / FLARM-compatible traffic</td></tr>
+          <tr><td>Elsewhere</td><td>1090 MHz</td><td>ADS-B traffic from equipped aircraft</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Near the US border you may also receive 978 MHz traffic and weather from US ground stations. A Stratux only receives. It does not make your aircraft visible to others.</p>
+
+    <h2 id="assembly">Putting it together</h2>
+    <ol>
+      <li><b>Write the software</b> to the microSD card. See <a href="/download/">download and install</a>.</li>
+      <li><b>Fit the Raspberry Pi</b> in the bottom of the case, with the fan if your case has one.</li>
+      <li><b>Plug in the radios and GPS</b> to the USB ports. Label the radios so you know which antenna goes on which.</li>
+      <li><b>Screw on the antennas</b> by hand. Pliers can break the small connectors.</li>
+      <li><b>Insert the microSD card</b>, close the case and connect power.</li>
+      <li><b>Join the Stratux Wi-Fi</b> and open <code>http://192.168.10.1</code>. The status page shows each radio and the GPS.</li>
+    </ol>
+    <div class="tip">Give the GPS a clear view of the sky the first time. The first fix can take 10 to 20 minutes with a new GPS.</div>
+
+    <h2 id="placement">Where to put it in the aircraft</h2>
+    <ul>
+      <li>Antennas work best vertical and away from metal, headsets and other electronics.</li>
+      <li>The GPS needs a view of the sky, so near the windshield or a side window usually works.</li>
+      <li>Secure it so it can't move into the controls, and keep it out of direct sun if you can.</li>
+    </ul>
+
+    <h2 id="prebuilt">Buying one ready-made</h2>
+    <p>If you'd rather not build one, several vendors sell complete Stratux receivers. In late 2026 a prebuilt dual-band Stratux sells for around $440. Building your own usually costs less, depending on the parts. Any standard Stratux can run Stratux NX: flash a new card and keep the original as a backup.</p>
+
+    <h2 id="software">The software is free either way</h2>
+    <p>Stratux and Stratux NX are both free and open source. Stratux NX adds an automatic flight log, data limits for Starlink, online updates and a redesigned interface, on the same hardware. <a href="/compare/">See how they compare</a>.</p>
+    <p>For more build options (other radios, serial GPS, OGN transmitters, displays), see the <a href="https://github.com/stratux/stratux" rel="noopener">upstream Stratux project</a> and its wiki.</p>
+  </article>
+  <aside class="toc">
+    <b>On this page</b>
+    <a href="#parts">Parts list</a>
+    <a href="#region">Which radios you need</a>
+    <a href="#assembly">Putting it together</a>
+    <a href="#placement">Placement</a>
+    <a href="#prebuilt">Buying ready-made</a>
+    <a href="#software">Free software</a>
+    <a class="btn btn-sm btn-primary" href="/download/"><svg><use href="#i-download"/></svg>Download free</a>
+  </aside>
+</div>

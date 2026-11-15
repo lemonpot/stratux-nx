@@ -1,0 +1,108 @@
+<!--{"path": "/apps/", "crumb": "EFB apps", "priority": "0.8", "title": "Stratux with ForeFlight, Garmin Pilot, SkyDemon and other EFB apps: setup guide", "description": "Which EFB apps work with Stratux and Stratux NX (ForeFlight, Garmin Pilot on iOS, SkyDemon, FltPlan Go, Avare and more) and how to connect each one over Wi-Fi using GDL90."}-->
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Stratux with ForeFlight, Garmin Pilot, SkyDemon and other EFB apps","author":{"@type":"Organization","name":"Lemonpot"},"publisher":{"@type":"Organization","name":"Lemonpot"},"datePublished":"2026-11-15","dateModified":"2026-11-15","mainEntityOfPage":"https://stratuxnx.com/apps/"}</script>
+<section class="page-hero">
+  <div class="container">
+    <!--crumbs-->
+    <h1>Stratux with <span class="gradient-text">ForeFlight, Garmin Pilot, SkyDemon</span> and other EFB apps</h1>
+    <p class="lead">Stratux and Stratux NX send traffic, weather, GPS position and attitude over GDL90, the format most EFB apps read. You join the Stratux Wi-Fi network and pick it in your app. There's nothing to pair and no account to create.</p>
+  </div>
+</section>
+
+<div class="container doc">
+  <article class="prose">
+    <h2 id="compatibility" style="margin-top:0">Which apps work</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>App</th><th>Platform</th><th>Traffic</th><th>Weather</th><th>Attitude (AHRS)</th></tr></thead>
+        <tbody>
+          <tr><td>ForeFlight</td><td>iOS</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>Garmin Pilot</td><td>iOS only</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td></tr>
+          <tr><td>SkyDemon</td><td>iOS, Android</td><td class="yes">Yes</td><td class="no">Not listed</td><td class="no">No</td></tr>
+          <tr><td>FltPlan Go</td><td>iOS, Android, Windows</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>WingX</td><td>iOS</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>FlyQ EFB</td><td>iOS</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>iFly GPS</td><td>iOS, Android</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>AvPlan EFB</td><td>iOS, Android</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td></tr>
+          <tr><td>OzRunways</td><td>iOS</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td></tr>
+          <tr><td>Avare</td><td>Android</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td></tr>
+          <tr><td>Naviator</td><td>Android</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>DroidEFB</td><td>Android</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+          <tr><td>Enroute Flight Navigation</td><td>Android</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td></tr>
+          <tr><td>EasyVFR</td><td>iOS, Android</td><td class="yes">Yes</td><td class="no">Not listed</td><td class="yes">Optional</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">As reported by the Stratux community (<a href="https://stratux.com/apps/" rel="noopener">stratux.com</a>, <a href="https://github.com/stratux/stratux/wiki/EFB-Configuration" rel="noopener">Stratux wiki</a>). App updates can change support, so check your app's documentation. "Weather" means FIS-B, which is broadcast on 978 MHz in the United States.</p>
+    <p>Garmin Pilot on Android does not support Stratux. Attitude needs an AHRS board in the Stratux, and it is a backup aid only.</p>
+
+    <h2 id="basics">The basics, for any app</h2>
+    <ol>
+      <li>Turn on the Stratux and wait until its Wi-Fi network appears.</li>
+      <li>On the tablet, join the <b>Stratux</b> network. The tablet may say it has no Internet; that's expected unless you set up Internet sharing.</li>
+      <li>Open your app and select Stratux, a "GDL90 device" or an "external ADS-B" source.</li>
+      <li>Check <code>http://192.168.10.1</code> if something seems wrong: the status page shows the radios, GPS and traffic count.</li>
+    </ol>
+    <div class="tip">Use one tablet as the primary EFB and keep others on the same Stratux network. Stratux sends to every connected device.</div>
+
+    <h2 id="foreflight">ForeFlight</h2>
+    <ol>
+      <li>Join the Stratux Wi-Fi.</li>
+      <li>Open ForeFlight. It finds Stratux on its own. Check <b>More → Devices</b> to see the connection, GPS and traffic status.</li>
+    </ol>
+    <ul>
+      <li>With <b>Hide Distant Traffic</b> on, ForeFlight hides traffic more than 15 NM away or more than 3,500 ft above or below you.</li>
+      <li>If traffic altitudes look wrong, check the ownship settings in the Stratux settings page.</li>
+      <li>Synthetic vision terrain works without AHRS. Pitch and roll need an AHRS board.</li>
+    </ul>
+
+    <h2 id="garmin-pilot">Garmin Pilot (iPad and iPhone)</h2>
+    <ol>
+      <li>Join the Stratux Wi-Fi.</li>
+      <li>In Garmin Pilot, open the <b>Devices</b> settings and select <b>Stratux</b>.</li>
+    </ol>
+    <p>Garmin Pilot shows Stratux traffic and weather on iOS. It does not use the Stratux attitude data, and the Android version doesn't support Stratux.</p>
+
+    <h2 id="skydemon">SkyDemon</h2>
+    <p>SkyDemon can read Stratux in two ways.</p>
+    <h3>GDL90</h3>
+    <ol>
+      <li>Settings → <b>Third-Party Devices</b> → enable <b>GDL90 Compatible Device</b>.</li>
+      <li>When you start <b>Go Flying</b>, choose <b>GDL90 Compatible Device</b>.</li>
+    </ol>
+    <h3>FLARM (NMEA)</h3>
+    <p>Stratux also offers FLARM-style NMEA on TCP port 2000, which SkyDemon can use through its FLARM device options. The Stratux community recommends this for traffic without position (Mode S targets with no bearing). See the <a href="https://github.com/stratux/stratux/wiki/EFB-Configuration" rel="noopener">Stratux wiki</a> for the exact SkyDemon settings.</p>
+
+    <h2 id="others">FltPlan Go, Avare, EasyVFR and others</h2>
+    <ul>
+      <li><b>FltPlan Go</b>: join the Stratux Wi-Fi and select Stratux as the ADS-B device in the app's settings.</li>
+      <li><b>Avare</b>: join the Stratux Wi-Fi, then enable the external ADS-B or GDL90 option in Avare's settings.</li>
+      <li><b>EasyVFR</b>: Settings → GDL90 Settings → <b>Use GDL90</b>. You can also use the GDL90 GPS as the app's GPS.</li>
+      <li><b>Any other app</b>: search its settings for "Stratux", "GDL90" or "external ADS-B". Any of those means it should work.</li>
+    </ul>
+
+    <h2 id="ports">For developers: outputs and ports</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Output</th><th>Transport</th><th>Used by</th></tr></thead>
+        <tbody>
+          <tr><td>GDL90</td><td>UDP port 4000, sent to connected Wi-Fi clients</td><td>ForeFlight and most EFBs</td></tr>
+          <tr><td>FLARM / NMEA</td><td>TCP port 2000 (the app connects), also UDP 2000</td><td>SkyDemon, FLARM-aware apps, EFIS</td></tr>
+          <tr><td>X-Plane format</td><td>UDP port 49002</td><td>Simulators and some apps</td></tr>
+          <tr><td>JSON and WebSocket</td><td>HTTP on port 80</td><td>The web interface and your own tools</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">From the upstream <a href="https://github.com/stratux/stratux/blob/master/docs/integration/README.md" rel="noopener">Stratux integration guide</a>. Stratux NX keeps these outputs unchanged.</p>
+  </article>
+  <aside class="toc">
+    <b>On this page</b>
+    <a href="#compatibility">Which apps work</a>
+    <a href="#basics">The basics</a>
+    <a href="#foreflight">ForeFlight</a>
+    <a href="#garmin-pilot">Garmin Pilot</a>
+    <a href="#skydemon">SkyDemon</a>
+    <a href="#others">Other apps</a>
+    <a href="#ports">Outputs and ports</a>
+    <a class="btn btn-sm btn-primary" href="/download/"><svg><use href="#i-download"/></svg>Download free</a>
+  </aside>
+</div>

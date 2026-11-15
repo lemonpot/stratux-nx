@@ -1,0 +1,66 @@
+<!--{"path": "/compare/", "crumb": "Compare", "priority": "0.8", "title": "Stratux vs Sentry vs Stratus 4 vs GDL 50, and Stratux NX vs Stratux", "description": "A factual comparison of the DIY Stratux ADS-B receiver with ForeFlight Sentry, Stratus 4 and Garmin GDL 50: price, apps, battery and features. Plus what Stratux NX changes compared with standard Stratux."}-->
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Stratux vs Sentry vs Stratus 4 vs GDL 50, and Stratux NX vs Stratux","author":{"@type":"Organization","name":"Lemonpot"},"publisher":{"@type":"Organization","name":"Lemonpot"},"datePublished":"2026-11-15","dateModified":"2026-11-15","mainEntityOfPage":"https://stratuxnx.com/compare/"}</script>
+<section class="page-hero">
+  <div class="container">
+    <!--crumbs-->
+    <h1>Stratux vs Sentry vs Stratus, <span class="gradient-text">and Stratux NX vs Stratux</span></h1>
+    <p class="lead">Portable ADS-B receivers all do the same core job: traffic, weather and GPS for your tablet. They differ in price, which apps they work with, battery and extras. Here is a factual comparison, followed by what Stratux NX changes compared with standard Stratux.</p>
+    <p class="updated">Prices and specifications as listed by the manufacturers and retailers in November 2026. Check current listings before buying.</p>
+  </div>
+</section>
+
+<div class="container" style="margin-top:48px">
+  <article class="prose" style="max-width:none">
+    <h2 id="receivers" style="margin-top:0">Portable ADS-B receivers compared</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th class="hl">Stratux (DIY or prebuilt)</th><th>ForeFlight Sentry</th><th>Stratus 4</th><th>Garmin GDL 50</th></tr></thead>
+        <tbody>
+          <tr><td><b>Price</b></td><td class="hl">About $440 prebuilt, less to build</td><td>$649</td><td>$849</td><td>About $850 to $875</td></tr>
+          <tr><td><b>Traffic</b></td><td class="hl">1090 + 978 MHz, plus 868 MHz OGN with an extra radio</td><td>1090 + 978 MHz</td><td>1090 + 978 MHz</td><td>1090 + 978 MHz</td></tr>
+          <tr><td><b>FIS-B weather (US)</b></td><td class="hl">Yes</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td><b>Apps</b></td><td class="hl">Any GDL90 app: ForeFlight, Garmin Pilot (iOS), SkyDemon, FltPlan Go and more</td><td>ForeFlight</td><td>ForeFlight, Garmin Pilot, Stratus apps</td><td>Garmin Pilot, ForeFlight, FltPlan Go (Bluetooth)</td></tr>
+          <tr><td><b>Battery</b></td><td class="hl">External USB pack, swappable</td><td>Internal, up to 12 h</td><td>About 8 h, user-replaceable</td><td>Internal</td></tr>
+          <tr><td><b>AHRS</b></td><td class="hl">Optional board</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+          <tr><td><b>CO detector</b></td><td class="hl">No</td><td>Yes</td><td>No</td><td>No</td></tr>
+          <tr><td><b>Open source</b></td><td class="hl">Yes</td><td>No</td><td>No</td><td>No</td></tr>
+          <tr><td><b>Repairable</b></td><td class="hl">Yes, standard parts</td><td>Sealed</td><td>Battery replaceable</td><td>Sealed</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">Sources: <a href="https://gear.foreflight.com/sentry-receiver/" rel="noopener">ForeFlight Sentry</a>, <a href="https://stratusbyappareo.com/products/stratus-ads-b-receivers/" rel="noopener">Stratus by Appareo</a>, <a href="https://pilotgearcompare.com/ga/ads-b-receivers" rel="noopener">Pilot Gear Compare</a>. Stratus 3 is discontinued.</p>
+
+    <h3>How to choose</h3>
+    <ul>
+      <li><b>You only use ForeFlight and want a sealed box</b> with a long battery and a CO alarm: Sentry is built for that.</li>
+      <li><b>You use Garmin Pilot and want a Garmin-native device</b>: the GDL 50 connects over Bluetooth.</li>
+      <li><b>You want a screen on the receiver and a replaceable battery</b>: Stratus 4.</li>
+      <li><b>You want the lowest cost, any app, repairable parts</b>, and you don't mind a bigger box and an external battery: Stratux. It is also the only option where you can change the software.</li>
+    </ul>
+
+    <h2 id="nx-vs-stratux">Stratux NX vs standard Stratux</h2>
+    <p>Stratux NX is a distribution of the open-source <a href="https://github.com/stratux/stratux" rel="noopener">stratux/stratux</a> project. Both are free and run on the same hardware. The receiver itself works the same way. The differences are in what's built around it.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>Stratux</th><th class="hl">Stratux NX</th></tr></thead>
+        <tbody>
+          <tr><td>Traffic, weather, GPS, AHRS, GDL90 and FLARM outputs</td><td class="yes">Yes</td><td class="yes hl">Yes, unchanged</td></tr>
+          <tr><td>Works with the same EFB apps and hardware</td><td class="yes">Yes</td><td class="yes hl">Yes</td></tr>
+          <tr><td>Price and license</td><td>Free, open source</td><td class="hl">Free, open source (BSD 3-Clause for NX changes)</td></tr>
+          <tr><td>Automatic flight log with block and air time</td><td class="no">No</td><td class="yes hl">Yes</td></tr>
+          <tr><td>Shares onboard Internet with per-device data limits</td><td class="no">No</td><td class="yes hl">Yes</td></tr>
+          <tr><td>Software updates</td><td>Upload an update file between minor versions</td><td class="hl">Install online from Settings, or upload a file offline</td></tr>
+          <tr><td>Departure and arrival airports and local times for each flight, offline</td><td class="no">No</td><td class="yes hl">Yes</td></tr>
+          <tr><td>Optional cloud replay and sharing</td><td class="no">No</td><td class="yes hl">Yes</td></tr>
+          <tr><td>Interface</td><td>Classic Stratux interface</td><td class="hl">Redesigned interface</td></tr>
+          <tr><td>Maturity</td><td>Long track record, large community</td><td class="hl">Newer, releases marked beta</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>If standard Stratux already does everything you need, there's no reason to switch. If you want an automatic logbook record of every flight or you fly with Starlink, Stratux NX may be useful. Switching back is just a matter of putting your old card back in.</p>
+    <div class="hero-cta" style="justify-content:flex-start;margin-top:28px">
+      <a class="btn btn-primary" href="/download/"><svg><use href="#i-download"/></svg>Download Stratux NX</a>
+      <a class="btn" href="/build/">Build a Stratux</a>
+    </div>
+  </article>
+</div>

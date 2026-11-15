@@ -1,0 +1,111 @@
+<!--{"path": "/download/", "crumb": "Download & install", "priority": "0.9", "title": "Download Stratux NX: free Stratux image and how to flash it", "description": "Download the latest Stratux NX SD card image for free and flash it to a microSD card with Raspberry Pi Imager or balenaEtcher. Step-by-step install, first boot, EFB setup and updates."}-->
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to install Stratux NX on a Raspberry Pi","description":"Download the Stratux NX SD card image, write it to a microSD card and connect your tablet.","totalTime":"PT20M","estimatedCost":{"@type":"MonetaryAmount","currency":"USD","value":"0"},"supply":[{"@type":"HowToSupply","name":"microSD card, 16 GB or larger"}],"tool":[{"@type":"HowToTool","name":"Raspberry Pi Imager or balenaEtcher"},{"@type":"HowToTool","name":"Stratux hardware (Raspberry Pi, ADS-B radios, GPS)"}],"step":[{"@type":"HowToStep","name":"Download the image","text":"Download the SD card image (.zip) from the latest Stratux NX release on GitHub.","url":"https://stratuxnx.com/download/#download"},{"@type":"HowToStep","name":"Write the microSD card","text":"In Raspberry Pi Imager choose your Raspberry Pi, Use Custom, select the .zip, choose the card and write it without OS customisation.","url":"https://stratuxnx.com/download/#flash"},{"@type":"HowToStep","name":"Boot the Stratux","text":"Insert the card, connect the radios and GPS and power on. The first boot takes a few minutes.","url":"https://stratuxnx.com/download/#boot"},{"@type":"HowToStep","name":"Connect your tablet","text":"Join the Stratux Wi-Fi network, open http://192.168.10.1 and then open your EFB app.","url":"https://stratuxnx.com/download/#connect"}]}</script>
+<section class="page-hero">
+  <div class="container">
+    <!--crumbs-->
+    <span class="free-badge"><svg><use href="#i-heart"/></svg>Free and open source</span>
+    <h1 style="margin-top:16px">Download Stratux NX</h1>
+    <p class="lead">Stratux NX is a complete SD card image for the Raspberry Pi in your Stratux. Download it, write it to a microSD card and boot. It takes about 20 minutes and you don't need a terminal.</p>
+  </div>
+</section>
+
+<div class="container doc">
+  <article class="prose">
+    <div class="release-card" id="download" style="margin-top:0">
+      <small>Latest release</small>
+      <h3 data-rel="tag">Stratux NX</h3>
+      <p data-rel="meta">Full SD card image, online update package and complete source code.</p>
+      <a class="btn btn-lg btn-primary" data-rel="image" href="https://github.com/lemonpot/stratux-nx/releases" rel="noopener"><svg><use href="#i-download"/></svg><span data-rel="imagelabel">Download SD card image</span></a>
+      <div class="release-links">
+        <a class="btn btn-sm" data-rel="page" href="https://github.com/lemonpot/stratux-nx/releases" rel="noopener">Release notes</a>
+        <a class="btn btn-sm" href="https://github.com/lemonpot/stratux-nx/releases" rel="noopener">All releases</a>
+      </div>
+    </div>
+
+    <h2 id="files">What's in a release</h2>
+    <p>Each release on GitHub has three files:</p>
+    <ul>
+      <li><b>SD card image</b> (<code>image_…-stratux-lite.zip</code>, about 730 MB). Use this for a new install or to start from scratch.</li>
+      <li><b>Update package</b> (<code>stratux-…-arm64.deb</code>). Use this to update a Stratux NX that has no Internet, from Settings → Software Update.</li>
+      <li><b>Source archive</b> (<code>…-corresponding-source.tar.gz</code>). The exact source used to build the release.</li>
+    </ul>
+    <p>Releases are currently marked as beta. Read the release notes before updating equipment you fly with.</p>
+
+    <h2 id="before">Before you start</h2>
+    <ul>
+      <li><b>Stratux hardware</b>: a Raspberry Pi with the ADS-B radios and a GPS. Any standard Stratux build works. Don't have one yet? See <a href="/build/">how to build a Stratux</a>.</li>
+      <li><b>A microSD card</b>, 16 GB or larger, from a known brand. Use a new card so you can keep your current one as a backup.</li>
+      <li><b>A computer</b> with a card reader (Windows, macOS or Linux).</li>
+    </ul>
+
+    <h2 id="flash">Write the image to the microSD card</h2>
+    <h3>With Raspberry Pi Imager</h3>
+    <ol>
+      <li>Install <a href="https://www.raspberrypi.com/software/" rel="noopener">Raspberry Pi Imager</a> and open it.</li>
+      <li><b>Choose Device</b>: pick your Raspberry Pi model.</li>
+      <li><b>Choose OS</b>: scroll to the bottom, pick <b>Use Custom</b> and select the <code>.zip</code> you downloaded. There's no need to unzip it.</li>
+      <li><b>Choose Storage</b>: pick your microSD card. Double-check it's the card and not another drive.</li>
+      <li>Click <b>Next</b>. When asked about OS customisation, choose <b>No</b>. Then confirm to write.</li>
+    </ol>
+    <div class="tip warn"><b>Don't use OS customisation</b> (Wi-Fi, username or hostname). Stratux NX sets up its own network and user. Custom settings can stop it from working.</div>
+    <h3>With balenaEtcher</h3>
+    <ol>
+      <li>Install <a href="https://etcher.balena.io/" rel="noopener">balenaEtcher</a>.</li>
+      <li>Click <b>Flash from file</b> and select the <code>.zip</code>.</li>
+      <li>Click <b>Select target</b>, pick the microSD card, then <b>Flash!</b></li>
+    </ol>
+
+    <h2 id="boot">First boot</h2>
+    <p>Put the card in the Raspberry Pi, check that the radios and GPS are plugged in, and connect power. Use a supply that delivers at least 2.5 A (3 A for a Raspberry Pi 4). Weak supplies cause reboots that look like software problems.</p>
+    <p>The first boot takes a few minutes while the card is prepared. After that, the Stratux starts in under a minute.</p>
+
+    <h2 id="connect">Connect your tablet</h2>
+    <ol>
+      <li>On your tablet or phone, join the Wi-Fi network called <b>Stratux</b>.</li>
+      <li>Open <code>http://192.168.10.1</code> in a browser. You'll see the Stratux NX status page with radios, GPS and traffic.</li>
+      <li>Open your EFB app. Most apps find Stratux on their own. See <a href="/apps/">setup for ForeFlight, Garmin Pilot, SkyDemon and others</a>.</li>
+    </ol>
+    <p>The GPS needs a view of the sky. The first fix can take several minutes, especially if the GPS is new or has been off for a long time.</p>
+
+    <h2 id="internet">Optional: Internet, data limits and cloud</h2>
+    <p>Stratux NX works without Internet. If you have Starlink, a phone hotspot or a router in the aircraft, it can join that network and share it with your devices:</p>
+    <ol>
+      <li>Open <b>Settings</b>, set <b>WiFi Mode</b> to <b>AP+Client</b> and join your network. The client connection uses 2.4 GHz.</li>
+      <li>Open <b>Internet Data</b> and set your warning, per-device and session limits. See the <a href="/starlink/">Starlink guide</a>.</li>
+      <li>To use the cloud, open <b>Flight Log</b>, note the <b>link code</b> and enter it at <a href="https://app.stratuxnx.com/">app.stratuxnx.com</a>.</li>
+    </ol>
+
+    <h2 id="update">Updating Stratux NX</h2>
+    <p>You only flash the card once. After that:</p>
+    <ul>
+      <li><b>With Internet</b>: open <b>Settings → Software Update</b> and install the latest version.</li>
+      <li><b>Without Internet</b>: download the <code>.deb</code> update package from the release on another device, then upload it in <b>Settings → Software Update</b>.</li>
+    </ul>
+    <p>Updates keep your settings and your flight log.</p>
+
+    <h2 id="switching">Switching from Stratux, and back</h2>
+    <p>Stratux NX runs on the same hardware as Stratux, so switching is only a matter of cards. Write down any settings you changed in your current Stratux (for example your ownship ICAO code), keep that card as a backup and flash Stratux NX to a new card. To go back, put the old card back in or flash an <a href="https://github.com/stratux/stratux/releases" rel="noopener">upstream Stratux release</a>.</p>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+    <h3>The Stratux Wi-Fi network doesn't appear</h3>
+    <p>Wait five minutes on the first boot. If it still doesn't appear, write the card again and check the power supply. A red power LED that flickers on the Raspberry Pi usually means low voltage.</p>
+    <h3>192.168.10.1 doesn't open</h3>
+    <p>Make sure the tablet is joined to the Stratux network. Some phones leave a network with no Internet; tell the phone to stay connected. Turning off mobile data while testing also helps.</p>
+    <h3>My EFB app shows no traffic</h3>
+    <p>Check the status page first: the radios should show messages. On the ground you may receive little or no ADS-B. Then follow the steps for your app in the <a href="/apps/">EFB guide</a>.</p>
+    <p>Still stuck? <a href="https://github.com/lemonpot/stratux-nx/issues" rel="noopener">Open an issue on GitHub</a> with what you see on the status page.</p>
+  </article>
+  <aside class="toc">
+    <b>On this page</b>
+    <a href="#files">What's in a release</a>
+    <a href="#before">Before you start</a>
+    <a href="#flash">Write the microSD card</a>
+    <a href="#boot">First boot</a>
+    <a href="#connect">Connect your tablet</a>
+    <a href="#internet">Internet and cloud</a>
+    <a href="#update">Updating</a>
+    <a href="#switching">Switching from Stratux</a>
+    <a href="#troubleshooting">Troubleshooting</a>
+    <a class="btn btn-sm btn-primary" data-rel="image" href="https://github.com/lemonpot/stratux-nx/releases" rel="noopener"><svg><use href="#i-download"/></svg>Download</a>
+  </aside>
+</div>

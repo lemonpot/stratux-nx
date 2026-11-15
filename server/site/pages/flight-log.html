@@ -1,0 +1,124 @@
+<!--{"path": "/flight-log/", "crumb": "Flight log", "priority": "0.9", "title": "Block time vs air time: what to log, and an automatic GPS flight log for Stratux", "description": "Block time runs from off-block to on-block, air time from takeoff to landing. Learn which one goes in your logbook (FAA and EASA) and how Stratux NX records both automatically from GPS."}-->
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Block time vs air time: what to log, and an automatic GPS flight log for Stratux","author":{"@type":"Organization","name":"Lemonpot"},"publisher":{"@type":"Organization","name":"Lemonpot"},"datePublished":"2026-11-15","dateModified":"2026-11-15","mainEntityOfPage":"https://stratuxnx.com/flight-log/","image":"https://stratuxnx.com/assets/img/ui-flight-detail.webp"}</script>
+<section class="page-hero">
+  <div class="container">
+    <!--crumbs-->
+    <h1>Block time and air time, <span class="gradient-text">logged automatically</span></h1>
+    <p class="lead">What block time and air time mean, which one goes in your logbook, and how Stratux NX records both from GPS on every flight, without you pressing anything.</p>
+  </div>
+</section>
+
+<div class="container doc">
+  <article class="prose">
+    <h2 id="oooi" style="margin-top:0">The four times of a flight</h2>
+    <p>Airlines describe each flight with four times, often called OOOI:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Time</th><th>When</th><th>Also called</th></tr></thead>
+        <tbody>
+          <tr><td><b>Out</b></td><td>The aircraft starts moving from its parking spot</td><td>Off-block, block out</td></tr>
+          <tr><td><b>Off</b></td><td>The wheels leave the runway</td><td>Takeoff, airborne</td></tr>
+          <tr><td><b>On</b></td><td>The wheels touch the runway</td><td>Landing, touchdown</td></tr>
+          <tr><td><b>In</b></td><td>The aircraft stops at the end of the flight</td><td>On-block, block in</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ul>
+      <li><b>Block time</b> runs from Out to In. It includes the taxi.</li>
+      <li><b>Air time</b> runs from Off to On, wheels up to wheels down.</li>
+      <li>The difference is <b>taxi out</b> (Out to Off) plus <b>taxi in</b> (On to In).</li>
+    </ul>
+
+    <h2 id="logbook">Which one goes in your logbook</h2>
+    <p>For airplanes, the regulators define flight time in a way that matches block time:</p>
+    <ul>
+      <li><b>FAA</b>: <a href="https://www.ecfr.gov/current/title-14/chapter-I/subchapter-A/part-1/section-1.1" rel="noopener">14 CFR 1.1</a> defines flight time as pilot time that starts when the aircraft moves under its own power for the purpose of flight and ends when it comes to rest after landing.</li>
+      <li><b>EASA</b>: FCL.010 defines flight time for aeroplanes as the time from when the aircraft first moves for the purpose of taking off until it finally comes to rest at the end of the flight.</li>
+    </ul>
+    <p>Air time is closer to what 14 CFR 1.1 calls <b>time in service</b> for maintenance records: from leaving the ground to touching down. Some operators and forms ask for both, which is why it helps to have both.</p>
+    <div class="tip">This is a summary, not legal advice. Check what your authority, school or operator asks you to log.</div>
+
+    <h2 id="example">A real example</h2>
+    <p>A local flight from CZBA recorded by Stratux NX:</p>
+    <div class="timeline">
+      <div class="tl-route"><strong>CZBA → CZBA</strong><span>Oct 17, 2026 · 108.4 NM</span></div>
+      <div class="tl-labels">
+        <div class="first" style="left:9.18%"><b>Takeoff</b>18:30:56Z</div>
+        <div class="last" style="left:96.18%"><b>Landing</b>19:35:03Z</div>
+      </div>
+      <div class="tl-track">
+        <div class="tl-seg taxi" style="left:0;width:9.18%"></div>
+        <div class="tl-seg air" style="left:9.18%;width:87%"></div>
+        <div class="tl-seg taxi" style="left:96.18%;width:3.82%"></div>
+        <div class="tl-event" style="left:0"></div>
+        <div class="tl-event" style="left:9.18%"></div>
+        <div class="tl-event" style="left:96.18%"></div>
+        <div class="tl-event" style="left:calc(100% - 2px)"></div>
+      </div>
+      <div class="tl-labels">
+        <div class="first" style="left:0"><b>Off-block</b>18:24:10Z</div>
+        <div class="last" style="left:100%"><b>On-block</b>19:37:52Z</div>
+      </div>
+      <div class="tl-totals">
+        <div class="hl"><small>Block time</small><strong>1h 13m 42s</strong></div>
+        <div class="hl"><small>Air time</small><strong>1h 04m 07s</strong></div>
+        <div><small>Taxi out</small><strong>6m 46s</strong></div>
+        <div><small>Taxi in</small><strong>2m 49s</strong></div>
+      </div>
+    </div>
+    <p style="margin-top:18px">Logging air time instead of block time would have left out 9 minutes and 35 seconds on this flight alone.</p>
+
+    <h2 id="how">How Stratux NX detects each time</h2>
+    <p>The Stratux turns on with the aircraft's power, so it is already running when you start moving. It reads the GPS every second and decides:</p>
+    <ul>
+      <li><b>Off-block</b>: the aircraft moves above taxi speed for a few seconds. Short GPS jumps on the ground are ignored.</li>
+      <li><b>Takeoff and landing</b>: from sustained speed and climb or descent. Touch-and-goes are counted.</li>
+      <li><b>On-block</b>: the aircraft stays stopped (2 knots or less) for 45 seconds after landing. The flight is then closed.</li>
+      <li><b>Airports</b>: the nearest airport at departure and arrival, from an offline database of 84,512 airports.</li>
+      <li><b>Time zones</b>: all times are stored in UTC/Zulu and shown in local time, which follows the aircraft's position.</li>
+    </ul>
+    <figure class="shot">
+      <div class="window"><div class="window-bar"><i></i><i></i><i></i><span>192.168.10.1 · Flight Log</span></div><img src="/assets/img/ui-flight-history.webp" alt="Flight history: each flight with route, date, air time and block time" width="1440" height="1135" loading="lazy"></div>
+      <figcaption>The flight history on the Stratux. The first flight was recovered after a power cut and is marked as incomplete.</figcaption>
+    </figure>
+    <figure class="shot">
+      <div class="window"><div class="window-bar"><i></i><i></i><i></i><span>192.168.10.1 · Flight Log · flight detail</span></div><img src="/assets/img/ui-flight-detail.webp" alt="Flight detail with the recorded route on a map, takeoff and landing in Zulu and local time, maximum groundspeed and altitude" width="1440" height="1330" loading="lazy"></div>
+      <figcaption>One flight: the recorded route, takeoff and landing times, and maximum groundspeed and altitude.</figcaption>
+    </figure>
+
+    <h2 id="what">What is saved with each flight</h2>
+    <ul>
+      <li>The four times, block time, air time, taxi out and taxi in.</li>
+      <li>The route, with position, altitude, groundspeed and vertical speed every second.</li>
+      <li>Distance, maximum groundspeed and maximum GPS altitude.</li>
+      <li>The FIS-B weather received during the flight (METARs, TAFs and NEXRAD), and the traffic around you.</li>
+    </ul>
+    <p>Flights are written to the SD card while they happen. If the power is cut, the flight is recovered on the next boot. If the cut happened in the air, the flight is kept and marked as incomplete.</p>
+
+    <h2 id="accuracy">Accuracy</h2>
+    <ul>
+      <li>All times come from GPS and are accurate to a few seconds.</li>
+      <li>Off-block is when the aircraft starts moving, not when the engine starts. Hobbs and tach times measure different things and will not match.</li>
+      <li>Altitude is GPS altitude, which can differ from indicated or pressure altitude.</li>
+      <li>Review the times before copying them to your logbook. You remain responsible for your logbook entries.</li>
+    </ul>
+
+    <h2 id="cloud">Replay and share (optional)</h2>
+    <p>When the Stratux has Internet, it uploads finished flights. Link it to a free account at <a href="https://app.stratuxnx.com/">app.stratuxnx.com</a> to see all your flights, replay them in 3D, look at the vertical profile and landing, and share a flight with a link.</p>
+    <figure class="shot">
+      <div class="window"><div class="window-bar"><i></i><i></i><i></i><span>app.stratuxnx.com · landing view</span></div><img src="/assets/img/cloud-landing.webp" alt="Landing view: height above airport and groundspeed during the last five minutes before touchdown" width="1520" height="1340" loading="lazy"></div>
+      <figcaption>The landing view in the cloud, built from GPS data. It is an estimate, not a certified measurement.</figcaption>
+    </figure>
+  </article>
+  <aside class="toc">
+    <b>On this page</b>
+    <a href="#oooi">The four times</a>
+    <a href="#logbook">Which one to log</a>
+    <a href="#example">A real example</a>
+    <a href="#how">How detection works</a>
+    <a href="#what">What is saved</a>
+    <a href="#accuracy">Accuracy</a>
+    <a href="#cloud">Replay and share</a>
+    <a class="btn btn-sm btn-primary" href="/download/"><svg><use href="#i-download"/></svg>Download free</a>
+  </aside>
+</div>
