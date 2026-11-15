@@ -254,15 +254,14 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
             case 'uploading': return 'Uploading';
             case 'pending': return 'Pending';
             case 'failed': return 'Retry needed';
-            default: return 'Local only';
+            default: return 'Pending';
         }
     };
 
     $scope.syncStatusClass = function(status) {
         if (status === 'uploaded') return 'uploaded';
-        if (status === 'uploading' || status === 'pending') return 'pending';
         if (status === 'failed') return 'failed';
-        return 'local';
+        return 'pending';
     };
 
     function buildTrack(points) {
@@ -398,14 +397,13 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
 
     $scope.syncAction = function(action) {
         if ($scope.syncing) return;
-        if (action === 'enable' && !window.confirm('Enable automatic Stratux NX Cloud sync? Completed flight routes will upload securely whenever Internet is available.')) return;
         $scope.syncing = true;
         $http.post('/flightLog/sync', {action:action}).then(function(response) {
             $scope.syncing = false;
             $scope.data.Sync = response.data || $scope.data.Sync;
             if (window.StratuxUI) {
-                var message = action === 'disable' ? 'Cloud sync disabled' : ($scope.data.Sync.Online ? 'Automatic flight sync is active' : 'No Internet now. Flights remain local and will sync automatically later.');
-                window.StratuxUI.toast(message, action === 'disable' ? 'info' : 'success', 4200);
+                var message = $scope.data.Sync.Online ? 'Uploading every flight not yet in the cloud' : 'No Internet now. Flights stay on this device and upload automatically later.';
+                window.StratuxUI.toast(message, 'success', 4200);
             }
             $scope.refresh();
         }, function(response) {
