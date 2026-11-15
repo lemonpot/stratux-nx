@@ -123,17 +123,17 @@
       </span>
     </div>
     <div class="flightlog-cloud-body">
-      <div class="flightlog-device-id"><span>DEVICE ID</span><strong>{{data.Sync.InstallationID || 'Initializing...'}}</strong><small>This public ID identifies this installation. Account linking uses a separate one-time secure code.</small></div>
+      <div class="flightlog-device-id"><span>DEVICE ID</span><strong>{{data.Sync.InstallationID || 'Initializing...'}}</strong><small>This public ID identifies this installation. Account linking uses the link code below.</small></div>
       <div class="flightlog-cloud-account"><span>ACCOUNT</span><strong ng-if="data.Sync.Linked"><i class="fa fa-check-circle"></i> {{data.Sync.AccountName || 'Linked account'}}</strong><strong ng-if="!data.Sync.Linked">Not linked</strong><small ng-if="data.Sync.Linked">{{data.Sync.AccountEmail}}</small><small ng-if="!data.Sync.Linked">Flights upload safely and can be claimed later.</small></div>
       <div class="flightlog-cloud-pending"><span>WAITING TO UPLOAD</span><strong>{{data.Sync.Pending || 0}}</strong><small>{{data.Sync.LastError || 'No synchronization errors'}}</small></div>
       <div class="flightlog-cloud-actions">
         <button class="btn btn-primary" ng-if="!data.Sync.Enabled" ng-click="syncAction('enable')" ng-disabled="syncing"><i class="fa fa-cloud-upload"></i> Enable automatic sync</button>
         <button class="btn btn-default" ng-if="data.Sync.Enabled" ng-click="syncAction('retry')" ng-disabled="syncing || !data.Sync.Online"><i class="fa fa-refresh" ng-class="{'fa-spin': syncing}"></i> Sync now</button>
-        <button class="btn btn-default" ng-if="data.Sync.Enabled && !data.Sync.Linked" ng-click="syncAction('claim-code')" ng-disabled="syncing || !data.Sync.Online"><i class="fa fa-link"></i> Link account</button>
+        <a class="btn btn-default" ng-if="data.Sync.Enabled && !data.Sync.Linked && data.Sync.LinkURL" href="{{data.Sync.LinkURL}}" target="_blank" rel="noopener"><i class="fa fa-link"></i> Open link page</a>
         <a class="btn btn-default" ng-if="data.Sync.Enabled && data.Sync.Linked" href="https://app.stratuxnx.com/" target="_blank" rel="noopener"><i class="fa fa-user"></i> Open account</a>
         <button class="btn btn-default" ng-if="data.Sync.Enabled" ng-click="syncAction('disable')" ng-disabled="syncing">Disable</button>
       </div>
-      <div class="flightlog-claim-code" ng-if="data.Sync.ClaimCode"><span>ONE-TIME LINK CODE</span><strong>{{data.Sync.ClaimCode}}</strong><small>Sign in at app.stratuxnx.com and enter this code. It expires at {{formatLocal(data.Sync.ClaimExpiresUTC)}}.</small></div>
+      <div class="flightlog-claim-code" ng-if="data.Sync.Enabled && !data.Sync.Linked && data.Sync.LinkCode"><span>LINK CODE</span><strong>{{data.Sync.LinkCode}}</strong><small>On any phone or computer with Internet, open app.stratuxnx.com, sign in and enter this code. It does not expire. This Stratux links itself automatically the next time it is online.</small></div>
     </div>
   </div>
 

@@ -6,7 +6,7 @@ function nx_user_flight(string $flightId, string $userId): ?array {
     $stmt = nx_db()->prepare(
         'SELECT f.id, f.installation_id, f.aircraft_id, f.client_flight_id, f.payload, f.off_block_utc,
                 f.landing_utc, f.departure_code, f.arrival_code, f.air_time_seconds,
-                f.distance_nm, f.max_altitude_ft, f.created_at, i.nickname,
+                f.distance_nm, f.max_altitude_ft, f.created_at, f.share_token, i.nickname,
                 a.registration aircraft_registration, a.manufacturer aircraft_manufacturer,
                 a.model aircraft_model, a.nickname aircraft_nickname
          FROM flights f
@@ -15,6 +15,25 @@ function nx_user_flight(string $flightId, string $userId): ?array {
          WHERE f.id=? AND i.user_id=?'
     );
     $stmt->execute([$flightId, $userId]);
+    return $stmt->fetch() ?: null;
+}
+
+function nx_shared_flight(string $flightId, string $shareToken): ?array {
+    if (!preg_match('/^[a-f0-9-]{36}$/i', $flightId)) return null;
+    if (!preg_match('/^[a-f0-9]{32}$/', $shareToken)) return null;
+    $stmt = nx_db()->prepare(
+        'SELECT f.id, f.installation_id, f.aircraft_id, f.client_flight_id, f.payload, f.off_block_utc,
+                f.landing_utc, f.departure_code, f.arrival_code, f.air_time_seconds,
+                f.distance_nm, f.max_altitude_ft, f.created_at, f.share_token,
+                i.nickname,
+                a.registration aircraft_registration, a.manufacturer aircraft_manufacturer,
+                a.model aircraft_model, a.nickname aircraft_nickname
+         FROM flights f
+         JOIN installations i ON i.id=f.installation_id
+         LEFT JOIN aircraft_profiles a ON a.id=f.aircraft_id AND a.user_id=i.user_id
+         WHERE f.id=? AND f.share_token=?'
+    );
+    $stmt->execute([$flightId, $shareToken]);
     return $stmt->fetch() ?: null;
 }
 

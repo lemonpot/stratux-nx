@@ -100,6 +100,12 @@ CREATE TABLE IF NOT EXISTS claim_codes (
   expires_at INTEGER NOT NULL,
   used_at INTEGER
 );
+CREATE TABLE IF NOT EXISTS pending_links (
+  code_hash TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  code_hint TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS flight_logbook (
   flight_id TEXT PRIMARY KEY REFERENCES flights(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -138,13 +144,14 @@ SQL);
             'distance_nm' => 'REAL NOT NULL DEFAULT 0',
             'max_altitude_ft' => 'REAL NOT NULL DEFAULT 0',
             'metrics_backfilled' => 'INTEGER NOT NULL DEFAULT 0',
+            'share_token' => 'TEXT',
         ];
         foreach ($flightColumns as $name => $definition) {
             if (!in_array($name, $columns, true)) $db->exec("ALTER TABLE flights ADD COLUMN $name $definition");
         }
 
         $installationColumns = array_column($db->query('PRAGMA table_info(installations)')->fetchAll(), 'name');
-        $installationAdditions = ['revoked_at' => 'TEXT', 'aircraft_id' => 'TEXT', 'previous_user_id' => 'TEXT'];
+        $installationAdditions = ['revoked_at' => 'TEXT', 'aircraft_id' => 'TEXT', 'previous_user_id' => 'TEXT', 'link_code_hash' => 'TEXT'];
         foreach ($installationAdditions as $name => $definition) {
             if (!in_array($name, $installationColumns, true)) $db->exec("ALTER TABLE installations ADD COLUMN $name $definition");
         }
@@ -152,8 +159,14 @@ SQL);
         if ($schemaVersion < 3) {
             $db->exec('UPDATE installations SET previous_user_id=user_id WHERE previous_user_id IS NULL AND user_id IS NOT NULL');
         }
+        if ($schemaVersion < 4) {
+            $db->exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_flights_share_token ON flights(share_token) WHERE share_token IS NOT NULL');
+        }
+        if ($schemaVersion < 5) {
+            $db->exec('CREATE INDEX IF NOT EXISTS idx_installations_link_code ON installations(link_code_hash)');
+        }
         $db->prepare("INSERT INTO schema_meta(key,value) VALUES('version',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value")
-            ->execute(['3']);
+            ->execute(['5']);
         $db->exec('COMMIT');
     } catch (Throwable $error) {
         if ($db->inTransaction()) $db->exec('ROLLBACK');
@@ -257,14 +270,34 @@ function nx_verify_device(string $body, ?string $registrationPublicKey = null): 
 }
 
 function nx_rate_limit(string $subject, int $limit): void {
+    if (nx_rate_limited($subject, $limit)) nx_json(['error' => 'rate limit exceeded'], 429);
+}
+
+function nx_rate_limited(string $subject, int $limit): bool {
     $db = nx_db();
     $bucket = intdiv(time(), 60);
     $db->prepare('INSERT INTO request_limits(subject,bucket,request_count) VALUES(?,?,1) ON CONFLICT(subject,bucket) DO UPDATE SET request_count=request_count+1')
         ->execute([$subject, $bucket]);
     $stmt = $db->prepare('SELECT request_count FROM request_limits WHERE subject=? AND bucket=?');
     $stmt->execute([$subject, $bucket]);
-    if ((int)$stmt->fetchColumn() > $limit) nx_json(['error' => 'rate limit exceeded'], 429);
+    $limited = (int)$stmt->fetchColumn() > $limit;
     if (random_int(1, 100) === 1) $db->prepare('DELETE FROM request_limits WHERE bucket<?')->execute([$bucket - 2]);
+    return $limited;
+}
+
+// Link codes are shown on the device itself, so having the code proves
+// physical access. They never expire; a device keeps its code until reinstalled.
+function nx_valid_link_code(string $code): bool {
+    return (bool)preg_match('/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/', $code);
+}
+
+function nx_link_code_hash(string $code): string {
+    return hash('sha256', strtoupper(trim($code)));
+}
+
+function nx_link_installation(PDO $db, string $installationId, string $userId): void {
+    $db->prepare('UPDATE installations SET user_id=?, previous_user_id=? WHERE id=?')
+        ->execute([$userId, $userId, $installationId]);
 }
 
 function nx_claim_code(): string {
@@ -272,6 +305,10 @@ function nx_claim_code(): string {
     $raw = '';
     for ($i = 0; $i < 8; $i++) $raw .= $alphabet[random_int(0, strlen($alphabet) - 1)];
     return substr($raw, 0, 4) . '-' . substr($raw, 4);
+}
+
+function nx_share_token(): string {
+    return bin2hex(random_bytes(16));
 }
 
 function nx_session_user(): ?array {

@@ -5,10 +5,23 @@ import (
 	"time"
 )
 
-const flightContextInterval = 45 * time.Second
+const (
+	flightContextInterval = 45 * time.Second
+	flightContextMaximum  = 400
+)
 
-type flightContextSnapshot struct{}
-type flightWeatherMemory struct{}
+type flightContextSnapshot struct {
+	TimeUTC string `json:"TimeUTC"`
+	Phase   string `json:"Phase"`
+}
+
+type WeatherMessage struct {
+	Type     string
+	Location string
+	Time     string
+	Data     string
+}
+
 type flightSyncPublicState struct{}
 
 var flightSyncEnabled bool
@@ -28,14 +41,19 @@ var mySituation struct {
 func isGPSValid() bool { return false }
 
 func captureFlightContext(sample flightLiveGPS, phase string) flightContextSnapshot {
-	return flightContextSnapshot{}
+	return flightContextSnapshot{TimeUTC: sample.TimeUTC, Phase: phase}
 }
 
-func appendFlightContextLocked(snapshot flightContextSnapshot)             {}
-func syncFlightWeatherLocked()                                             {}
-func startFlightWeatherCapture(flightID string, existing *flightWeatherMemory) {}
-func stopFlightWeatherCapture(flightID string)                             {}
-func flightSyncPublicStateLocked() flightSyncPublicState                   { return flightSyncPublicState{} }
-func flightSyncCompletedStatusLocked() string                              { return "local" }
-func wakeFlightSync()                                                      {}
-func flightSyncInitializeLocked()                                          {}
+// Mirrors flightlog_context.go, which needs the full Stratux runtime to compile.
+func appendFlightContextLocked(snapshot flightContextSnapshot) {
+	if flightCurrent == nil {
+		return
+	}
+	flightCurrent.Context = append(flightCurrent.Context, snapshot)
+	appendFlightJournalContextLocked(snapshot)
+}
+
+func flightSyncPublicStateLocked() flightSyncPublicState { return flightSyncPublicState{} }
+func flightSyncCompletedStatusLocked() string            { return "local" }
+func wakeFlightSync()                                    {}
+func flightSyncInitializeLocked()                        {}

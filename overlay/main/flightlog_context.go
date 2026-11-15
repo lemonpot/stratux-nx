@@ -144,4 +144,5 @@ func appendFlightContextLocked(snapshot flightContextSnapshot) {
 	if len(flightCurrent.Context) > flightContextMaximum {
 		flightCurrent.Context = append([]flightContextSnapshot(nil), flightCurrent.Context[len(flightCurrent.Context)-flightContextMaximum:]...)
 	}
+	appendFlightJournalContextLocked(snapshot)
 }

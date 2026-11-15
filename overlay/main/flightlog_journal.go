@@ -35,12 +35,21 @@ type flightRecoveryAnalysis struct {
 }
 
 type flightJournalEntry struct {
-	Kind       string            `json:"kind"`
-	FlightID   string            `json:"flight_id"`
-	RecordedAt string            `json:"recorded_at"`
-	State      *flightRecord     `json:"state,omitempty"`
-	Point      *flightTrackPoint `json:"point,omitempty"`
+	Kind       string                 `json:"kind"`
+	FlightID   string                 `json:"flight_id"`
+	RecordedAt string                 `json:"recorded_at"`
+	State      *flightRecord          `json:"state,omitempty"`
+	Point      *flightTrackPoint      `json:"point,omitempty"`
+	Context    *flightContextSnapshot `json:"context,omitempty"`
+	Weather    *flightWeatherMemory   `json:"weather,omitempty"`
 }
+
+// Weather already written to the open journal: text reports are appended as
+// deltas, radar rollups and counters are rewritten only when the total changes.
+var (
+	flightJournalWeatherTexts    int
+	flightJournalWeatherMessages int
+)
 
 var (
 	flightJournalRoot           string
@@ -102,6 +111,7 @@ func recoverFlightJournalsLocked() {
 		flightCurrent = journal.record
 		flightJournalSegment = journal.nextSegment
 		flightJournalSegmentEntries = 0
+		markFlightJournalWeatherLocked(journal.record.Weather)
 		flightJournalRecovered = true
 		flightRecoveredAt = time.Now()
 		if len(journal.record.Track) > 0 {
@@ -247,6 +257,7 @@ func flightJournalState(rec *flightRecord, includeTrack bool) *flightRecord {
 func beginFlightJournalLocked(rec *flightRecord) {
 	flightJournalSegment = 1
 	flightJournalSegmentEntries = 0
+	markFlightJournalWeatherLocked(nil)
 	flightJournalRecovered = false
 	if rec == nil {
 		return
@@ -280,6 +291,13 @@ func adoptLegacyFlightIntoJournalLocked(rec *flightRecord) {
 		RecordedAt: rec.LastUpdateUTC,
 		State:      flightJournalState(rec, true),
 	})
+	for i := range rec.Context {
+		snapshot := rec.Context[i]
+		appendFlightJournalLocked(flightJournalEntry{Kind: "context", FlightID: rec.ID, RecordedAt: snapshot.TimeUTC, Context: &snapshot})
+	}
+	if rec.Weather != nil {
+		appendFlightJournalLocked(flightJournalEntry{Kind: "weather", FlightID: rec.ID, RecordedAt: rec.LastUpdateUTC, Weather: rec.Weather})
+	}
 	flightJournalSegment++
 	flightJournalSegmentEntries = 0
 }
@@ -308,6 +326,7 @@ func finishFlightJournalLocked(rec *flightRecord) {
 	})
 	flightJournalSegment = 0
 	flightJournalSegmentEntries = 0
+	markFlightJournalWeatherLocked(nil)
 	flightJournalRecovered = false
 }
 
@@ -331,6 +350,7 @@ func archiveFlightJournalLocked(flightID string) {
 	}
 	flightJournalSegment = 0
 	flightJournalSegmentEntries = 0
+	markFlightJournalWeatherLocked(nil)
 	flightJournalRecovered = false
 }
 
@@ -347,9 +367,61 @@ func appendFlightJournalPointLocked(point flightTrackPoint) {
 	})
 }
 
-func appendFlightJournalLocked(entry flightJournalEntry) {
-	if flightJournalRoot == "" || entry.FlightID == "" {
+func appendFlightJournalContextLocked(snapshot flightContextSnapshot) {
+	if flightCurrent == nil {
 		return
+	}
+	appendFlightJournalLocked(flightJournalEntry{
+		Kind:       "context",
+		FlightID:   flightCurrent.ID,
+		RecordedAt: snapshot.TimeUTC,
+		Context:    &snapshot,
+	})
+}
+
+func appendFlightJournalWeatherLocked(weather *flightWeatherMemory) {
+	if flightCurrent == nil || weather == nil {
+		return
+	}
+	if len(weather.TextReports) < flightJournalWeatherTexts {
+		flightJournalWeatherTexts = 0
+	}
+	messages := flightWeatherMessageTotal(weather)
+	if len(weather.TextReports) == flightJournalWeatherTexts && messages == flightJournalWeatherMessages {
+		return
+	}
+	delta := *weather
+	delta.TextReports = weather.TextReports[flightJournalWeatherTexts:]
+	if appendFlightJournalLocked(flightJournalEntry{
+		Kind:       "weather",
+		FlightID:   flightCurrent.ID,
+		RecordedAt: flightCurrent.LastUpdateUTC,
+		Weather:    &delta,
+	}) {
+		markFlightJournalWeatherLocked(weather)
+	}
+}
+
+func markFlightJournalWeatherLocked(weather *flightWeatherMemory) {
+	flightJournalWeatherTexts = 0
+	flightJournalWeatherMessages = 0
+	if weather != nil {
+		flightJournalWeatherTexts = len(weather.TextReports)
+		flightJournalWeatherMessages = flightWeatherMessageTotal(weather)
+	}
+}
+
+func flightWeatherMessageTotal(weather *flightWeatherMemory) int {
+	total := 0
+	for _, count := range weather.Summary {
+		total += count
+	}
+	return total
+}
+
+func appendFlightJournalLocked(entry flightJournalEntry) bool {
+	if flightJournalRoot == "" || entry.FlightID == "" {
+		return false
 	}
 	if flightJournalSegment < 1 {
 		flightJournalSegment = 1
@@ -361,18 +433,18 @@ func appendFlightJournalLocked(entry flightJournalEntry) {
 	dir := flightJournalDirectory(entry.FlightID)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		setFlightStorageErrorLocked(fmt.Sprintf("Cannot create flight journal: %v", err))
-		return
+		return false
 	}
 	body, err := json.Marshal(entry)
 	if err != nil {
 		setFlightStorageErrorLocked(fmt.Sprintf("Cannot encode flight journal: %v", err))
-		return
+		return false
 	}
 	path := filepath.Join(dir, fmt.Sprintf("%06d.ndjson", flightJournalSegment))
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		setFlightStorageErrorLocked(fmt.Sprintf("Cannot open flight journal: %v", err))
-		return
+		return false
 	}
 	if _, err = file.Write(append(body, '\n')); err == nil {
 		err = file.Sync()
@@ -383,9 +455,10 @@ func appendFlightJournalLocked(entry flightJournalEntry) {
 	}
 	if err != nil {
 		setFlightStorageErrorLocked(fmt.Sprintf("Cannot write flight journal: %v", err))
-		return
+		return false
 	}
 	flightJournalSegmentEntries++
+	return true
 }
 
 func flightHistoryContains(flightID string) bool {
@@ -428,6 +501,8 @@ func readFlightJournalLocked(directory string) (*flightRecord, bool, int) {
 	}
 	sort.Strings(files)
 	var record *flightRecord
+	var contexts []flightContextSnapshot
+	var weather *flightWeatherMemory
 	points := make([]flightTrackPoint, 0, len(files)*flightJournalEntriesPerSegment)
 	ended := false
 	maxSegment := 0
@@ -459,6 +534,18 @@ func readFlightJournalLocked(directory string) (*flightRecord, bool, int) {
 			if entry.Point != nil {
 				points = append(points, *entry.Point)
 			}
+			if entry.Context != nil {
+				contexts = append(contexts, *entry.Context)
+			}
+			if entry.Weather != nil {
+				if weather == nil {
+					weather = &flightWeatherMemory{}
+				}
+				weather.CaptureVersion = entry.Weather.CaptureVersion
+				weather.TextReports = append(weather.TextReports, entry.Weather.TextReports...)
+				weather.NEXRADSnapshots = entry.Weather.NEXRADSnapshots
+				weather.Summary = entry.Weather.Summary
+			}
 			if entry.Kind == "end" {
 				ended = true
 			}
@@ -471,6 +558,11 @@ func readFlightJournalLocked(directory string) (*flightRecord, bool, int) {
 	if record == nil {
 		return nil, ended, maxSegment + 1
 	}
+	if len(contexts) > flightContextMaximum {
+		contexts = contexts[len(contexts)-flightContextMaximum:]
+	}
+	record.Context = contexts
+	record.Weather = weather
 	record.Track = deduplicateJournalPoints(points)
 	recalculateRecoveredFlight(record)
 	return record, ended, maxSegment + 1

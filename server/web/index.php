@@ -31,8 +31,13 @@ $claimCode = strtoupper(trim((string)($_GET['claim'] ?? $_COOKIE['nx_pending_cla
 $error = '';
 
 if ($action === 'flight-json' || $action === 'flight-export') {
-    $apiUser = nx_require_user();
-    $flightRow = nx_user_flight((string)($_GET['flight_id'] ?? ''), (string)$apiUser['id']);
+    $shareParam = (string)($_GET['share'] ?? '');
+    if ($shareParam !== '') {
+        $flightRow = nx_shared_flight((string)($_GET['flight_id'] ?? ''), $shareParam);
+    } else {
+        $apiUser = nx_require_user();
+        $flightRow = nx_user_flight((string)($_GET['flight_id'] ?? ''), (string)$apiUser['id']);
+    }
     if (!$flightRow) nx_json(['error' => 'flight unavailable'], 404);
     $flightData = [];
     try {
@@ -44,14 +49,17 @@ if ($action === 'flight-json' || $action === 'flight-export') {
         $validTrack = nx_flight_track($flightData);
         if (count($validTrack) < 2) nx_json(['error' => 'flight track unavailable'], 422);
         $flightData['Track'] = nx_downsample_track($validTrack, 5000);
+        $isShared = $shareParam !== '';
+        $ownerId = $isShared ? '' : (string)$apiUser['id'];
         nx_json([
             'flight' => $flightData,
             'landing' => nx_landing_analysis($flightData),
-            'ghost_landings' => nx_comparable_landings($flightRow, (string)$apiUser['id']),
-            'memory' => nx_flight_milestones($flightRow, (string)$apiUser['id']),
+            'ghost_landings' => $isShared ? [] : nx_comparable_landings($flightRow, $ownerId),
+            'memory' => $isShared ? ['flight_number' => 0, 'cumulative_air_time_seconds' => 0, 'milestones' => []] : nx_flight_milestones($flightRow, $ownerId),
             'meta' => [
                 'id' => $flightRow['id'],
                 'device_name' => $flightRow['nickname'] ?: 'Stratux NX',
+                'shared' => $isShared,
             ],
         ]);
     }
@@ -158,32 +166,51 @@ if ($user && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $formAction = (string)($_POST['form_action'] ?? '');
         $redirect = '/';
         if ($formAction === 'claim') {
-            $code = strtoupper(trim((string)($_POST['code'] ?? '')));
+            $code = strtoupper(str_replace(' ', '', trim((string)($_POST['code'] ?? ''))));
+            if (preg_match('/^[A-Z0-9]{8}$/', $code)) $code = substr($code, 0, 4) . '-' . substr($code, 4);
+            if (!nx_valid_link_code($code)) throw new RuntimeException('Enter the 8-character code shown on your Stratux, for example ABCD-2345');
+            if (nx_rate_limited('link:' . $user['id'], 10)) throw new RuntimeException('Too many attempts. Wait a minute and try again.');
+            $codeHash = nx_link_code_hash($code);
             $db = nx_db();
             $db->exec('BEGIN IMMEDIATE');
             try {
-                $stmt = $db->prepare(
-                    'SELECT c.*,i.user_id,i.previous_user_id,i.revoked_at
-                     FROM claim_codes c JOIN installations i ON i.id=c.installation_id
-                     WHERE c.code_hash=? AND c.used_at IS NULL AND c.expires_at>?'
-                );
-                $stmt->execute([hash('sha256', $code), time()]);
-                $claim = $stmt->fetch();
-                if (!$claim) throw new RuntimeException('The link code is invalid or expired');
-                $boundOwner = (string)($claim['user_id'] ?: $claim['previous_user_id']);
-                if ($claim['revoked_at']) throw new RuntimeException('This installation key was revoked');
-                if ($boundOwner !== '' && $boundOwner !== (string)$user['id']) {
-                    throw new RuntimeException('This device is linked to another account');
+                // Older firmware requests short-lived one-time codes instead of a permanent link code.
+                $stmt = $db->prepare('SELECT installation_id FROM claim_codes WHERE code_hash=? AND used_at IS NULL AND expires_at>?');
+                $stmt->execute([$codeHash, time()]);
+                $installationId = (string)($stmt->fetchColumn() ?: '');
+                if ($installationId !== '') {
+                    $db->prepare('UPDATE claim_codes SET used_at=? WHERE code_hash=?')->execute([time(), $codeHash]);
+                } else {
+                    $stmt = $db->prepare('SELECT id FROM installations WHERE link_code_hash=? ORDER BY last_seen_at DESC LIMIT 1');
+                    $stmt->execute([$codeHash]);
+                    $installationId = (string)($stmt->fetchColumn() ?: '');
                 }
-                $db->prepare('UPDATE installations SET user_id=?,previous_user_id=? WHERE id=?')
-                    ->execute([$user['id'], $user['id'], $claim['installation_id']]);
-                $db->prepare('UPDATE claim_codes SET used_at=? WHERE code_hash=?')->execute([time(), $claim['code_hash']]);
+                if ($installationId !== '') {
+                    $stmt = $db->prepare('SELECT user_id, revoked_at FROM installations WHERE id=?');
+                    $stmt->execute([$installationId]);
+                    $installation = $stmt->fetch();
+                    if (!empty($installation['revoked_at'])) throw new RuntimeException('This Stratux was revoked. Reinstall it to get a new link code.');
+                    $owner = (string)($installation['user_id'] ?? '');
+                    if ($owner !== '' && $owner !== (string)$user['id']) {
+                        throw new RuntimeException('This Stratux is linked to another account. Unlink it from that account first.');
+                    }
+                    nx_link_installation($db, $installationId, (string)$user['id']);
+                    $redirect = '/?linked=1';
+                } else {
+                    $db->prepare('DELETE FROM pending_links WHERE created_at<?')->execute([time() - 90 * 86400]);
+                    $db->prepare('INSERT INTO pending_links(code_hash,user_id,code_hint,created_at) VALUES(?,?,?,?) ON CONFLICT(code_hash) DO UPDATE SET user_id=excluded.user_id, created_at=excluded.created_at')
+                        ->execute([$codeHash, $user['id'], substr($code, 0, 4), time()]);
+                    $redirect = '/?linked=pending';
+                }
                 $db->exec('COMMIT');
             } catch (Throwable $claimError) {
                 if ($db->inTransaction()) $db->exec('ROLLBACK');
                 throw $claimError;
             }
             setcookie('nx_pending_claim', '', ['expires' => 1, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
+        } elseif ($formAction === 'cancel-pending-link') {
+            nx_db()->prepare('DELETE FROM pending_links WHERE code_hash=? AND user_id=?')
+                ->execute([(string)($_POST['code_hash'] ?? ''), $user['id']]);
         } elseif ($formAction === 'rename') {
             nx_db()->prepare('UPDATE installations SET nickname=? WHERE id=? AND user_id=?')
                 ->execute([trim((string)($_POST['nickname'] ?? '')), (string)($_POST['installation_id'] ?? ''), $user['id']]);
@@ -193,6 +220,19 @@ if ($user && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         } elseif ($formAction === 'revoke') {
             nx_db()->prepare('UPDATE installations SET revoked_at=?, user_id=NULL WHERE id=? AND user_id=?')
                 ->execute([gmdate(DATE_RFC3339), (string)($_POST['installation_id'] ?? ''), $user['id']]);
+        } elseif ($formAction === 'share-flight') {
+            $flightId = (string)($_POST['flight_id'] ?? '');
+            $ownedFlight = nx_user_flight($flightId, (string)$user['id']);
+            if (!$ownedFlight) throw new RuntimeException('Flight not found');
+            $token = nx_share_token();
+            nx_db()->prepare('UPDATE flights SET share_token=? WHERE id=? AND installation_id IN (SELECT id FROM installations WHERE user_id=?)')
+                ->execute([$token, $flightId, $user['id']]);
+            $redirect = '/?page=flight&flight_id=' . rawurlencode($flightId);
+        } elseif ($formAction === 'unshare-flight') {
+            $flightId = (string)($_POST['flight_id'] ?? '');
+            nx_db()->prepare('UPDATE flights SET share_token=NULL WHERE id=? AND installation_id IN (SELECT id FROM installations WHERE user_id=?)')
+                ->execute([$flightId, $user['id']]);
+            $redirect = '/?page=flight&flight_id=' . rawurlencode($flightId);
         } elseif ($formAction === 'delete-flight') {
             nx_db()->prepare('DELETE FROM flights WHERE id=? AND installation_id IN (SELECT id FROM installations WHERE user_id=?)')
                 ->execute([(string)($_POST['flight_id'] ?? ''), $user['id']]);
@@ -286,6 +326,12 @@ if ($user && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 }
 
 $devices = [];
+$pendingLinks = [];
+$notice = match ((string)($_GET['linked'] ?? '')) {
+    '1' => 'Stratux linked. Its flights will appear here as they sync.',
+    'pending' => 'Code saved. Your Stratux will link itself automatically the next time it is connected to the Internet.',
+    default => '',
+};
 $flights = [];
 $flightDetail = null;
 $flightPayload = null;
@@ -294,10 +340,29 @@ $aircraftProfiles = [];
 $pilotSummary = ['flights' => 0, 'air_time_seconds' => 0, 'distance_nm' => 0, 'aircraft' => 0, 'airports' => 0];
 $flightMilestones = null;
 $logbook = ['aircraft_id' => '', 'role' => '', 'notes' => '', 'confirmed' => 0];
+$sharedView = false;
+$shareToken = (string)($_GET['share'] ?? '');
+if (!$user && $page === 'flight' && $shareToken !== '') {
+    $flightDetail = nx_shared_flight((string)($_GET['flight_id'] ?? ''), $shareToken);
+    if ($flightDetail) {
+        $sharedView = true;
+        try {
+            $flightPayload = nx_flight_payload($flightDetail);
+        } catch (Throwable $e) {
+            $error = 'This flight record cannot be opened';
+            $flightDetail = null;
+        }
+    } else {
+        $error = 'This flight link is invalid or the flight is no longer shared';
+    }
+}
 if ($user) {
     $stmt = nx_db()->prepare('SELECT i.*, a.registration aircraft_registration, a.model aircraft_model, a.nickname aircraft_nickname, COUNT(f.id) flight_count FROM installations i LEFT JOIN aircraft_profiles a ON a.id=i.aircraft_id AND a.user_id=i.user_id LEFT JOIN flights f ON f.installation_id=i.id WHERE i.user_id=? GROUP BY i.id ORDER BY i.created_at DESC');
     $stmt->execute([$user['id']]);
     $devices = $stmt->fetchAll();
+    $stmt = nx_db()->prepare('SELECT code_hash, code_hint, created_at FROM pending_links WHERE user_id=? ORDER BY created_at DESC');
+    $stmt->execute([$user['id']]);
+    $pendingLinks = $stmt->fetchAll();
     $stmt = nx_db()->prepare('SELECT * FROM pilot_profiles WHERE user_id=?');
     $stmt->execute([$user['id']]);
     $pilotProfile = $stmt->fetch() ?: $pilotProfile;
@@ -369,10 +434,10 @@ function aircraft_label(array $row): string {
         : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     }());
   </script>
-  <?php if ($page === 'flight' && $user): ?>
+  <?php if ($page === 'flight' && ($user || $sharedView)): ?>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css" integrity="sha384-ghEeMdcWWzRv/BPeUcX835vcKDGrxvROXisl/Btpv3GeekBUXTSPVcFJpI1Tcrgp" crossorigin="anonymous">
   <?php endif ?>
-  <?php if ($user): ?><link rel="stylesheet" href="/?asset=flight-memory-css"><?php endif ?>
+  <?php if ($user || $sharedView): ?><link rel="stylesheet" href="/?asset=flight-memory-css"><?php endif ?>
   <style>
     :root{--bg:#f6f8fb;--card:#fff;--text:#1a1f36;--muted:#697386;--border:#e3e8ee;--primary:#635bff;--soft:#f0efff;--danger:#b4234d}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.top{height:68px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px}.brand-logo{display:block;width:178px;height:auto}.wrap{max-width:1100px;margin:0 auto;padding:36px 24px}.hero{margin-bottom:24px}.hero h1{font-size:28px;margin:0 0 6px}.hero p,.muted{color:var(--muted)}.card{background:var(--card);border:1px solid var(--border);border-radius:8px;margin:14px 0;overflow:hidden}.head{padding:16px 18px;border-bottom:1px solid var(--border)}.head h2{font-size:16px;margin:0}.body{padding:18px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.device,.flight{border:1px solid var(--border);border-radius:7px;padding:14px}.device strong,.flight strong{display:block}.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.row.space{justify-content:space-between}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 13px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font:600 13px inherit;text-decoration:none;cursor:pointer}.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}.btn.danger{color:var(--danger)}input{height:36px;border:1px solid var(--border);border-radius:6px;padding:0 10px;min-width:210px;background:var(--card);color:var(--text)}.notice{padding:12px 14px;border-radius:6px;background:#fff3f6;color:var(--danger);margin-bottom:16px}.login{max-width:480px;margin:80px auto}.login .btn{width:100%;margin-top:10px}.pill{display:inline-block;padding:3px 7px;border-radius:99px;background:var(--soft);color:#5147e5;font-size:11px;font-weight:600}.empty{padding:22px;color:var(--muted);text-align:center}.footer{display:flex;justify-content:center;gap:16px;margin-top:32px;color:var(--muted);font-size:12px}.footer a{color:inherit}@media(prefers-color-scheme:dark){:root{--bg:#07131f;--card:#0b1b2a;--text:#f6f9fc;--muted:#9eacba;--border:#213449;--soft:#17263c}.pill{color:#a9a4ff}.notice{background:#321826}}@media(max-width:700px){.grid{grid-template-columns:1fr}.top{padding:0 16px}.brand-logo{width:154px}.wrap{padding:24px 16px}.row.space{align-items:flex-start;flex-direction:column}input{width:100%}}
   </style>
@@ -380,6 +445,9 @@ function aircraft_label(array $row): string {
     html[data-theme="light"]{--bg:#f6f8fb;--card:#fff;--text:#1a1f36;--muted:#697386;--border:#e3e8ee;--primary:#635bff;--soft:#f0efff;--danger:#b4234d;color-scheme:light}
     html[data-theme="dark"]{--bg:#06131f;--card:#0a1c2a;--text:#eef4fa;--muted:#94a4b5;--border:#1d3445;--primary:#7b73ff;--soft:#182440;--danger:#ff7698;color-scheme:dark}
     .top-actions{display:flex;align-items:center;gap:8px}.theme-toggle{min-width:88px}.logo-for-dark{display:none}
+    .shared-banner{padding:12px 16px;border-radius:8px;background:var(--soft);color:var(--text);margin-bottom:14px;font-size:13px}.shared-banner span{font-weight:600}.shared-banner a{color:var(--primary)}
+    .share-card .body{padding:14px 18px}.share-card input[type="text"]{font-size:12px;font-family:monospace}
+    .notice.success{background:var(--soft);color:var(--text)}.link-card .body p{margin:10px 0 0}.link-card input[name="code"]{font-family:monospace;font-size:16px;letter-spacing:2px;text-transform:uppercase;min-width:160px}.pending-links{margin:12px 0 0;padding:0;list-style:none}.pending-links li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border)}.pending-links code{font-size:14px}
     html[data-theme="dark"] .logo-for-light{display:none}html[data-theme="dark"] .logo-for-dark{display:block}
   </style>
 </head>
@@ -387,6 +455,7 @@ function aircraft_label(array $row): string {
 <header class="top"><a href="/" aria-label="Stratux NX home"><img class="brand-logo logo-for-light" src="/?asset=logo-light" alt="Stratux NX"><img class="brand-logo logo-for-dark" src="/?asset=logo-dark" alt="Stratux NX"></a><div class="top-actions"><button id="theme-toggle" class="btn theme-toggle" type="button" aria-label="Switch color theme">Theme</button><?php if ($user): ?><a class="btn" href="/?action=logout">Sign out</a><?php endif ?></div></header>
 <main class="wrap">
 <?php if ($error): ?><div class="notice"><?=h($error)?></div><?php endif ?>
+<?php if ($notice): ?><div class="notice success"><?=h($notice)?></div><?php endif ?>
 <?php if ($page === 'privacy'): ?>
   <section class="hero"><h1>Privacy policy</h1><p>Last updated September 14, 2026</p></section>
   <section class="card"><div class="body">
@@ -408,14 +477,20 @@ function aircraft_label(array $row): string {
     <p>The software and services are provided without warranty to the extent permitted by their applicable terms. Stratux NX provides supplemental situational awareness only. It is not certified avionics and must not be used as the sole source for navigation, traffic avoidance, weather decisions or flight safety.</p>
     <p><a class="btn" href="/">Back to Stratux NX</a></p>
   </div></section>
-<?php elseif ($page === 'flight' && $user && $flightDetail && $flightPayload): ?>
+<?php elseif ($page === 'flight' && ($user || $sharedView) && $flightDetail && $flightPayload): ?>
   <?php
     $departure = (string)($flightPayload['DepartureAirport']['Code'] ?? $flightDetail['departure_code'] ?? '---');
     $arrival = (string)($flightPayload['ArrivalAirport']['Code'] ?? $flightDetail['arrival_code'] ?? '---');
-    $flightEndpoint = '/?' . http_build_query(['action' => 'flight-json', 'flight_id' => $flightDetail['id']]);
-    $exportBase = '/?' . http_build_query(['action' => 'flight-export', 'flight_id' => $flightDetail['id']]);
+    $endpointParams = ['action' => 'flight-json', 'flight_id' => $flightDetail['id']];
+    $exportParams = ['action' => 'flight-export', 'flight_id' => $flightDetail['id']];
+    if ($sharedView) {
+        $endpointParams['share'] = $shareToken;
+        $exportParams['share'] = $shareToken;
+    }
+    $flightEndpoint = '/?' . http_build_query($endpointParams);
+    $exportBase = '/?' . http_build_query($exportParams);
   ?>
-  <a class="memory-back" href="/">← All flights</a>
+  <?php if (!$sharedView): ?><a class="memory-back" href="/">← All flights</a><?php endif ?>
   <section class="memory-hero">
     <div>
       <h1 class="memory-route"><?=h($departure)?> → <?=h($arrival)?></h1>
@@ -427,6 +502,27 @@ function aircraft_label(array $row): string {
     </div>
   </section>
 
+  <?php if ($sharedView): ?>
+  <div class="shared-banner"><span>Shared flight</span> — viewed via a link shared by the pilot. <a href="/">Learn more about Stratux NX</a></div>
+  <?php elseif ($user): ?>
+  <section class="card share-card">
+    <div class="head row space"><div><h2>Share this flight</h2><span class="muted">Create a public link that anyone can view without signing in.</span></div></div>
+    <div class="body">
+      <?php if (!empty($flightDetail['share_token'])): ?>
+        <?php $shareUrl = NX_APP_URL . '/?page=flight&flight_id=' . rawurlencode($flightDetail['id']) . '&share=' . rawurlencode($flightDetail['share_token']); ?>
+        <div class="row space">
+          <input id="share-url" type="text" value="<?=h($shareUrl)?>" readonly onclick="this.select()" style="flex:1;min-width:0">
+          <button class="btn primary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('share-url').value).then(function(){this.textContent='Copied!'}.bind(this))">Copy link</button>
+          <form method="post" style="margin:0"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="form_action" value="unshare-flight"><input type="hidden" name="flight_id" value="<?=h($flightDetail['id'])?>"><button class="btn danger" onclick="return confirm('Stop sharing this flight? The existing link will stop working.')">Stop sharing</button></form>
+        </div>
+        <p class="muted" style="margin-top:8px">Anyone with this link can see the flight track, replay, and landing data. Private sections like your logbook and milestones are not shared.</p>
+      <?php else: ?>
+        <form method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="form_action" value="share-flight"><input type="hidden" name="flight_id" value="<?=h($flightDetail['id'])?>"><button class="btn primary">Create share link</button><span class="muted" style="margin-left:8px">This generates a unique link you can send to anyone.</span></form>
+      <?php endif ?>
+    </div>
+  </section>
+  <?php endif ?>
+
   <div class="memory-summary">
     <div><span>Block time</span><strong><?=h(duration_text((int)($flightPayload['BlockTimeSeconds'] ?? 0)))?></strong></div>
     <div><span>Maximum altitude</span><strong><?=h(metric((float)($flightPayload['MaxAltitudeFt'] ?? 0), ' ft'))?></strong></div>
@@ -434,6 +530,7 @@ function aircraft_label(array $row): string {
     <div><span>Touch-and-go</span><strong><?=intval($flightPayload['TouchAndGoCount'] ?? 0)?></strong></div>
   </div>
 
+  <?php if (!$sharedView): ?>
   <section class="card postflight-card">
     <div class="head row space"><div><h2>Postflight memory</h2><span class="muted">Flight <?=intval($flightMilestones['flight_number'] ?? 1)?> in your private history.</span></div><span class="pill"><?=h(duration_text((int)($flightMilestones['cumulative_air_time_seconds'] ?? 0)))?> remembered</span></div>
     <div class="body">
@@ -469,6 +566,7 @@ function aircraft_label(array $row): string {
       <p class="profile-note">Stratux NX estimates times and landings from recorded sensor data. Verify entries before using them in any official or regulatory logbook.</p>
     </div>
   </section>
+  <?php endif ?>
 
   <div id="flight-memory" data-flight-endpoint="<?=h($flightEndpoint)?>">
     <section class="card memory-viewer-card">
@@ -608,7 +706,17 @@ function aircraft_label(array $row): string {
 <?php elseif (!$user): ?>
   <section class="login card"><div class="head"><h2><?= $claimCode !== '' ? 'Link your Stratux NX' : 'Your Stratux NX flights' ?></h2></div><div class="body"><p class="muted"><?= $claimCode !== '' ? 'Sign in to securely link the device that sent you here. The one-time code is already included.' : 'Sign in to link one or more Stratux NX devices and see flights they have synchronized.' ?></p><?php if (nx_env('GOOGLE_CLIENT_ID') !== '' && nx_env('GOOGLE_CLIENT_SECRET') !== ''): ?><a class="btn primary" href="/?action=login-google<?= $claimCode !== '' ? '&amp;claim=' . rawurlencode($claimCode) : '' ?>">Continue with Google</a><?php endif ?><?php if (nx_env('APPLE_CLIENT_ID') !== '' && nx_env('APPLE_CLIENT_SECRET') !== ''): ?><a class="btn" href="/?action=login-apple<?= $claimCode !== '' ? '&amp;claim=' . rawurlencode($claimCode) : '' ?>">Continue with Apple</a><?php endif ?><?php if (nx_env('GOOGLE_CLIENT_ID') === '' && nx_env('APPLE_CLIENT_ID') === ''): ?><p class="muted">Account login is being configured.</p><?php endif ?><p class="muted"><a href="/?page=privacy">Privacy policy</a></p></div></section>
 <?php else: ?>
+  <?php
+  $linkCardFirst = $claimCode !== '' || !$devices;
+  $renderLinkCard = function () use ($claimCode, $pendingLinks): void { ?>
+  <section class="card link-card" id="link"><div class="head"><h2><?= $claimCode !== '' ? 'Confirm device link' : 'Link a Stratux NX' ?></h2></div><div class="body">
+    <form class="row" method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="form_action" value="claim"><input name="code" value="<?=h($claimCode)?>" placeholder="ABCD-2345" maxlength="9" autocomplete="off" autocapitalize="characters" required><button class="btn primary"><?= $claimCode !== '' ? 'Link this Stratux' : 'Link Stratux' ?></button></form>
+    <p class="muted">On the Stratux, open Flight Log and enable cloud sync: its link code is shown there. The Stratux does not need Internet right now; it links itself the next time it is online. You can link as many Stratux as you like.</p>
+    <?php if ($pendingLinks): ?><ul class="pending-links"><?php foreach ($pendingLinks as $pending): ?><li><code><?=h($pending['code_hint'])?>-••••</code><span class="muted">Waiting for this Stratux to connect · saved <?=h(gmdate('M j', (int)$pending['created_at']))?></span><form method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="code_hash" value="<?=h($pending['code_hash'])?>"><button class="btn is-quiet" name="form_action" value="cancel-pending-link">Cancel</button></form></li><?php endforeach ?></ul><?php endif ?>
+  </div></section>
+  <?php }; ?>
   <section class="hero"><h1>Flight history</h1><p><?=h($user['email'])?> · <?=count($devices)?> linked device<?=count($devices) === 1 ? '' : 's'?></p></section>
+  <?php if ($linkCardFirst) $renderLinkCard(); ?>
   <section class="pilot-memory-summary">
     <div><span>Flights</span><strong><?=intval($pilotSummary['flights'])?></strong></div>
     <div><span>Air time</span><strong><?=h(duration_text((int)$pilotSummary['air_time_seconds']))?></strong></div>
@@ -662,7 +770,7 @@ function aircraft_label(array $row): string {
     <div><span>Average flight</span><strong><?=h(duration_text((int)($pilotSummary['average_air_time_seconds'] ?? 0)))?></strong><p>Average recorded airborne time.</p></div>
     <div><span>Most flown aircraft</span><strong><?=h(($pilotSummary['top_aircraft'] ?? '') ?: 'Assign an aircraft')?></strong><p>Uses confirmed aircraft assignments.</p></div>
   </div></section>
-  <section class="card"><div class="head"><h2><?= $claimCode !== '' ? 'Confirm device link' : 'Link a Stratux NX' ?></h2></div><div class="body"><form class="row" method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="form_action" value="claim"><input name="code" value="<?=h($claimCode)?>" placeholder="ABCD-2345" maxlength="9" required><button class="btn primary"><?= $claimCode !== '' ? 'Link this device' : 'Link device' ?></button><span class="muted"><?= $claimCode !== '' ? 'The secure one-time code was supplied by your Stratux NX.' : 'Generate the one-time code from Flight Log on the device.' ?></span></form></div></section>
+  <?php if (!$linkCardFirst) $renderLinkCard(); ?>
   <section class="card"><div class="head"><h2>Pilot profile</h2></div><div class="body"><form class="profile-form" method="post"><input type="hidden" name="csrf" value="<?=h(nx_csrf_token())?>"><input type="hidden" name="form_action" value="save-pilot-profile"><label><span>Name</span><input name="display_name" value="<?=h((string)$user['name'])?>" maxlength="80" required></label><label><span>Home airport</span><input name="home_airport" value="<?=h((string)$pilotProfile['home_airport'])?>" maxlength="4" placeholder="CYUL"></label><label><span>Timezone</span><select name="timezone"><?php foreach (array_values(array_unique(array_merge(['UTC'], DateTimeZone::listIdentifiers()))) as $timezone): ?><option value="<?=h($timezone)?>" <?=$pilotProfile['timezone'] === $timezone ? 'selected' : ''?>><?=h(str_replace('_', ' ', $timezone))?></option><?php endforeach ?></select></label><button class="btn primary">Save pilot profile</button></form></div></section>
 <?php endif ?>
 <footer class="footer"><a href="/?page=privacy">Privacy</a><a href="/?page=legal">Legal</a><a href="https://github.com/lemonpot/stratux-nx">Source</a></footer>
@@ -686,7 +794,7 @@ function aircraft_label(array $row): string {
     render();
   }());
 </script>
-<?php if ($page === 'flight' && $user && $flightDetail && $flightPayload): ?>
+<?php if ($page === 'flight' && ($user || $sharedView) && $flightDetail && $flightPayload): ?>
   <script>window.CESIUM_BASE_URL='https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/';</script>
   <script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js" integrity="sha384-D1oR8FyBDsJWkPeydGJTh8nJg5/++9sqchzJuu+oGQPmgbwu3aJmoVj3BTowr6t6" crossorigin="anonymous"></script>
   <script src="/?asset=flight-memory-js"></script>
