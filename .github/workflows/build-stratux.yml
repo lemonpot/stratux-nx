@@ -109,7 +109,7 @@ jobs:
           grep -q 'dataUsageLimitKeys' stratux/main/datausage.go
           grep -q 'c.Exempt, c.LimitMB' stratux/main/datausage_wire.go
           grep -q 'applyDevicePolicy' stratux/web/plates/js/datausage.js
-          grep -q 'data-device-table' stratux/web/plates/datausage.html
+          grep -q 'nxd-devices' stratux/web/plates/datausage.html
           grep -q 'href="#/about"' stratux/web/index.html
           grep -q 'sx-sidebar-brand' stratux/web/index.html
           grep -q "state('about'" stratux/web/js/main.js
