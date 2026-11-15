@@ -6,6 +6,8 @@
 
 Enhanced flight logging, managed internet connectivity, a modern interface, offline aviation data, and next-generation attitude estimation.
 
+**[stratuxnx.com](https://stratuxnx.com)** · [Download](https://stratuxnx.com/download/) · [Guides](https://stratuxnx.com/faq/)
+
 </div>
 
 ## Overview
