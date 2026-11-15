@@ -36,7 +36,6 @@ type flightInstallationIdentity struct {
 }
 
 type flightSyncPublicState struct {
-	Enabled        bool   `json:"Enabled"`
 	InstallationID string `json:"InstallationID"`
 	Online         bool   `json:"Online"`
 	Pending        int    `json:"Pending"`
@@ -50,7 +49,6 @@ type flightSyncPublicState struct {
 }
 
 type flightSyncConfig struct {
-	Enabled      bool   `json:"Enabled"`
 	Linked       bool   `json:"Linked,omitempty"`
 	AccountName  string `json:"AccountName,omitempty"`
 	AccountEmail string `json:"AccountEmail,omitempty"`
@@ -58,7 +56,6 @@ type flightSyncConfig struct {
 
 var (
 	flightIdentity     flightInstallationIdentity
-	flightSyncEnabled  bool
 	flightSyncOnline   bool
 	flightSyncLastTry  string
 	flightSyncLastErr  string
@@ -113,7 +110,6 @@ func flightSyncInitializeLocked() {
 
 	var cfg flightSyncConfig
 	if b, err := os.ReadFile(flightSyncPath); err == nil && json.Unmarshal(b, &cfg) == nil {
-		flightSyncEnabled = cfg.Enabled
 		flightSyncLinked = cfg.Linked
 		flightSyncAccountName = cfg.AccountName
 		flightSyncAccountEmail = cfg.AccountEmail
@@ -181,7 +177,6 @@ func newFlightInstallationID() string {
 
 func saveFlightSyncConfigLocked() {
 	b, _ := json.MarshalIndent(flightSyncConfig{
-		Enabled:      flightSyncEnabled,
 		Linked:       flightSyncLinked,
 		AccountName:  flightSyncAccountName,
 		AccountEmail: flightSyncAccountEmail,
@@ -191,22 +186,14 @@ func saveFlightSyncConfigLocked() {
 	}
 }
 
-func flightSyncCompletedStatusLocked() string {
-	if flightSyncEnabled {
-		return "pending"
-	}
-	return "local"
-}
-
 func flightSyncPublicStateLocked() flightSyncPublicState {
 	pending := 0
 	for i := range flightHistory {
-		if flightHistory[i].SyncStatus == "pending" || flightHistory[i].SyncStatus == "failed" {
+		if flightHistory[i].SyncStatus != "uploaded" {
 			pending++
 		}
 	}
 	return flightSyncPublicState{
-		Enabled:        flightSyncEnabled,
 		InstallationID: flightIdentity.InstallationID,
 		Online:         flightSyncOnline,
 		Pending:        pending,
@@ -247,10 +234,12 @@ func flightSyncLoop() {
 	}
 }
 
+// Every flight not yet on the server is uploaded whenever Internet is
+// available, linked or not; linking only decides which account sees it.
 func syncPendingFlight() {
 	initializeFlightLog()
 	flightLogMu.Lock()
-	if !flightSyncEnabled || flightIdentity.InstallationID == "" {
+	if flightIdentity.InstallationID == "" {
 		flightLogMu.Unlock()
 		return
 	}
@@ -269,24 +258,39 @@ func syncPendingFlight() {
 	flightLogMu.Lock()
 	flightSyncOnline = true
 	flightSyncLastErr = ""
-	var summary *flightSummary
+	var pending []string
 	for i := range flightHistory {
-		if flightHistory[i].SyncStatus == "pending" || flightHistory[i].SyncStatus == "failed" || flightHistory[i].SyncStatus == "local" || flightHistory[i].SyncStatus == "" {
-			copy := flightHistory[i]
-			summary = &copy
+		if flightHistory[i].SyncStatus != "uploaded" {
+			pending = append(pending, flightHistory[i].ID)
+		}
+	}
+	flightLogMu.Unlock()
+
+	// A flight the server rejects must not hold back the others.
+	for _, flightID := range pending {
+		uploadPendingFlight(identity, flightID)
+	}
+}
+
+func uploadPendingFlight(identity flightInstallationIdentity, flightID string) {
+	flightLogMu.Lock()
+	found := false
+	for i := range flightHistory {
+		if flightHistory[i].ID == flightID && flightHistory[i].SyncStatus != "uploaded" {
 			flightHistory[i].SyncStatus = "uploading"
+			found = true
 			break
 		}
 	}
-	if summary == nil {
-		flightLogMu.Unlock()
+	if found {
+		saveFlightIndexLocked()
+	}
+	flightLogMu.Unlock()
+	if !found {
 		return
 	}
-	saveFlightIndexLocked()
-	flightLogMu.Unlock()
 
-	recordPath := filepath.Join(flightFilesDir, summary.ID+".json")
-	body, err := os.ReadFile(recordPath)
+	body, err := os.ReadFile(filepath.Join(flightFilesDir, flightID+".json"))
 	contentHash := ""
 	if err == nil {
 		sum := sha256.Sum256(body)
@@ -300,7 +304,7 @@ func syncPendingFlight() {
 	flightLogMu.Lock()
 	defer flightLogMu.Unlock()
 	for i := range flightHistory {
-		if flightHistory[i].ID != summary.ID {
+		if flightHistory[i].ID != flightID {
 			continue
 		}
 		if err != nil {
@@ -472,18 +476,6 @@ func handleFlightLogSync(w http.ResponseWriter, r *http.Request) {
 	}
 	flightLogMu.Lock()
 	switch request.Action {
-	case "enable":
-		flightSyncEnabled = true
-		for i := range flightHistory {
-			if flightHistory[i].SyncStatus == "" || flightHistory[i].SyncStatus == "local" {
-				flightHistory[i].SyncStatus = "pending"
-			}
-		}
-		saveFlightSyncConfigLocked()
-		saveFlightIndexLocked()
-	case "disable":
-		flightSyncEnabled = false
-		saveFlightSyncConfigLocked()
 	case "retry":
 		for i := range flightHistory {
 			if flightHistory[i].SyncStatus == "failed" {
@@ -499,9 +491,7 @@ func handleFlightLogSync(w http.ResponseWriter, r *http.Request) {
 	}
 	state := flightSyncPublicStateLocked()
 	flightLogMu.Unlock()
-	if request.Action != "disable" {
-		wakeFlightSync()
-	}
+	wakeFlightSync()
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	_ = json.NewEncoder(w).Encode(state)

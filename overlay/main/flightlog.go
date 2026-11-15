@@ -828,7 +828,7 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) bool {
 	flightCurrent.OnBlockUTC = onBlock.UTC().Format(time.RFC3339)
 	flightCurrent.Phase = flightPhaseParked
 	flightCurrent.LastUpdateUTC = sample.TimeUTC
-	flightCurrent.SyncStatus = flightSyncCompletedStatusLocked()
+	flightCurrent.SyncStatus = "pending"
 	if flightCurrent.ArrivalAirport == nil && !flightCurrent.Incomplete {
 		flightCurrent.ArrivalAirport = nearestAirportLocked(sample.Latitude, sample.Longitude, sample.AltitudeFt, 8.0)
 	}
@@ -865,9 +865,7 @@ func finishFlightLocked(onBlock time.Time, sample flightLiveGPS) bool {
 	flightTaxiBaseAltitude = 0
 	flightTaxiBaseSamples = 0
 	flightCurrentAirport = nearestAirportLocked(sample.Latitude, sample.Longitude, sample.AltitudeFt, 8.0)
-	if flightSyncEnabled {
-		wakeFlightSync()
-	}
+	wakeFlightSync()
 	stopFlightWeatherCapture(completedFlightID)
 	return true
 }

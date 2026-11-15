@@ -24,8 +24,6 @@ type WeatherMessage struct {
 
 type flightSyncPublicState struct{}
 
-var flightSyncEnabled bool
-
 var mySituation struct {
 	muGPS                 *sync.Mutex
 	GPSTime               time.Time
@@ -54,6 +52,5 @@ func appendFlightContextLocked(snapshot flightContextSnapshot) {
 }
 
 func flightSyncPublicStateLocked() flightSyncPublicState { return flightSyncPublicState{} }
-func flightSyncCompletedStatusLocked() string            { return "local" }
 func wakeFlightSync()                                    {}
 func flightSyncInitializeLocked()                        {}
