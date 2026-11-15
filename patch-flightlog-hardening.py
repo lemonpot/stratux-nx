@@ -44,21 +44,3 @@ elif new not in s:
     raise SystemExit('Could not enforce fixed-wing suitability in nearest-airport resolver')
 
 p.write_text(s)
-
-# Avoid String.padStart so older iPad Safari versions can still render Zulu times.
-p = root / 'web/plates/js/flightlog.js'
-s = p.read_text()
-if 'function pad2(value)' not in s:
-    marker = '''    function validDate(value) {'''
-    helper = '''    function pad2(value) {\n        value = String(value);\n        return value.length < 2 ? '0' + value : value;\n    }\n\n    function validDate(value) {'''
-    if marker not in s:
-        raise SystemExit('Could not add Flight Log pad2 helper')
-    s = s.replace(marker, helper, 1)
-s = s.replace("String(d.getUTCHours()).padStart(2,'0')", "pad2(d.getUTCHours())")
-s = s.replace("String(d.getUTCMinutes()).padStart(2,'0')", "pad2(d.getUTCMinutes())")
-s = s.replace("String(d.getUTCSeconds()).padStart(2,'0')", "pad2(d.getUTCSeconds())")
-s = s.replace("String(d.getUTCMonth()+1).padStart(2,'0')", "pad2(d.getUTCMonth()+1)")
-s = s.replace("String(d.getUTCDate()).padStart(2,'0')", "pad2(d.getUTCDate())")
-s = s.replace("String(m).padStart(2,'0')", "pad2(m)")
-s = s.replace("String(s).padStart(2,'0')", "pad2(s)")
-p.write_text(s)

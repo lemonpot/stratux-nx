@@ -1,36 +1,29 @@
 appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
     $scope.data = {
         Phase: 'PARKED',
-        GPS: {
-            Valid:false,
-            TimeUTC:'',
-            Latitude:0,
-            Longitude:0,
-            GroundSpeedKt:0,
-            AltitudeFt:0,
-            CourseDeg:0,
-            VerticalSpeedFps:0,
-            HorizontalAccuracyM:0
-        },
+        GPS: {Valid:false, TimeUTC:'', GroundSpeedKt:0, AltitudeFt:0, VerticalSpeedFps:0},
         Current: null,
-        CurrentTrack: [],
         CurrentAirport: null,
         Flights: [],
-        Settings: {Timezone:'UTC', AutoDetect:true},
+        Settings: {Timezone:'UTC', AutoDetect:true, AutoTimezone:true},
         AirportDatabaseReady: false,
         AirportCount: 0,
         StorageError: '',
         StopCountdownSeconds: 45,
         Sync: {Enabled:false, InstallationID:'', Online:false, Pending:0, LastError:'', Linked:false, AccountName:'', AccountEmail:''},
+        LocalTimezone: 'UTC',
+        TimezoneSource: 'fallback',
+        TimezoneDatabaseReady: false,
         StoragePath: ''
     };
-    $scope.settings = {Timezone:'UTC', AutoDetect:true};
+    $scope.settings = {Timezone:'UTC', AutoDetect:true, AutoTimezone:true};
+    $scope.settingsDraft = null;
     $scope.errorMessage = '';
     $scope.savingSettings = false;
     $scope.selectedFlight = null;
-    $scope.currentTrackPath = '';
-    $scope.selectedTrackPath = '';
     $scope.syncing = false;
+    $scope.finishing = false;
+    $scope.flightLimit = 20;
     $scope.browserTimezone = '';
     var settingsLoaded = false;
     var selectedFlightMap = null;
@@ -43,12 +36,17 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         return detail;
     }
 
+    function toast(message, type, ms) {
+        if (window.StratuxUI) window.StratuxUI.toast(message, type, ms);
+    }
+
     try {
         if (window.Intl && Intl.DateTimeFormat) {
             $scope.browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
         }
     } catch (e) {}
 
+    // String.padStart is missing on older iPad Safari versions.
     function pad2(value) {
         value = String(value);
         return value.length < 2 ? '0' + value : value;
@@ -61,56 +59,39 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
     }
 
     function timezone() {
-        return ($scope.settings && $scope.settings.Timezone) || 'UTC';
+        if ($scope.settings && $scope.settings.AutoTimezone && $scope.data && $scope.data.LocalTimezone) {
+            return $scope.data.LocalTimezone;
+        }
+        return ($scope.settings && $scope.settings.Timezone) || ($scope.data && $scope.data.LocalTimezone) || 'UTC';
     }
 
-    function localParts(value, withDate) {
+    $scope.localTimezoneLabel = function() {
+        return timezone();
+    };
+
+    function localFormat(value, opts) {
         var d = validDate(value);
-        if (!d) return '--';
+        if (!d) return null;
+        opts.timeZone = timezone();
         try {
-            var opts = withDate ? {
-                timeZone: timezone(), year:'numeric', month:'short', day:'2-digit',
-                hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
-            } : {
-                timeZone: timezone(), hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
-            };
             return new Intl.DateTimeFormat('en-CA', opts).format(d);
         } catch (e) {
-            return withDate ? d.toLocaleString() : d.toLocaleTimeString();
+            return opts.year ? d.toLocaleDateString() : d.toLocaleTimeString();
         }
     }
 
-    $scope.formatZuluClock = function(value) {
-        var d = validDate(value);
-        if (!d) return '--:--:--Z';
-        return pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ':' + pad2(d.getUTCSeconds()) + 'Z';
+    $scope.formatLocalShort = function(value) {
+        return localFormat(value, {hour:'2-digit', minute:'2-digit', hour12:false}) || '--:--';
     };
 
-    $scope.formatZuluDate = function(value) {
+    $scope.formatZuluShort = function(value) {
         var d = validDate(value);
-        if (!d) return 'Waiting for GPS time';
-        return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth()+1) + '-' + pad2(d.getUTCDate());
+        if (!d) return '--:--Z';
+        return pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + 'Z';
     };
 
-    $scope.formatZulu = function(value) {
-        var d = validDate(value);
-        if (!d) return '--';
-        return $scope.formatZuluDate(value) + ' ' + $scope.formatZuluClock(value);
-    };
-
-    $scope.formatLocalClock = function(value) { return localParts(value, false); };
-    $scope.formatLocal = function(value) { return value ? localParts(value, true) : '--'; };
     $scope.formatLocalDate = function(value) {
-        var d = validDate(value);
-        if (!d) return '--';
-        try {
-            return new Intl.DateTimeFormat('en-CA', {timeZone:timezone(), year:'numeric', month:'short', day:'2-digit'}).format(d);
-        } catch (e) { return d.toLocaleDateString(); }
-    };
-
-    $scope.dualTime = function(value) {
-        if (!value) return '--';
-        return $scope.formatZulu(value) + ' · ' + $scope.formatLocal(value);
+        return localFormat(value, {year:'numeric', month:'short', day:'2-digit'}) || '--';
     };
 
     $scope.formatDuration = function(seconds) {
@@ -126,14 +107,6 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
     $scope.formatNM = function(value) { return Number(value || 0).toFixed(1) + ' NM'; };
     $scope.formatKt = function(value) { return Math.round(Number(value || 0)) + ' kt'; };
     $scope.formatFt = function(value) { return Math.round(Number(value || 0)).toLocaleString() + ' ft'; };
-    $scope.formatNumber = function(value, decimals) {
-        var n = Number(value || 0);
-        return isFinite(n) ? n.toFixed(decimals || 0) : '--';
-    };
-    $scope.formatInteger = function(value) {
-        var n = Number(value || 0);
-        return isFinite(n) ? Math.round(n).toLocaleString() : '--';
-    };
 
     $scope.formatVerticalSpeed = function(fps) {
         var fpm = Number(fps || 0) * 60;
@@ -143,86 +116,7 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         return (rounded > 0 ? '+' : '') + rounded.toLocaleString() + ' fpm';
     };
 
-    $scope.verticalSpeedClass = function(fps) {
-        var fpm = Number(fps || 0) * 60;
-        if (fpm > 100) return 'climb';
-        if (fpm < -100) return 'descent';
-        return 'level';
-    };
-
-    $scope.verticalSpeedHint = function(fps) {
-        var fpm = Number(fps || 0) * 60;
-        if (fpm > 100) return 'Climbing';
-        if (fpm < -100) return 'Descending';
-        return 'Level / stable';
-    };
-
-    $scope.formatCourse = function(value) {
-        var deg = Number(value || 0);
-        if (!isFinite(deg)) return '---°';
-        deg = ((deg % 360) + 360) % 360;
-        var rounded = Math.round(deg);
-        if (rounded === 0) rounded = 360;
-        var text = String(rounded);
-        while (text.length < 3) text = '0' + text;
-        return text + '°T';
-    };
-
-    $scope.cardinalCourse = function(value) {
-        var deg = Number(value || 0);
-        if (!isFinite(deg)) return 'Waiting for track';
-        deg = ((deg % 360) + 360) % 360;
-        var names = ['N','NE','E','SE','S','SW','W','NW'];
-        return names[Math.round(deg / 45) % 8] + ' · GPS true course';
-    };
-
-    $scope.formatAccuracy = function(value) {
-        var m = Number(value || 0);
-        if (!isFinite(m) || m <= 0) return '--';
-        if (m < 10) return m.toFixed(1) + ' m';
-        return Math.round(m) + ' m';
-    };
-
-    $scope.accuracyClass = function(value) {
-        var m = Number(value || 0);
-        if (!isFinite(m) || m <= 0) return 'accuracy-unknown';
-        if (m <= 15) return 'accuracy-good';
-        if (m <= 50) return 'accuracy-warn';
-        return 'accuracy-bad';
-    };
-
-    $scope.accuracyHint = function(value) {
-        var m = Number(value || 0);
-        if (!isFinite(m) || m <= 0) return 'Accuracy unavailable';
-        if (m <= 15) return 'Strong position solution';
-        if (m <= 50) return 'Usable position solution';
-        return 'Low precision';
-    };
-
-    $scope.formatCoordinate = function(value, axis) {
-        var n = Number(value);
-        if (!isFinite(n)) return '--';
-        var suffix;
-        if (axis === 'lat') suffix = n >= 0 ? 'N' : 'S';
-        else suffix = n >= 0 ? 'E' : 'W';
-        return Math.abs(n).toFixed(6) + '° ' + suffix;
-    };
-
     $scope.airportCode = function(a) { return a && a.Code ? a.Code : '---'; };
-    $scope.airportName = function(a) {
-        if (!a) return '';
-        var parts = [];
-        if (a.Name) parts.push(a.Name);
-        if (a.Municipality) parts.push(a.Municipality);
-        return parts.join(' · ');
-    };
-
-    $scope.airportDistance = function(a) {
-        if (!a) return 'No nearby airport resolved';
-        var d = Number(a.DistanceNM || 0);
-        if (d > 0) return d.toFixed(1) + ' NM · ' + (a.Name || 'airport');
-        return a.Name || 'Airport resolved';
-    };
 
     $scope.phaseLabel = function(phase) {
         switch (phase) {
@@ -233,72 +127,43 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         }
     };
 
-    $scope.phaseHint = function(phase) {
-        switch (phase) {
-            case 'TAXI_OUT': return 'Flight session started; waiting for takeoff';
-            case 'AIRBORNE': return 'Air time is running';
-            case 'TAXI_IN': return 'Landing detected; waiting for parking';
-            default: return 'Waiting for sustained movement';
-        }
-    };
-
     $scope.phaseClass = function(phase) {
         if (phase === 'AIRBORNE') return 'airborne';
         if (phase === 'TAXI_OUT' || phase === 'TAXI_IN') return 'taxi';
         return 'parked';
     };
 
+    $scope.statusHint = function() {
+        var d = $scope.data;
+        if (d.Current) return 'Flight in progress';
+        if (!d.GPS.Valid) return 'Waiting for GPS';
+        if (!$scope.settings.AutoDetect) return 'Automatic detection is off';
+        if (d.CurrentAirport) return 'At ' + d.CurrentAirport.Code + (d.CurrentAirport.Name ? ' · ' + d.CurrentAirport.Name : '');
+        return 'A flight starts by itself when you taxi';
+    };
+
+    $scope.syncSummary = function() {
+        var sync = $scope.data.Sync || {};
+        var pending = Number(sync.Pending || 0);
+        if (!pending) return 'All flights uploaded';
+        var text = pending + (pending === 1 ? ' flight' : ' flights') + ' waiting to upload';
+        return sync.Online ? text : text + ' · uploads when Internet is available';
+    };
+
     $scope.syncStatusLabel = function(status) {
         switch (status) {
             case 'uploaded': return 'Cloud';
             case 'uploading': return 'Uploading';
-            case 'pending': return 'Pending';
             case 'failed': return 'Retry needed';
             default: return 'Pending';
         }
     };
 
     $scope.syncStatusClass = function(status) {
-        if (status === 'uploaded') return 'uploaded';
-        if (status === 'failed') return 'failed';
-        return 'pending';
+        if (status === 'uploaded') return 'ok';
+        if (status === 'failed') return 'bad';
+        return 'muted';
     };
-
-    function buildTrack(points) {
-        points = points || [];
-        if (points.length < 2) return {path:'', start:null, end:null};
-        var minLat=Infinity,maxLat=-Infinity,minLon=Infinity,maxLon=-Infinity;
-        angular.forEach(points, function(p){
-            var lat=Number(p.Latitude), lon=Number(p.Longitude);
-            if (!isFinite(lat) || !isFinite(lon)) return;
-            minLat=Math.min(minLat,lat); maxLat=Math.max(maxLat,lat);
-            minLon=Math.min(minLon,lon); maxLon=Math.max(maxLon,lon);
-        });
-        var latSpan=Math.max(0.001,maxLat-minLat), lonSpan=Math.max(0.001,maxLon-minLon);
-        var pad=35, w=1000-pad*2, h=360-pad*2;
-        var coords=[];
-        angular.forEach(points,function(p){
-            var x=pad+((Number(p.Longitude)-minLon)/lonSpan)*w;
-            var y=pad+(1-((Number(p.Latitude)-minLat)/latSpan))*h;
-            coords.push({x:x,y:y});
-        });
-        var str=coords.map(function(c){return c.x.toFixed(1)+','+c.y.toFixed(1);}).join(' ');
-        return {path:str,start:coords[0],end:coords[coords.length-1]};
-    }
-
-    function updateCurrentTrack() {
-        var t=buildTrack($scope.data.CurrentTrack || []);
-        $scope.currentTrackPath=t.path;
-        $scope.currentTrackStart=t.start;
-        $scope.currentTrackEnd=t.end;
-    }
-
-    function updateSelectedTrack() {
-        var t=buildTrack(($scope.selectedFlight && $scope.selectedFlight.Track) || []);
-        $scope.selectedTrackPath=t.path;
-        $scope.selectedTrackStart=t.start;
-        $scope.selectedTrackEnd=t.end;
-    }
 
     function destroySelectedFlightMap() {
         if (selectedFlightMap) {
@@ -359,39 +224,48 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
 
     $scope.refresh = function() {
         $http.get('/flightLog', {cache:false}).then(function(response) {
-            var d=response.data || {};
-            d.GPS=d.GPS || {Valid:false};
-            d.Flights=d.Flights || [];
-            d.CurrentTrack=d.CurrentTrack || [];
-            $scope.data=d;
+            var d = response.data || {};
+            d.GPS = d.GPS || {Valid:false};
+            d.Flights = d.Flights || [];
+            d.Sync = d.Sync || {};
+            $scope.data = d;
             if (!settingsLoaded && d.Settings) {
-                $scope.settings=angular.copy(d.Settings);
-                settingsLoaded=true;
+                $scope.settings = angular.copy(d.Settings);
+                settingsLoaded = true;
             }
-            updateCurrentTrack();
-            $scope.errorMessage='';
+            $scope.errorMessage = '';
         }, function(response) {
-            $scope.errorMessage='Unable to read the flight logger: ' + responseMessage(response, 'service unavailable');
+            $scope.errorMessage = 'Unable to read the flight logger: ' + responseMessage(response, 'service unavailable');
         });
     };
 
-    $scope.useBrowserTimezone = function() {
-        if ($scope.browserTimezone) $scope.settings.Timezone=$scope.browserTimezone;
+    $scope.openSettings = function() {
+        $scope.settingsDraft = angular.copy($scope.settings);
+        if ($scope.settingsDraft.AutoTimezone === undefined) $scope.settingsDraft.AutoTimezone = true;
+    };
+
+    $scope.closeSettings = function() {
+        $scope.settingsDraft = null;
     };
 
     $scope.saveSettings = function() {
-        $scope.savingSettings=true;
-        $http.post('/flightLog/settings', {
-            Timezone: ($scope.settings.Timezone || 'UTC').trim(),
-            AutoDetect: !!$scope.settings.AutoDetect
-        }).then(function() {
-            $scope.savingSettings=false;
-            $scope.errorMessage='';
-            if (window.StratuxUI) window.StratuxUI.toast('Flight Log settings saved','success',1800);
+        var draft = $scope.settingsDraft;
+        if (!draft || $scope.savingSettings) return;
+        var payload = {
+            Timezone: (draft.Timezone || 'UTC').trim(),
+            AutoDetect: !!draft.AutoDetect,
+            AutoTimezone: draft.AutoTimezone !== false
+        };
+        $scope.savingSettings = true;
+        $http.post('/flightLog/settings', payload).then(function() {
+            $scope.savingSettings = false;
+            $scope.settings = payload;
+            $scope.settingsDraft = null;
+            toast('Flight Log settings saved', 'success', 1800);
             $scope.refresh();
         }, function(response) {
-            $scope.savingSettings=false;
-            $scope.errorMessage='Could not save Flight Log settings: ' + responseMessage(response, 'unknown error');
+            $scope.savingSettings = false;
+            toast('Could not save settings: ' + responseMessage(response, 'unknown error'), 'error', 4200);
         });
     };
 
@@ -401,61 +275,63 @@ appControllers.controller('FlightLogCtrl', function($scope, $http, $interval) {
         $http.post('/flightLog/sync', {action:action}).then(function(response) {
             $scope.syncing = false;
             $scope.data.Sync = response.data || $scope.data.Sync;
-            if (window.StratuxUI) {
-                var message = $scope.data.Sync.Online ? 'Uploading every flight not yet in the cloud' : 'No Internet now. Flights stay on this device and upload automatically later.';
-                window.StratuxUI.toast(message, 'success', 4200);
-            }
+            var message = $scope.data.Sync.Online ? 'Uploading every flight not yet in the cloud' : 'No Internet now. Flights stay on this device and upload automatically later.';
+            toast(message, 'success', 4200);
             $scope.refresh();
         }, function(response) {
             $scope.syncing = false;
-            $scope.errorMessage = 'Could not update cloud sync: ' + responseMessage(response, 'service unavailable');
+            toast('Could not sync: ' + responseMessage(response, 'service unavailable'), 'error', 4200);
         });
     };
 
     $scope.selectFlight = function(flight) {
         if (!flight || !flight.ID) return;
         $http.get('/flightLog/flight?id=' + encodeURIComponent(flight.ID), {cache:false}).then(function(response) {
-            $scope.selectedFlight=response.data || null;
-            updateSelectedTrack();
-            window.setTimeout(function(){
-                renderSelectedFlightMap();
-                var el=document.querySelector('.flightlog-panel:last-of-type');
-                if (el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'});
-            },50);
+            $scope.selectedFlight = response.data || null;
+            window.setTimeout(renderSelectedFlightMap, 50);
         }, function(response) {
-            $scope.errorMessage='Could not open this flight: ' + responseMessage(response, 'unknown error');
+            toast('Could not open this flight: ' + responseMessage(response, 'unknown error'), 'error', 4200);
         });
     };
 
     $scope.closeSelected = function() {
         destroySelectedFlightMap();
-        $scope.selectedFlight=null;
-        $scope.selectedTrackPath='';
+        $scope.selectedFlight = null;
     };
 
     $scope.finishFlight = function() {
-        if (!window.confirm('Finish the current flight now? Stratux NX will use the current GPS time as the end of the flight.')) return;
-        $http.post('/flightLog/action', {action:'finish'}).then(function(){
-            if (window.StratuxUI) window.StratuxUI.toast('Flight saved','success',1800);
+        if ($scope.finishing) return;
+        if (!window.confirm('End the current flight now? The current GPS time is saved as the end of the flight.')) return;
+        $scope.finishing = true;
+        $http.post('/flightLog/action', {action:'finish'}).then(function() {
+            $scope.finishing = false;
+            toast('Flight saved', 'success', 1800);
             $scope.refresh();
-        }, function(response){
-            $scope.errorMessage='Could not finish the flight: ' + responseMessage(response, 'unknown error');
+        }, function(response) {
+            $scope.finishing = false;
+            toast('Could not end the flight: ' + responseMessage(response, 'unknown error'), 'error', 5000);
         });
     };
 
     $scope.discardFlight = function() {
-        if (!window.confirm('Discard the current flight? This removes the unsaved current track.')) return;
-        $http.post('/flightLog/action', {action:'discard'}).then(function(){
+        if (!window.confirm('Discard the current flight? It will not be saved or uploaded.')) return;
+        $http.post('/flightLog/action', {action:'discard'}).then(function() {
+            toast('Flight discarded', 'info', 1800);
             $scope.refresh();
-        }, function(response){
-            $scope.errorMessage='Could not discard the flight: ' + responseMessage(response, 'unknown error');
+        }, function(response) {
+            toast('Could not discard the flight: ' + responseMessage(response, 'unknown error'), 'error', 4200);
         });
     };
 
     $scope.refresh();
-    var timer=$interval($scope.refresh,1000);
-    $scope.$on('$destroy',function(){
+    var timer = $interval($scope.refresh, 1000);
+    $scope.$on('$destroy', function() {
         $interval.cancel(timer);
         destroySelectedFlightMap();
+        // Mobile Angular UI keeps yielded modal content after the page is left.
+        angular.forEach(document.querySelectorAll('.nxf-modal'), function(el) {
+            var modal = el.closest('.modal');
+            if (modal) angular.element(modal).remove();
+        });
     });
 });
