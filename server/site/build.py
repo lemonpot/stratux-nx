@@ -6,6 +6,7 @@ Usage: python3 build.py OUTPUT_DIR
 Each file in pages/ starts with a one-line JSON comment:
 <!--{"path": "/download/", "title": "...", "description": "...", "crumb": "Download"}-->
 The rest of the file is placed inside layout.html.
+Files in public/ (e.g. search engine verification files) are copied to the site root as-is.
 """
 import datetime
 import html
@@ -48,6 +49,8 @@ def build(out):
     if out.exists():
         shutil.rmtree(out)
     shutil.copytree(ROOT / "assets", out / "assets")
+    for extra in (ROOT / "public").iterdir():
+        shutil.copy(extra, out / extra.name)
     layout = (ROOT / "layout.html").read_text()
     today = datetime.date.today().isoformat()
     version = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M")
