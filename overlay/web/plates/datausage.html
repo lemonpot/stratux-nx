@@ -1,267 +1,191 @@
 <div class="col-sm-12 data-usage-page" ng-cloak>
-  <div class="data-page-toolbar">
-    <div>
-      <strong>Internet use in this session</strong>
-      <p>See what is using data and decide when each connected device should pause.</p>
-    </div>
-    <div class="data-page-actions">
-      <div class="data-connection-pill is-online" ng-if="data.WANOnline">
-        <span class="data-dot"></span>
-        Internet connected
-      </div>
-      <div class="data-connection-pill is-offline" ng-if="!data.WANOnline">
-        <span class="data-dot"></span>
-        No Internet connection
-      </div>
-      <button class="btn btn-default data-secondary-action" ng-click="resetSession()" ng-disabled="resetPending">
-        <i class="fa" ng-class="resetPending ? 'fa-circle-o-notch fa-spin' : 'fa-refresh'"></i>
-        {{resetPending ? 'Starting…' : 'Start new session'}}
-      </button>
-    </div>
-  </div>
-
-  <div class="data-feedback" ng-class="'is-' + feedbackType" ng-if="feedbackMessage" role="status" aria-live="polite">
-    <i class="fa fa-check-circle"></i>
-    <span>{{feedbackMessage}}</span>
-  </div>
-
-  <div class="data-alert data-alert-danger" ng-if="data.SessionLimitReached">
-    <i class="fa fa-pause-circle"></i>
-    <div>
-      <strong>The session limit was reached.</strong>
-      <span>Internet was paused for protected devices. Start a new session to reset usage and restore automatic blocks.</span>
-    </div>
-  </div>
-
   <div class="data-error" ng-if="errorMessage">
     <i class="fa fa-exclamation-triangle"></i>
     <span>{{errorMessage}}</span>
   </div>
 
-  <div class="data-summary-grid">
-    <div class="data-stat-card data-stat-primary">
-      <div class="data-stat-label">Used this session</div>
-      <div class="data-stat-value">{{formatBytes(data.TotalBytes)}}</div>
-      <div class="data-stat-sub">Started {{formatTime(data.SessionStart)}}</div>
-    </div>
-    <div class="data-stat-card">
-      <div class="data-stat-label">Remaining before pause</div>
-      <div class="data-stat-value">{{formatBytes(remainingBytes())}}</div>
-      <div class="data-stat-sub">Session limit: {{settings.SessionLimitMB}} MB</div>
-    </div>
-    <div class="data-stat-card">
-      <div class="data-stat-label">Using now</div>
-      <div class="data-stat-value">{{formatRate(data.DownloadBps + data.UploadBps)}}</div>
-      <div class="data-stat-sub">{{formatRate(data.DownloadBps)}} down · {{formatRate(data.UploadBps)}} up</div>
-    </div>
-    <div class="data-stat-card">
-      <div class="data-stat-label">Session time</div>
-      <div class="data-stat-value data-stat-time">{{formatDuration(data.SessionSeconds)}}</div>
-      <div class="data-stat-sub">{{data.MonitoringActive ? 'Monitoring automatically' : 'Monitor starting'}}</div>
+  <div class="data-alert data-alert-danger" ng-if="data.SessionLimitReached">
+    <i class="fa fa-pause-circle"></i>
+    <div>
+      <strong>Session limit reached</strong>
+      <span>Internet is paused for devices that follow the limits. Start a new session to resume.</span>
     </div>
   </div>
 
-  <section class="data-panel data-protection-panel">
-    <div class="data-panel-header data-protection-header">
+  <section class="nxd-card nxd-status">
+    <div class="nxd-online" ng-class="data.WANOnline ? 'is-online' : 'is-offline'">
+      <span class="nxd-dot"></span>
       <div>
-        <h3>Automatic data protection</h3>
-        <div class="data-muted">Stratux NX can warn you and pause Internet before an unexpected download uses the whole data plan.</div>
+        <strong>{{data.WANOnline ? 'Internet connected' : 'No Internet'}}</strong>
+        <small ng-if="data.WANOnline">{{formatRate(data.DownloadBps + data.UploadBps)}} right now</small>
+        <small ng-if="!data.WANOnline">Stratux NX keeps working without it</small>
       </div>
-      <button class="data-toggle" type="button"
-              ng-class="{'is-on': settings.AutoBlockEnabled}"
-              ng-click="toggleProtection()"
-              ng-disabled="protectionPending || savingSettings"
-              aria-pressed="{{settings.AutoBlockEnabled}}">
-        <span class="data-toggle-track"><span></span></span>
-        <span>{{settings.AutoBlockEnabled ? 'Protection on' : 'Protection off'}}</span>
-      </button>
     </div>
 
-    <div class="data-protection-state" ng-class="{'is-off': !settings.AutoBlockEnabled}">
-      <i class="fa" ng-class="settings.AutoBlockEnabled ? 'fa-shield' : 'fa-info-circle'"></i>
-      <span ng-if="settings.AutoBlockEnabled">Limits are active. Local access to Stratux NX and ForeFlight is never blocked.</span>
-      <span ng-if="!settings.AutoBlockEnabled">Usage is still measured, but Stratux NX will not pause any device automatically.</span>
-    </div>
-
-    <div class="data-limit-progress-wrap">
-      <div class="data-limit-head">
-        <span>Session usage</span>
-        <strong>{{formatBytes(data.TotalBytes)}} of {{settings.SessionLimitMB}} MB</strong>
+    <div class="nxd-usage">
+      <div class="nxd-usage-head">
+        <span>Used this session</span>
+        <strong>{{formatBytes(data.TotalBytes)}}<small ng-if="settings.AutoBlockEnabled"> of {{formatMB(settings.SessionLimitMB)}}</small></strong>
       </div>
-      <div class="data-progress-track" aria-label="Session usage">
+      <div class="data-progress-track" ng-if="settings.AutoBlockEnabled">
         <div class="data-progress-bar" ng-class="limitProgressClass()" ng-style="{'width': sessionPercent() + '%'}"></div>
       </div>
-      <div class="data-progress-caption">{{sessionPercent() | number:0}}% used</div>
-    </div>
-
-    <div class="data-limit-steps">
-      <label class="data-limit-step">
-        <span class="data-step-number">1</span>
-        <span class="data-step-copy">
-          <strong>Show a warning</strong>
-          <small>Tell me when one device reaches this amount.</small>
-        </span>
-        <span class="data-simple-input"><input type="number" min="1" ng-model="settings.WarningMB"><b>MB</b></span>
-      </label>
-      <label class="data-limit-step">
-        <span class="data-step-number">2</span>
-        <span class="data-step-copy">
-          <strong>Pause that device</strong>
-          <small>Default limit for each device unless you choose another below.</small>
-        </span>
-        <span class="data-simple-input"><input type="number" min="1" ng-model="settings.AutoBlockMB"><b>MB</b></span>
-      </label>
-      <label class="data-limit-step">
-        <span class="data-step-number">3</span>
-        <span class="data-step-copy">
-          <strong>Pause all protected devices</strong>
-          <small>Maximum total usage for this Internet session.</small>
-        </span>
-        <span class="data-simple-input"><input type="number" min="1" ng-model="settings.SessionLimitMB"><b>MB</b></span>
-      </label>
-    </div>
-
-    <div class="data-panel-footer">
-      <span>Use MB for precise control. 1 GB equals 1024 MB.</span>
-      <button class="btn btn-primary data-save-protection" ng-click="saveSettings()" ng-disabled="savingSettings">
-        <i class="fa" ng-class="savingSettings ? 'fa-circle-o-notch fa-spin' : 'fa-check'"></i>
-        {{savingSettings ? 'Saving…' : 'Save protection settings'}}
-      </button>
+      <div class="nxd-usage-foot">
+        <span>Started {{formatDuration(data.SessionSeconds)}} ago</span>
+        <button type="button" class="nxd-link" ng-click="resetSession()" ng-disabled="resetPending">
+          {{resetPending ? 'Starting…' : 'Start new session'}}
+        </button>
+      </div>
     </div>
   </section>
 
-  <section class="data-panel">
-    <div class="data-panel-header">
-      <div>
-        <h3>Connected devices</h3>
-        <div class="data-muted">Give every iPad, phone or computer its own limit. Pausing Internet never disconnects it from Stratux NX. Tap a device to change its limit.</div>
-      </div>
-      <button class="btn btn-default data-secondary-action" ng-click="refresh()" ng-disabled="refreshPending">
-        <i class="fa" ng-class="refreshPending ? 'fa-circle-o-notch fa-spin' : 'fa-refresh'"></i>
-        {{refreshPending ? 'Updating…' : 'Refresh'}}
-      </button>
+  <section class="nxd-card nxd-limits">
+    <button type="button" class="nxd-switch" role="switch" aria-checked="{{settings.AutoBlockEnabled}}"
+            ng-class="{'is-on': settings.AutoBlockEnabled}"
+            ng-click="toggleProtection()" ng-disabled="protectionPending || savingSettings">
+      <span></span>
+    </button>
+    <div class="nxd-limits-text">
+      <strong>Automatic limits {{settings.AutoBlockEnabled ? 'on' : 'off'}}</strong>
+      <span ng-if="settings.AutoBlockEnabled">Each device pauses at <b>{{formatMB(settings.AutoBlockMB)}}</b>, everyone at <b>{{formatMB(settings.SessionLimitMB)}}</b> per session.</span>
+      <span ng-if="!settings.AutoBlockEnabled">Usage is measured, but nothing is paused.</span>
+    </div>
+    <button type="button" class="btn btn-default nxd-btn" ng-click="openLimits()">Edit</button>
+  </section>
+
+  <section class="nxd-card nxd-devices">
+    <div class="nxd-devices-head">
+      <h3>Devices</h3>
+      <span>Follows limits</span>
     </div>
 
-    <div class="data-empty" ng-if="!data.Clients || data.Clients.length === 0">
+    <div class="data-empty" ng-if="!deviceRows.length">
       <i class="fa fa-wifi"></i>
-      <strong>No devices connected yet</strong>
+      <strong>No devices yet</strong>
       <span>Connect an iPad, phone or computer to the Stratux NX Wi-Fi.</span>
     </div>
 
-    <table class="data-device-table" ng-if="data.Clients.length">
-      <thead>
-        <tr>
-          <th>Device</th>
-          <th class="text-right">Used</th>
-          <th class="text-right hidden-xs">Now</th>
-          <th class="text-right">Limit</th>
-          <th>Internet</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr ng-repeat="client in data.Clients | orderBy:['!Connected','-TotalBytes']"
-            ng-class="{'is-blocked': client.Blocked, 'is-unlimited': client.Exempt}"
-            ng-click="selectClient(client)">
-          <td>
-            <strong>{{client.Hostname || 'Unknown'}}</strong>
-            <small class="data-device-ip">{{client.IP}}</small>
-          </td>
-          <td class="text-right"><strong>{{formatBytes(client.TotalBytes)}}</strong></td>
-          <td class="text-right hidden-xs">{{formatRate(client.DownloadBps + client.UploadBps)}}</td>
-          <td class="text-right">{{client.Exempt ? '∞' : (deviceLimitMB(client) + ' MB')}}</td>
-          <td>
-            <span class="data-inet-badge" ng-class="{'is-paused': client.Blocked, 'is-ok': !client.Blocked && !client.Exempt, 'is-free': client.Exempt}">
-              {{client.Blocked ? 'Paused' : (client.Exempt ? 'No limit' : 'OK')}}
-            </span>
-          </td>
-          <td class="data-device-row-actions">
-            <button class="btn btn-xs" ng-class="client.Blocked ? 'btn-success' : 'data-pause-btn'"
-                    ng-click="toggleBlock(client); $event.stopPropagation()" ng-disabled="client.actionPending">
-              <i class="fa" ng-class="client.actionPending ? 'fa-circle-o-notch fa-spin' : (client.Blocked ? 'fa-play' : 'fa-pause')"></i>
+    <div class="nxd-device" ng-repeat="row in deviceRows track by row.key"
+         ng-class="{'is-offline': !row.client.Connected, 'is-paused': row.client.Blocked, 'is-unknown': !row.known}">
+      <button type="button" class="nxd-device-main" ng-click="openDevice(row)">
+        <span class="nxd-device-name">{{row.name}}</span>
+        <span class="nxd-device-sub">{{deviceSummary(row)}}</span>
+      </button>
+      <button type="button" class="nxd-paused" ng-if="row.client.Blocked" ng-click="toggleBlock(row.client)" ng-disabled="row.client.actionPending">
+        Paused · Resume
+      </button>
+      <button type="button" class="nxd-switch" role="switch" aria-checked="{{!row.client.Exempt}}"
+              ng-class="{'is-on': !row.client.Exempt}"
+              ng-click="setFollowsLimits(row.client, row.client.Exempt)"
+              ng-disabled="!row.known || policyDraft(row.client).pending">
+        <span></span>
+      </button>
+    </div>
+  </section>
+
+  <section class="nxd-card nxd-more">
+    <button type="button" class="nxd-more-toggle" ng-click="showFlows = !showFlows">
+      <span>
+        <strong>Where the data went</strong>
+        <small>Apps and services that used data this session</small>
+      </span>
+      <i class="fa" ng-class="showFlows ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+    </button>
+  </section>
+  <div ng-if="showFlows" ng-include="'plates/datausage_flows.html'"></div>
+</div>
+
+<div ui-content-for="modals">
+  <div class="modal" ng-if="limitsDraft">
+    <div class="modal-overlay"></div>
+    <div class="vertical-alignment-helper center-block">
+      <div class="modal-dialog vertical-align-center">
+        <div class="modal-content nxd-modal">
+          <div class="modal-header">
+            <button type="button" class="close" ng-click="closeLimits()"></button>
+            <h4 class="modal-title">Data limits</h4>
+          </div>
+          <div class="modal-body">
+            <label class="nxd-field">
+              <span><strong>Pause a device after</strong><small>Each device, per session</small></span>
+              <span class="data-simple-input"><input type="number" min="1" ng-model="limitsDraft.AutoBlockMB"><b>MB</b></span>
+            </label>
+            <label class="nxd-field">
+              <span><strong>Pause everyone after</strong><small>All devices together, per session</small></span>
+              <span class="data-simple-input"><input type="number" min="1" ng-model="limitsDraft.SessionLimitMB"><b>MB</b></span>
+            </label>
+            <label class="nxd-field">
+              <span><strong>Warn me at</strong><small>When one device reaches this amount</small></span>
+              <span class="data-simple-input"><input type="number" min="1" ng-model="limitsDraft.WarningMB"><b>MB</b></span>
+            </label>
+            <p class="nxd-note">A session starts when Stratux NX turns on or when you press “Start new session”. 1 GB = 1024 MB.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" ng-click="closeLimits()">Cancel</button>
+            <button type="button" class="btn btn-primary" ng-click="saveLimits()" ng-disabled="savingSettings">
+              {{savingSettings ? 'Saving…' : 'Save'}}
             </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="data-device-detail" ng-if="selectedClient">
-      <div class="data-device-detail-header">
-        <strong>{{selectedClient.Hostname || 'Unknown device'}}</strong>
-        <small>{{selectedClient.IP}} <span ng-if="selectedClient.MAC">· {{selectedClient.MAC}}</span></small>
-        <button class="btn btn-xs btn-default" ng-click="selectClient(null)"><i class="fa fa-times"></i></button>
-      </div>
-      <div class="data-device-detail-body">
-        <div class="data-policy-options">
-          <button type="button" class="data-policy-option"
-                  ng-class="{'is-selected': policyDraft(selectedClient).mode === 'standard'}"
-                  ng-click="chooseDevicePolicy(selectedClient, 'standard')"
-                  ng-disabled="policyDraft(selectedClient).pending">
-            <i class="fa fa-shield"></i>
-            <span><strong>Standard</strong><small>{{settings.AutoBlockMB}} MB</small></span>
-          </button>
-          <button type="button" class="data-policy-option"
-                  ng-class="{'is-selected': policyDraft(selectedClient).mode === 'custom'}"
-                  ng-click="chooseDevicePolicy(selectedClient, 'custom')"
-                  ng-disabled="policyDraft(selectedClient).pending">
-            <i class="fa fa-sliders"></i>
-            <span><strong>Custom</strong><small>Choose amount</small></span>
-          </button>
-          <button type="button" class="data-policy-option"
-                  ng-class="{'is-selected': policyDraft(selectedClient).mode === 'unlimited'}"
-                  ng-click="chooseDevicePolicy(selectedClient, 'unlimited')"
-                  ng-disabled="policyDraft(selectedClient).pending">
-            <i class="fa fa-unlock"></i>
-            <span><strong>No limit</strong><small>Never auto-pause</small></span>
-          </button>
-        </div>
-        <div class="data-custom-limit" ng-if="policyDraft(selectedClient).mode === 'custom'">
-          <label>Pause after</label>
-          <span class="data-simple-input"><input type="number" min="1" ng-model="policyDraft(selectedClient).limitMB"><b>MB</b></span>
-          <button class="btn btn-primary btn-sm" ng-click="applyDevicePolicy(selectedClient)" ng-disabled="policyDraft(selectedClient).pending">
-            {{policyDraft(selectedClient).pending ? 'Applying…' : 'Apply'}}
-          </button>
-        </div>
-        <div class="data-device-detail-actions">
-          <button class="btn btn-default btn-sm" ng-click="saveDevice(selectedClient)" ng-if="!isDeviceSaved(selectedClient.MAC)" ng-disabled="!selectedClient.MAC">
-            <i class="fa fa-bookmark-o"></i> Remember
-          </button>
-          <button class="btn btn-default btn-sm is-saved" ng-if="isDeviceSaved(selectedClient.MAC)" disabled>
-            <i class="fa fa-bookmark"></i> Remembered
-          </button>
+          </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <div ng-include="'plates/datausage_flows.html'"></div>
+  <div class="modal" ng-if="deviceEdit">
+    <div class="modal-overlay"></div>
+    <div class="vertical-alignment-helper center-block">
+      <div class="modal-dialog vertical-align-center">
+        <div class="modal-content nxd-modal">
+          <div class="modal-header">
+            <button type="button" class="close" ng-click="closeDevice()"></button>
+            <h4 class="modal-title">{{deviceEdit.title}}</h4>
+          </div>
+          <div class="modal-body">
+            <p class="nxd-device-meta">
+              {{deviceEdit.client.IP}}<span ng-if="deviceEdit.client.MAC"> · {{deviceEdit.client.MAC}}</span>
+              <span ng-if="deviceEdit.known"> · {{formatBytes(deviceEdit.client.TotalBytes)}} this session</span>
+            </p>
 
-  <section class="data-panel">
-    <div class="data-panel-header">
-      <div>
-        <h3>Remembered devices</h3>
-        <div class="data-muted">Friendly names for devices you regularly use with Stratux NX.</div>
+            <div ng-if="deviceEdit.known">
+              <div class="nxd-label">Internet limit</div>
+              <div class="data-policy-options">
+                <button type="button" class="data-policy-option" ng-class="{'is-selected': deviceEdit.mode === 'standard'}" ng-click="deviceEdit.mode = 'standard'">
+                  <span><strong>Standard</strong><small>{{formatMB(settings.AutoBlockMB)}}</small></span>
+                </button>
+                <button type="button" class="data-policy-option" ng-class="{'is-selected': deviceEdit.mode === 'custom'}" ng-click="deviceEdit.mode = 'custom'">
+                  <span><strong>Custom</strong><small>Choose amount</small></span>
+                </button>
+                <button type="button" class="data-policy-option" ng-class="{'is-selected': deviceEdit.mode === 'unlimited'}" ng-click="deviceEdit.mode = 'unlimited'">
+                  <span><strong>No limit</strong><small>Never paused</small></span>
+                </button>
+              </div>
+              <label class="nxd-field" ng-if="deviceEdit.mode === 'custom'">
+                <span><strong>Pause after</strong></span>
+                <span class="data-simple-input"><input type="number" min="1" ng-model="deviceEdit.limitMB"><b>MB</b></span>
+              </label>
+            </div>
+
+            <label class="nxd-field" ng-if="deviceEdit.client.MAC">
+              <span><strong>Name</strong></span>
+              <input type="text" class="form-control nxd-name" ng-model="deviceEdit.name" ng-change="deviceEdit.remember = true" placeholder="{{deviceEdit.client.Hostname || 'Unknown device'}}">
+            </label>
+            <label class="nxd-check" ng-if="deviceEdit.client.MAC">
+              <input type="checkbox" ng-model="deviceEdit.remember">
+              <span>Keep in the list when not connected</span>
+            </label>
+          </div>
+          <div class="modal-footer nxd-modal-footer">
+            <button type="button" class="btn nxd-pause" ng-if="deviceEdit.client.Connected"
+                    ng-class="deviceEdit.client.Blocked ? 'btn-success' : 'btn-default'"
+                    ng-click="toggleBlock(deviceEdit.client)" ng-disabled="deviceEdit.client.actionPending">
+              {{deviceEdit.client.Blocked ? 'Resume Internet' : 'Pause Internet'}}
+            </button>
+            <span class="nxd-spacer"></span>
+            <button type="button" class="btn btn-default" ng-click="closeDevice()">Cancel</button>
+            <button type="button" class="btn btn-primary" ng-click="saveDevice()" ng-disabled="policyDraft(deviceEdit.client).pending">Save</button>
+          </div>
+        </div>
       </div>
     </div>
-
-    <div class="data-empty" ng-if="savedDeviceList().length === 0">
-      <i class="fa fa-bookmark-o"></i>
-      <strong>No remembered devices</strong>
-      <span>Use “Remember device” above to keep it here for future sessions.</span>
-    </div>
-
-    <div class="data-saved-list" ng-if="savedDeviceList().length">
-      <div class="data-saved-device" ng-repeat="dev in savedDeviceList() | orderBy:['-isOnline', 'name']">
-        <div class="data-device-icon"><i class="fa fa-bookmark"></i></div>
-        <div>
-          <strong>{{dev.name}}</strong>
-          <span>{{dev.isOnline ? 'Connected now' : 'Not connected'}} · {{dev.ip || dev.mac}}</span>
-        </div>
-        <div class="data-saved-actions">
-          <button class="btn btn-default" ng-click="renameDevice(dev.mac)"><i class="fa fa-pencil"></i> Rename</button>
-          <button class="btn btn-default" ng-click="removeDevice(dev.mac)"><i class="fa fa-trash-o"></i> Remove</button>
-        </div>
-      </div>
-    </div>
-  </section>
+  </div>
 </div>
