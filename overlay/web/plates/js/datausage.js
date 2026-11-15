@@ -1,4 +1,4 @@
-appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $timeout) {
+appControllers.controller('DataUsageCtrl', function($scope, $http, $interval) {
     $scope.data = {
         TotalBytes: 0,
         UploadBytes: 0,
@@ -19,35 +19,26 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         AutoBlockEnabled: true
     };
 
-    $scope.Math = window.Math;
     $scope.errorMessage = '';
-    $scope.feedbackMessage = '';
-    $scope.feedbackType = 'success';
     $scope.savingSettings = false;
     $scope.protectionPending = false;
     $scope.resetPending = false;
-    $scope.refreshPending = false;
+    $scope.deviceRows = [];
+    $scope.limitsDraft = null;
+    $scope.deviceEdit = null;
+    $scope.showFlows = false;
     var settingsLoaded = false;
-    var feedbackTimer = null;
     var devicePolicyDrafts = {};
-    var devicePolicyFeedback = {};
 
     function deviceKey(client) {
         return String((client && (client.MAC || client.IP)) || '');
     }
 
     function showFeedback(message, type) {
-        $scope.feedbackMessage = message;
-        $scope.feedbackType = type || 'success';
-        if (feedbackTimer) $timeout.cancel(feedbackTimer);
-        feedbackTimer = $timeout(function() {
-            $scope.feedbackMessage = '';
-        }, 4500);
         if (window.StratuxUI && window.StratuxUI.toast) {
             window.StratuxUI.toast(message, type || 'success', 3000);
         }
     }
-    $scope.showFeedback = showFeedback;
 
     $scope.mb = function(value) {
         return Number(value || 0) * 1024 * 1024;
@@ -59,6 +50,12 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+    };
+
+    $scope.formatMB = function(mb) {
+        mb = Number(mb || 0);
+        if (mb >= 1024 && mb % 1024 === 0) return (mb / 1024) + ' GB';
+        return mb + ' MB';
     };
 
     $scope.formatRate = function(bytesPerSecond) {
@@ -76,33 +73,10 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         return m + 'm';
     };
 
-    $scope.formatTime = function(value) {
-        if (!value) return 'now';
-        var d = new Date(value);
-        if (isNaN(d.getTime())) return value;
-        return d.toLocaleString();
-    };
-
     $scope.sessionPercent = function() {
         var limit = $scope.mb($scope.settings.SessionLimitMB);
         if (!limit) return 0;
         return Math.min(100, ($scope.data.TotalBytes / limit) * 100);
-    };
-
-    $scope.remainingBytes = function() {
-        var remaining = $scope.mb($scope.settings.SessionLimitMB) - Number($scope.data.TotalBytes || 0);
-        return Math.max(0, remaining);
-    };
-
-    $scope.deviceLimitMB = function(client) {
-        if (client && client.Exempt) return 0;
-        return Number((client && client.LimitMB) || $scope.settings.AutoBlockMB || 0);
-    };
-
-    $scope.devicePercent = function(client) {
-        var limit = $scope.mb($scope.deviceLimitMB(client));
-        if (!limit) return 0;
-        return Math.min(100, (Number(client.TotalBytes || 0) / limit) * 100);
     };
 
     $scope.limitProgressClass = function() {
@@ -112,19 +86,66 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         return 'safe';
     };
 
-    $scope.deviceProgressClass = function(client) {
-        if (client.Blocked) return 'danger';
-        var percent = $scope.devicePercent(client);
-        if (percent >= 100) return 'danger';
-        if (percent >= 75) return 'warning';
-        return 'safe';
+    $scope.deviceLimitMB = function(client) {
+        if (client && client.Exempt) return 0;
+        return Number((client && client.LimitMB) || $scope.settings.AutoBlockMB || 0);
     };
 
-    $scope.selectClient = function(client) {
-        var same = client && $scope.selectedClient && deviceKey(client) === deviceKey($scope.selectedClient);
-        $scope.selectedClient = client && !same ? client : null;
+    $scope.deviceSummary = function(row) {
+        var c = row.client;
+        if (!row.known) return 'Not connected';
+        var used = $scope.formatBytes(c.TotalBytes);
+        if (!c.Connected) return 'Not connected · ' + used + ' this session';
+        if (c.Exempt) return used + ' · no limit';
+        var limit = $scope.formatMB($scope.deviceLimitMB(c));
+        return used + ' of ' + limit + (Number(c.LimitMB || 0) > 0 ? ' (custom)' : '');
     };
 
+    // --- Device list: connected devices plus remembered ones ---
+    var SAVED_KEY = 'stratux_nx_saved_devices';
+
+    function loadSavedDevices() {
+        try {
+            return JSON.parse(localStorage.getItem(SAVED_KEY)) || {};
+        } catch (e) { return {}; }
+    }
+
+    function persistSavedDevices() {
+        localStorage.setItem(SAVED_KEY, JSON.stringify($scope.savedDevices));
+    }
+
+    $scope.savedDevices = loadSavedDevices();
+
+    function buildDeviceRows() {
+        var rows = [];
+        var seen = {};
+        var clients = ($scope.data.Clients || []).slice().sort(function(a, b) {
+            if (a.Connected !== b.Connected) return a.Connected ? -1 : 1;
+            return Number(b.TotalBytes || 0) - Number(a.TotalBytes || 0);
+        });
+        clients.forEach(function(c) {
+            var saved = c.MAC && $scope.savedDevices[c.MAC];
+            seen[c.MAC] = true;
+            rows.push({key: deviceKey(c), client: c, known: true, name: (saved && saved.name) || c.Hostname || 'Unknown device'});
+        });
+        Object.keys($scope.savedDevices).forEach(function(mac) {
+            if (seen[mac]) return;
+            var saved = $scope.savedDevices[mac];
+            rows.push({key: mac, client: {MAC: mac, IP: saved.ip, Hostname: saved.name, Connected: false}, known: false, name: saved.name});
+        });
+        $scope.deviceRows = rows;
+
+        if ($scope.deviceEdit) {
+            var key = $scope.deviceEdit.key;
+            var current = rows.filter(function(r) { return r.key === key; })[0];
+            if (current) {
+                $scope.deviceEdit.client = current.client;
+                $scope.deviceEdit.known = current.known;
+            }
+        }
+    }
+
+    // --- Per-device limits ---
     $scope.policyDraft = function(client) {
         var key = deviceKey(client);
         if (!devicePolicyDrafts[key]) {
@@ -137,63 +158,22 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         return devicePolicyDrafts[key];
     };
 
-    $scope.currentPolicyMode = function(client) {
-        if (client && client.Exempt) return 'unlimited';
-        if (client && Number(client.LimitMB || 0) > 0) return 'custom';
-        return 'standard';
-    };
-
-    $scope.currentPolicyTitle = function(client) {
-        var mode = $scope.currentPolicyMode(client);
-        if (mode === 'unlimited') return 'No automatic limit';
-        if (mode === 'custom') return 'Custom limit: ' + client.LimitMB + ' MB';
-        return 'Standard limit: ' + $scope.settings.AutoBlockMB + ' MB';
-    };
-
-    $scope.currentPolicyDescription = function(client) {
-        if (client && client.Exempt) return 'Stratux NX will never pause this device automatically.';
-        return 'Internet pauses automatically when this device reaches the shown amount.';
-    };
-
-    $scope.policyFeedback = function(client) {
-        return devicePolicyFeedback[deviceKey(client)] || null;
-    };
-
-    function setPolicyFeedback(client, message, type) {
-        devicePolicyFeedback[deviceKey(client)] = {
-            message: message,
-            type: type || 'success'
-        };
-    }
-
-    $scope.chooseDevicePolicy = function(client, mode) {
-        var draft = $scope.policyDraft(client);
-        var previousMode = draft.mode;
-        draft.mode = mode;
-        if (mode === 'custom') {
-            if (!draft.limitMB) draft.limitMB = Number($scope.settings.AutoBlockMB || 500);
-            setPolicyFeedback(client, 'Enter the amount and press “Apply limit” to save it.', 'info');
-            return;
-        }
-        $scope.applyDevicePolicy(client, previousMode);
-    };
-
     $scope.applyDevicePolicy = function(client, rollbackMode) {
-        if (!client) return;
+        if (!client) return false;
         var draft = $scope.policyDraft(client);
         var limit = draft.mode === 'custom' ? Number(draft.limitMB) : 0;
+        var invalid = '';
         if (draft.mode === 'custom' && (!limit || limit < 1)) {
-            setPolicyFeedback(client, 'Enter a limit of at least 1 MB.', 'error');
-            $scope.errorMessage = 'Enter a device limit of at least 1 MB.';
-            return;
+            invalid = 'Enter a device limit of at least 1 MB.';
+        } else if (draft.mode === 'custom' && limit > Number($scope.settings.SessionLimitMB || 0)) {
+            invalid = 'A device limit cannot be higher than the everyone limit of ' + $scope.formatMB($scope.settings.SessionLimitMB) + '.';
         }
-        if (draft.mode === 'custom' && limit > Number($scope.settings.SessionLimitMB || 0)) {
-            setPolicyFeedback(client, 'Choose an amount no higher than the session limit.', 'error');
-            $scope.errorMessage = 'This device limit cannot be higher than the session limit of ' + $scope.settings.SessionLimitMB + ' MB.';
-            return;
+        if (invalid) {
+            if (rollbackMode) draft.mode = rollbackMode;
+            showFeedback(invalid, 'error');
+            return false;
         }
         draft.pending = true;
-        setPolicyFeedback(client, 'Saving this device setting…', 'pending');
         $http.post('/dataUsage/policy', {
             ip: client.IP,
             mac: client.MAC || '',
@@ -206,72 +186,76 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
             client.Blocked = false;
             var name = client.Hostname || 'This device';
             if (draft.mode === 'unlimited') {
-                setPolicyFeedback(client, 'Saved. This device now has no automatic data limit.');
-                showFeedback(name + ' now has no automatic data limit.');
+                showFeedback(name + ' now has no data limit.');
             } else if (draft.mode === 'custom') {
-                setPolicyFeedback(client, 'Saved. Internet will pause for this device at ' + limit + ' MB.');
                 showFeedback(name + ' will pause at ' + limit + ' MB.');
             } else {
-                setPolicyFeedback(client, 'Saved. This device now uses the standard ' + $scope.settings.AutoBlockMB + ' MB limit.');
                 showFeedback(name + ' now uses the standard ' + $scope.settings.AutoBlockMB + ' MB limit.');
             }
             $scope.errorMessage = '';
-            $timeout($scope.refresh, 350);
+            buildDeviceRows();
         }, function(response) {
             draft.pending = false;
             if (rollbackMode) draft.mode = rollbackMode;
-            setPolicyFeedback(client, 'Not saved. Check the connection and try again.', 'error');
             $scope.errorMessage = 'Could not save the device limit: ' + ((response && response.data) || 'unknown error');
         });
+        return true;
     };
 
-    $scope.eventIcon = function(event) {
-        switch (event.Type) {
-            case 'auto_block':
-            case 'manual_block':
-            case 'session_limit': return 'fa-ban';
-            case 'manual_unblock': return 'fa-unlock';
-            case 'warning': return 'fa-exclamation-triangle';
-            case 'client_connected': return 'fa-wifi';
-            case 'settings': return 'fa-shield';
-            case 'session_reset':
-            case 'session_start': return 'fa-play';
-            default: return 'fa-clock-o';
-        }
+    $scope.setFollowsLimits = function(client, follows) {
+        var draft = $scope.policyDraft(client);
+        var previousMode = draft.mode;
+        draft.mode = follows ? 'standard' : 'unlimited';
+        $scope.applyDevicePolicy(client, previousMode);
     };
 
-    $scope.eventClass = function(event) {
-        switch (event.Type) {
-            case 'auto_block':
-            case 'manual_block':
-            case 'session_limit': return 'danger';
-            case 'warning': return 'warning';
-            case 'manual_unblock': return 'success';
-            default: return '';
-        }
+    $scope.openDevice = function(row) {
+        var c = row.client;
+        var saved = c.MAC && $scope.savedDevices[c.MAC];
+        $scope.deviceEdit = {
+            key: row.key,
+            client: c,
+            known: row.known,
+            title: row.name,
+            mode: c.Exempt ? 'unlimited' : (Number(c.LimitMB || 0) > 0 ? 'custom' : 'standard'),
+            limitMB: Number(c.LimitMB || $scope.settings.AutoBlockMB || 500),
+            name: saved ? saved.name : '',
+            remember: !!saved
+        };
     };
 
-    $scope.refresh = function() {
-        $scope.refreshPending = true;
-        $http.get('/dataUsage', {cache: false}).then(function(response) {
-            var d = response.data || {};
-            $scope.data = d;
-            $scope.data.Clients = d.Clients || [];
-            $scope.data.RecentEvents = d.RecentEvents || [];
-            if ($scope.selectedClient) {
-                var selectedKey = deviceKey($scope.selectedClient);
-                $scope.selectedClient = $scope.data.Clients.filter(function(c) { return deviceKey(c) === selectedKey; })[0] || null;
+    $scope.closeDevice = function() {
+        $scope.deviceEdit = null;
+    };
+
+    $scope.saveDevice = function() {
+        var edit = $scope.deviceEdit;
+        var c = edit.client;
+        if (c.MAC) {
+            if (edit.remember) {
+                $scope.savedDevices[c.MAC] = {
+                    name: (edit.name || '').trim() || c.Hostname || 'Unknown device',
+                    mac: c.MAC,
+                    ip: c.IP
+                };
+            } else {
+                delete $scope.savedDevices[c.MAC];
             }
-            if (!settingsLoaded && d.Settings) {
-                $scope.settings = angular.copy(d.Settings);
-                settingsLoaded = true;
+            persistSavedDevices();
+        }
+        if (edit.known) {
+            var current = c.Exempt ? 'unlimited' : (Number(c.LimitMB || 0) > 0 ? 'custom' : 'standard');
+            var changed = edit.mode !== current || (edit.mode === 'custom' && Number(edit.limitMB) !== Number(c.LimitMB));
+            if (changed) {
+                var draft = $scope.policyDraft(c);
+                var previousMode = draft.mode;
+                draft.mode = edit.mode;
+                draft.limitMB = Number(edit.limitMB);
+                if (!$scope.applyDevicePolicy(c, previousMode)) return;
             }
-            $scope.errorMessage = '';
-            $scope.refreshPending = false;
-        }, function() {
-            $scope.refreshPending = false;
-            $scope.errorMessage = 'Unable to read Internet usage monitor. The service may still be starting.';
-        });
+        }
+        $scope.deviceEdit = null;
+        buildDeviceRows();
     };
 
     $scope.toggleBlock = function(client) {
@@ -289,19 +273,35 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
                 'Internet paused for ' + name + '. Stratux NX remains available.' :
                 'Internet restored for ' + name + '.');
             $scope.errorMessage = '';
-            $timeout($scope.refresh, 350);
         }, function(response) {
             client.actionPending = false;
             $scope.errorMessage = 'Could not change Internet access for ' + client.IP + ': ' + (response.data || 'unknown error');
         });
     };
 
-    $scope.saveSettings = function(message, onError) {
+    // --- Session and global limits ---
+    $scope.refresh = function() {
+        $http.get('/dataUsage', {cache: false}).then(function(response) {
+            var d = response.data || {};
+            $scope.data = d;
+            $scope.data.Clients = d.Clients || [];
+            $scope.data.RecentEvents = d.RecentEvents || [];
+            if (!settingsLoaded && d.Settings) {
+                $scope.settings = angular.copy(d.Settings);
+                settingsLoaded = true;
+            }
+            buildDeviceRows();
+        }, function() {
+            $scope.errorMessage = 'Unable to read Internet usage monitor. The service may still be starting.';
+        });
+    };
+
+    $scope.saveSettings = function(message, onError, onSuccess) {
         var warning = Number($scope.settings.WarningMB);
         var block = Number($scope.settings.AutoBlockMB);
         var session = Number($scope.settings.SessionLimitMB);
         if (!warning || !block || !session || warning > block || block > session) {
-            $scope.errorMessage = 'Limits must be: Warning ≤ Auto-block ≤ Session limit.';
+            $scope.errorMessage = 'Limits must be: warning ≤ device limit ≤ everyone limit.';
             if (onError) onError();
             return;
         }
@@ -314,11 +314,12 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         }).then(function() {
             $scope.savingSettings = false;
             $scope.errorMessage = '';
-            showFeedback(message || 'Protection settings saved. The new limits are active.');
+            showFeedback(message || 'Limits saved.');
+            if (onSuccess) onSuccess();
             $scope.refresh();
         }, function(response) {
             $scope.savingSettings = false;
-            $scope.errorMessage = 'Could not save safety limits: ' + (response.data || 'unknown error');
+            $scope.errorMessage = 'Could not save limits: ' + (response.data || 'unknown error');
             if (onError) onError();
         });
     };
@@ -326,23 +327,40 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
     $scope.toggleProtection = function() {
         if ($scope.protectionPending || $scope.savingSettings) return;
         var previous = $scope.settings.AutoBlockEnabled;
-        $scope.settings.AutoBlockEnabled = !$scope.settings.AutoBlockEnabled;
+        $scope.settings.AutoBlockEnabled = !previous;
         $scope.protectionPending = true;
         $scope.saveSettings($scope.settings.AutoBlockEnabled ?
-            'Automatic data protection is now on.' :
-            'Automatic data protection is now off.', function() {
+            'Automatic limits are on.' :
+            'Automatic limits are off.', function() {
                 $scope.settings.AutoBlockEnabled = previous;
-            });
-        var stop = $scope.$watch('savingSettings', function(saving) {
-            if (!saving) {
                 $scope.protectionPending = false;
-                stop();
-            }
+            }, function() {
+                $scope.protectionPending = false;
+            });
+    };
+
+    $scope.openLimits = function() {
+        $scope.limitsDraft = angular.copy($scope.settings);
+    };
+
+    $scope.closeLimits = function() {
+        $scope.limitsDraft = null;
+    };
+
+    $scope.saveLimits = function() {
+        var previous = angular.copy($scope.settings);
+        ['WarningMB', 'AutoBlockMB', 'SessionLimitMB'].forEach(function(field) {
+            $scope.settings[field] = Number($scope.limitsDraft[field]);
+        });
+        $scope.saveSettings('Limits saved.', function() {
+            $scope.settings = previous;
+        }, function() {
+            $scope.limitsDraft = null;
         });
     };
 
     $scope.resetSession = function() {
-        if (!window.confirm('Start a new data session? Current counters will reset to zero. The historical log will NOT be deleted.')) {
+        if (!window.confirm('Start a new session? Usage goes back to 0 MB and paused devices get Internet again. Your limits are kept.')) {
             return;
         }
         $scope.resetPending = true;
@@ -356,80 +374,14 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         });
     };
 
-    // --- Saved devices (localStorage) ---
-    var SAVED_KEY = 'stratux_nx_saved_devices';
-
-    function loadSavedDevices() {
-        try {
-            return JSON.parse(localStorage.getItem(SAVED_KEY)) || {};
-        } catch (e) { return {}; }
-    }
-
-    function persistSavedDevices() {
-        localStorage.setItem(SAVED_KEY, JSON.stringify($scope.savedDevices));
-    }
-
-    $scope.savedDevices = loadSavedDevices();
-
-    $scope.isDeviceSaved = function(mac) {
-        return mac && $scope.savedDevices[mac];
-    };
-
-    $scope.saveDevice = function(client) {
-        if (!client.MAC) return;
-        $scope.savedDevices[client.MAC] = {
-            name: client.Hostname || 'Unknown device',
-            mac: client.MAC,
-            ip: client.IP,
-            lastSeen: new Date().toISOString(),
-            totalBytes: client.TotalBytes || 0
-        };
-        persistSavedDevices();
-        showFeedback((client.Hostname || 'Device') + ' saved for future sessions.');
-    };
-
-    $scope.removeDevice = function(mac) {
-        delete $scope.savedDevices[mac];
-        persistSavedDevices();
-        showFeedback('Saved device removed.');
-    };
-
-    $scope.renameDevice = function(mac) {
-        var dev = $scope.savedDevices[mac];
-        if (!dev) return;
-        var name = window.prompt('Device name:', dev.name);
-        if (name !== null && name.trim()) {
-            dev.name = name.trim();
-            persistSavedDevices();
-            showFeedback('Device renamed to ' + dev.name + '.');
-        }
-    };
-
-    $scope.savedDeviceList = function() {
-        var list = [];
-        var saved = $scope.savedDevices;
-        for (var mac in saved) {
-            if (saved.hasOwnProperty(mac)) {
-                var d = angular.copy(saved[mac]);
-                d.isOnline = false;
-                for (var i = 0; i < $scope.data.Clients.length; i++) {
-                    if ($scope.data.Clients[i].MAC === mac && $scope.data.Clients[i].Connected) {
-                        d.isOnline = true;
-                        d.ip = $scope.data.Clients[i].IP;
-                        d.totalBytes = $scope.data.Clients[i].TotalBytes;
-                        break;
-                    }
-                }
-                list.push(d);
-            }
-        }
-        return list;
-    };
-
     $scope.refresh();
     var timer = $interval($scope.refresh, 2000);
     $scope.$on('$destroy', function() {
         $interval.cancel(timer);
-        if (feedbackTimer) $timeout.cancel(feedbackTimer);
+        // Mobile Angular UI keeps yielded modal content after the page is left.
+        angular.forEach(document.querySelectorAll('.nxd-modal'), function(el) {
+            var modal = el.closest('.modal');
+            if (modal) angular.element(modal).remove();
+        });
     });
 });

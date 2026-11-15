@@ -126,10 +126,9 @@ python3 "$SCRIPT_DIR/patch-version.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-licensing.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-ap-client-24ghz.py" "$TARGET"
 
-# Internet usage backend, service ranking, unrestricted device policies and UX.
+# Internet usage backend, service ranking and per-device policies.
 python3 "$SCRIPT_DIR/patch-flow-backend.py" "$TARGET"
 python3 "$SCRIPT_DIR/patch-data-policies.py" "$TARGET"
-python3 "$SCRIPT_DIR/patch-data-policy-style.py" "$TARGET"
 
 # Shared Stratux UX modernization, map enhancements and settings workflow fixes.
 python3 "$SCRIPT_DIR/patch-modern-ui.py" "$TARGET"
