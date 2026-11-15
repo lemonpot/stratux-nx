@@ -22,6 +22,12 @@ install -o www-data -g www-data -m 0644 "$SOURCE/web/icon.png" "$TARGET/web/icon
 install -o www-data -g www-data -m 0644 "$SOURCE/web/flight-memory.css" "$TARGET/web/flight-memory.css"
 install -o www-data -g www-data -m 0644 "$SOURCE/web/flight-memory.js" "$TARGET/web/flight-memory.js"
 
+# Public landing page served at www.stratuxnx.com
+install -d -o www-data -g www-data -m 0755 "$TARGET/site/assets/img"
+install -o www-data -g www-data -m 0644 "$SOURCE/site/index.html" "$TARGET/site/index.html"
+install -o www-data -g www-data -m 0644 "$SOURCE/site/assets/"*.css "$SOURCE/site/assets/"*.js "$TARGET/site/assets/"
+install -o www-data -g www-data -m 0644 "$SOURCE/site/assets/img/"* "$TARGET/site/assets/img/"
+
 if [[ -f "$CONFIG_SOURCE" ]]; then
   install -o www-data -g www-data -m 0640 "$CONFIG_SOURCE" "$TARGET/config/app.php"
 elif [[ ! -f "$TARGET/config/app.php" ]]; then

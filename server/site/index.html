@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stratux NX — The modern Stratux for ADS-B, flight logging and Starlink</title>
+  <meta name="description" content="Stratux NX is a free, open-source Stratux distribution: ADS-B traffic and weather for your EFB, automatic flight logging with block and air time, Starlink data protection and cloud flight replays.">
+  <meta name="theme-color" content="#04070f">
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/img/favicon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Stratux NX — The modern Stratux">
+  <meta property="og:description" content="ADS-B for your EFB, every flight logged from engine start to shutdown, and Starlink data that lasts the whole month. Free and open source.">
+  <meta property="og:image" content="https://www.stratuxnx.com/assets/img/photo-cockpit.webp">
+  <meta property="og:url" content="https://www.stratuxnx.com/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+    <symbol id="i-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98"/><path d="m15.41 6.51-6.82 3.98"/></symbol>
+    <symbol id="i-landing" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17 13.5 8.5l-5 5L2 7"/><path d="M16 17h6v-6"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.27 6.96 8.73 5.05 8.73-5.05"/><path d="M12 22.08V12"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 15V9"/><path d="M14 15V9"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></symbol>
+    <symbol id="i-ghost" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-chip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/></symbol>
+  </defs>
+</svg>
+
+<div class="aurora"><div class="grid-bg"></div></div>
+
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="#top" aria-label="Stratux NX home"><img src="/assets/img/mark.png" alt="" width="40" height="24">Stratux <span class="nx">NX</span></a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#features">Features</a>
+      <a href="#starlink">Starlink</a>
+      <a href="#flight-log">Flight Log</a>
+      <a href="#cloud">Cloud</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-sm" href="https://github.com/lemonpot/stratux-nx" target="_blank" rel="noopener"><svg><use href="#i-github"/></svg>GitHub</a>
+      <a class="btn btn-sm" href="https://app.stratuxnx.com/">Sign in</a>
+      <a class="btn btn-sm btn-primary" href="#install"><svg><use href="#i-download"/></svg>Get Stratux NX</a>
+    </div>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false"><svg width="20" height="20"><use href="#i-menu"/></svg></button>
+  </div>
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="#features">Features</a>
+    <a href="#starlink">Starlink</a>
+    <a href="#flight-log">Flight Log</a>
+    <a href="#cloud">Cloud</a>
+    <a href="#install">Install</a>
+    <a href="#faq">FAQ</a>
+    <a href="https://github.com/lemonpot/stratux-nx" target="_blank" rel="noopener">GitHub</a>
+    <a class="btn btn-primary" href="#install">Get Stratux NX</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="container">
+      <a class="pill reveal" data-rel="page" href="https://github.com/lemonpot/stratux-nx/releases" target="_blank" rel="noopener">
+        <span class="tag">New</span><span class="dot"></span><span data-rel="pill">Latest beta release available</span><svg width="15" height="15"><use href="#i-arrow"/></svg>
+      </a>
+      <h1 class="reveal">The Stratux you know.<br><span class="gradient-text">Rebuilt for how you fly today.</span></h1>
+      <p class="lead reveal">Stratux NX turns a Raspberry Pi ADS-B receiver into a complete cockpit companion: traffic and weather for your EFB, every flight logged from engine start to shutdown, and Starlink data that lasts the whole month.</p>
+      <div class="hero-cta reveal">
+        <a class="btn btn-lg btn-primary" data-rel="image" href="https://github.com/lemonpot/stratux-nx/releases" target="_blank" rel="noopener"><svg><use href="#i-download"/></svg>Download the latest image</a>
+        <a class="btn btn-lg" href="https://github.com/lemonpot/stratux-nx" target="_blank" rel="noopener"><svg><use href="#i-github"/></svg>View on GitHub</a>
+      </div>
+      <p class="hero-note reveal"><strong>Free &amp; open source</strong> · Works with ForeFlight, Garmin Pilot, SkyDemon and other GDL90 apps · No subscription</p>
+
+      <div class="showcase reveal">
+        <div class="showcase-photo"><img src="/assets/img/photo-cockpit.webp" alt="Tablet with traffic and weather in a small aircraft cockpit above the clouds" width="1280" height="720" fetchpriority="high"></div>
+        <div class="window">
+          <div class="window-bar"><i></i><i></i><i></i><span>192.168.10.1 · Flight Log</span></div>
+          <img src="/assets/img/shot-flight-route.webp" alt="Stratux NX Flight Log showing a recorded route on a map" width="1600" height="908">
+        </div>
+        <div class="chip chip-1">
+          <span class="ico" style="background:rgba(56,189,248,.15);color:#7dd3fc"><svg><use href="#i-clock"/></svg></span>
+          <div><small>Block time</small><strong>1h 13m 42s</strong></div>
+        </div>
+        <div class="chip chip-2">
+          <span class="ico" style="background:rgba(139,92,246,.18);color:#c4b5fd"><svg><use href="#i-plane"/></svg></span>
+          <div><small>Air time</small><strong>1h 04m 07s</strong></div>
+        </div>
+        <div class="chip chip-3">
+          <span class="ico" style="background:rgba(251,191,36,.15);color:#fcd34d"><svg><use href="#i-pause"/></svg></span>
+          <div><small>Starlink guard</small><strong>Passenger iPhone paused at 500 MB</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip">
+      <div class="container strip-inner">
+        <div class="stat"><strong class="gradient-text">1 Hz</strong><span>GPS track, every second of every flight</span></div>
+        <div class="stat"><strong class="gradient-text">84,512</strong><span>airports available offline</span></div>
+        <div class="stat"><strong class="gradient-text">0</strong><span>buttons to press to log a flight</span></div>
+        <div class="stat"><strong class="gradient-text">1090 + 978</strong><span>ADS-B traffic and FIS-B weather</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="features">
+    <div class="container">
+      <div class="section-head center reveal">
+        <span class="eyebrow">Everything in one box</span>
+        <h2>All of Stratux. <span class="gradient-text">Plus the parts you always wished it had.</span></h2>
+        <p>Stratux NX keeps the proven open-source receiver underneath and adds the workflows pilots actually use every day, on the ground and in the air.</p>
+      </div>
+
+      <div class="bento">
+        <article class="card span-3 feature-lg reveal">
+          <div class="icon"><svg><use href="#i-book"/></svg></div>
+          <h3>Automatic flight log</h3>
+          <p>Every flight is detected, timed and stored on its own: off-block, takeoff, landing and on-block, plus route, altitude, speed and touch-and-goes.</p>
+          <div class="card-media"><img src="/assets/img/shot-flight-history.webp" alt="Flight history with air, block and taxi times" width="1600" height="1048" loading="lazy"></div>
+        </article>
+        <article class="card span-3 feature-lg reveal">
+          <div class="icon amber"><svg><use href="#i-wifi"/></svg></div>
+          <h3>Starlink data protection</h3>
+          <p>See which iPad, phone or laptop is using your onboard Internet, set limits per device and for the whole session, and pause the heavy users automatically.</p>
+          <div class="card-media"><img src="/assets/img/shot-internet-data.webp" alt="Internet Data page with session usage and per-device limits" width="1600" height="1531" loading="lazy"></div>
+        </article>
+        <article class="card span-2 reveal">
+          <div class="icon violet"><svg><use href="#i-cloud"/></svg></div>
+          <h3>Cloud sync &amp; sharing</h3>
+          <p>Flights upload by themselves whenever there is Internet. Replay them in 3D and share a link with anyone, even if they don't have an account.</p>
+        </article>
+        <article class="card span-2 reveal">
+          <div class="icon green"><svg><use href="#i-zap"/></svg></div>
+          <h3>Power-loss proof</h3>
+          <p>Flights are written to physical storage as they happen. Pull the master switch and the flight is recovered on the next boot, using its own recorded times.</p>
+        </article>
+        <article class="card span-2 reveal">
+          <div class="icon"><svg><use href="#i-refresh"/></svg></div>
+          <h3>Online updates</h3>
+          <p>Update from the Stratux web page in one tap. Each update keeps your settings and flights. No Internet? Upload the update file instead.</p>
+        </article>
+        <article class="card span-2 reveal">
+          <div class="icon rose"><svg><use href="#i-activity"/></svg></div>
+          <h3>NX Guardian</h3>
+          <p>A single health check for radios, GPS, storage and system state, with clear next steps when something needs attention before you depart.</p>
+        </article>
+        <article class="card span-2 reveal">
+          <div class="icon"><svg><use href="#i-rain"/></svg></div>
+          <h3>Weather journey</h3>
+          <p>FIS-B METARs, TAFs and NEXRAD received in flight are saved with the flight, so you can see what the weather really was along your route.</p>
+        </article>
+        <article class="card span-2 reveal">
+          <div class="icon violet"><svg><use href="#i-landing"/></svg></div>
+          <h3>Landing signature</h3>
+          <p>A GPS view of the final approach and touchdown: groundspeed, descent and timing. Ghost Landing compares it with your previous arrivals.</p>
+        </article>
+        <article class="card span-2 reveal">
+          <div class="icon green"><svg><use href="#i-db"/></svg></div>
+          <h3>Offline airports &amp; time zones</h3>
+          <p>84,512 airports and a full time zone database on board, so departure, arrival and local times work with no Internet at all.</p>
+        </article>
+        <article class="card span-2 reveal">
+          <div class="icon amber"><svg><use href="#i-compass"/></svg></div>
+          <h3>Adaptive AHRS v2 <small style="color:var(--amber);font-weight:600">beta</small></h3>
+          <p>A new attitude estimator that adapts to changing flight conditions. Experimental: always cross-check with your instruments.</p>
+        </article>
+        <article class="card span-2 reveal">
+          <div class="icon"><svg><use href="#i-monitor"/></svg></div>
+          <h3>A modern interface</h3>
+          <p>A redesigned, responsive web app for phone, tablet and laptop, with light and dark themes and plain-language status everywhere.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="starlink">
+    <div class="container split">
+      <div class="reveal">
+        <span class="eyebrow">Starlink, under control</span>
+        <div class="section-head" style="margin-bottom:0">
+          <h2>Don't burn your <span class="gradient-text" style="white-space:nowrap">50 GB plan</span> in one flight.</h2>
+          <p>Bringing Starlink into the cockpit is a game changer, until a passenger's phone starts an iOS update or a laptop syncs its photo library at 9,000 feet. Stratux NX sits between your devices and the dish and keeps every megabyte accountable.</p>
+        </div>
+        <ul class="checklist">
+          <li><svg><use href="#i-check"/></svg><span><b>Live usage per device.</b> See exactly who is using data right now and how much they have used this session.</span></li>
+          <li><svg><use href="#i-check"/></svg><span><b>Warn, then pause.</b> Get a warning at one amount, pause that device at another, and cap the total for the session.</span></li>
+          <li><svg><use href="#i-check"/></svg><span><b>Protect what matters.</b> Exempt the pilot's iPad. Local traffic to Stratux NX and ForeFlight is never blocked.</span></li>
+          <li><svg><use href="#i-check"/></svg><span><b>Know where it went.</b> A ranking of the apps and services that used the most data this session.</span></li>
+          <li><svg><use href="#i-check"/></svg><span><b>Any uplink.</b> Starlink Mini, a phone hotspot or an LTE router: Stratux NX joins it as a client and shares it safely.</span></li>
+        </ul>
+        <div class="plan">
+          <div class="plan-head"><strong>How a 50 GB plan disappears</strong><span>Illustrative flight with two passengers</span></div>
+          <div class="plan-bar" role="img" aria-label="About 18 GB of a 50 GB plan used in one flight">
+            <i style="width:12%;background:#fb7185"></i>
+            <i style="width:12%;background:#fbbf24"></i>
+            <i style="width:8%;background:#a78bfa"></i>
+            <i style="width:4%;background:#38bdf8"></i>
+          </div>
+          <div class="plan-legend">
+            <span style="--c:#fb7185">Phone OS update · up to 6 GB</span>
+            <span style="--c:#fbbf24">2 h of HD streaming · ~6 GB</span>
+            <span style="--c:#a78bfa">Photo &amp; cloud backup · ~4 GB</span>
+            <span style="--c:#38bdf8">App updates · ~2 GB</span>
+          </div>
+          <div class="plan-foot"><svg><use href="#i-shield"/></svg><span>With Stratux NX limits, those devices are paused at the amount you choose, and your EFB keeps working.</span></div>
+        </div>
+      </div>
+      <div class="media-stack reveal">
+        <div class="photo"><img src="/assets/img/photo-starlink.webp" alt="Compact satellite Internet dish on the glareshield of a small aircraft" width="1152" height="864" loading="lazy"></div>
+        <div class="window">
+          <div class="window-bar"><i></i><i></i><i></i><span>Internet Data</span></div>
+          <img src="/assets/img/shot-internet-data.webp" alt="Stratux NX Internet Data page" width="1600" height="1531" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="flight-log">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Automatic flight log</span>
+        <h2>From the first turn of the prop <span class="gradient-text">to the last.</span></h2>
+        <p>Turn on the avionics and forget about it. Stratux NX detects movement, takeoff, landing and parking from sustained GPS speed, climb and nearby-airport context, then writes a complete record with block time and air time. No buttons, no paperwork.</p>
+      </div>
+
+      <div class="timeline reveal">
+        <div class="tl-route"><strong>CZBA → CZBA</strong><span>Real flight recorded by Stratux NX · Oct 17, 2026 · 108.4 NM</span></div>
+        <div class="tl-labels">
+          <div class="first" style="left:9.18%"><b>Takeoff</b>18:30:56Z</div>
+          <div class="last" style="left:96.18%"><b>Landing</b>19:35:03Z</div>
+        </div>
+        <div class="tl-track">
+          <div class="tl-seg taxi" style="left:0;width:9.18%"></div>
+          <div class="tl-seg air" style="left:9.18%;width:87%"></div>
+          <div class="tl-seg taxi" style="left:96.18%;width:3.82%"></div>
+          <div class="tl-event" style="left:0"></div>
+          <div class="tl-event" style="left:9.18%"></div>
+          <div class="tl-event" style="left:96.18%"></div>
+          <div class="tl-event" style="left:calc(100% - 2px)"></div>
+        </div>
+        <div class="tl-labels">
+          <div class="first" style="left:0"><b>Off-block · engine start</b>18:24:10Z</div>
+          <div class="mid" style="left:52%"><b>Air time</b>takeoff to landing</div>
+          <div class="last" style="left:100%"><b>On-block · shutdown</b>19:37:52Z</div>
+        </div>
+        <div class="tl-totals">
+          <div class="hl"><small>Block time</small><strong>1h 13m 42s</strong></div>
+          <div class="hl"><small>Air time</small><strong>1h 04m 07s</strong></div>
+          <div><small>Taxi out</small><strong>6m 46s</strong></div>
+          <div><small>Taxi in</small><strong>2m 49s</strong></div>
+        </div>
+      </div>
+
+      <div class="split" style="margin-top:56px">
+        <div class="reveal">
+          <ul class="checklist" style="margin-top:0">
+            <li><svg><use href="#i-check"/></svg><span><b>Starts by itself.</b> A few seconds above taxi speed opens a new flight. Short GPS spikes are ignored.</span></li>
+            <li><svg><use href="#i-check"/></svg><span><b>Closes by itself.</b> 45 seconds stopped after landing closes the flight and sets the on-block time.</span></li>
+            <li><svg><use href="#i-check"/></svg><span><b>Logbook-ready times.</b> Off-block, takeoff, landing and on-block in UTC/Zulu, shown in your local time zone. Touch-and-goes counted.</span></li>
+            <li><svg><use href="#i-check"/></svg><span><b>Every second, on disk.</b> The full route, altitude, groundspeed and vertical speed, plus the weather and traffic context of the flight.</span></li>
+            <li><svg><use href="#i-check"/></svg><span><b>Survives power loss.</b> Unfinished flights are recovered at boot. If power was lost in the air, the flight is kept and clearly marked as incomplete.</span></li>
+          </ul>
+        </div>
+        <div class="window reveal">
+          <div class="window-bar"><i></i><i></i><i></i><span>Flight Log · recorded route</span></div>
+          <img src="/assets/img/shot-flight-route.webp" alt="Recorded route of a local flight" width="1600" height="908" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="cloud">
+    <div class="container">
+      <div class="section-head center reveal">
+        <span class="eyebrow">Stratux NX Cloud</span>
+        <h2>Every flight, <span class="gradient-text">replayed and ready to share.</span></h2>
+        <p>Your Stratux uploads every flight by itself whenever it has Internet. Link it to your account once with its code and the whole history appears, beautifully analysed.</p>
+      </div>
+      <div class="cloud-grid">
+        <div class="window reveal">
+          <div class="window-bar"><i></i><i></i><i></i><span>app.stratuxnx.com · shared flight</span></div>
+          <img src="/assets/img/shot-cloud-header.webp" alt="Cloud flight summary with block time and air time" width="1600" height="345" loading="lazy">
+          <img src="/assets/img/shot-cloud-landing.webp" alt="Vertical profile and landing signature charts" width="1600" height="1488" loading="lazy">
+        </div>
+        <div class="mini-list">
+          <div class="mini reveal"><span class="icon"><svg><use href="#i-box"/></svg></span><div><h4>3D flight replay</h4><p>Follow the whole flight in time and altitude, with nearby traffic.</p></div></div>
+          <div class="mini reveal"><span class="icon"><svg><use href="#i-landing"/></svg></span><div><h4>Vertical profile &amp; landing signature</h4><p>Climb, cruise, descent and a GPS-derived look at every touchdown.</p></div></div>
+          <div class="mini reveal"><span class="icon"><svg><use href="#i-ghost"/></svg></span><div><h4>Ghost Landing</h4><p>Compare today's approach with your previous arrivals at the same airport.</p></div></div>
+          <div class="mini reveal"><span class="icon"><svg><use href="#i-rain"/></svg></span><div><h4>Weather journey</h4><p>The weather your Stratux actually received during the flight.</p></div></div>
+          <div class="mini reveal"><span class="icon"><svg><use href="#i-share"/></svg></span><div><h4>Share with one link</h4><p>Send a flight to family, students or your instructor. No account needed to view it.</p></div></div>
+          <div class="mini reveal"><span class="icon"><svg><use href="#i-link"/></svg></span><div><h4>One account, many receivers</h4><p>Link one or several Stratux NX units with a permanent code. Nobody else can see their flights.</p></div></div>
+          <a class="btn btn-lg btn-primary reveal" href="https://app.stratuxnx.com/">Open Stratux NX Cloud<svg><use href="#i-arrow"/></svg></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="install">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Install in 15 minutes</span>
+        <h2>Flash it, boot it, <span class="gradient-text">go fly.</span></h2>
+        <p>Stratux NX is a complete SD card image. No terminal, no compiling: write the image to a microSD card, put it in your Raspberry Pi and connect from your tablet.</p>
+      </div>
+      <div class="install">
+        <aside class="install-aside reveal">
+          <div class="photo"><img src="/assets/img/photo-hardware.webp" alt="Raspberry Pi ADS-B receiver with two radios and a GPS puck" width="1152" height="864" loading="lazy"></div>
+          <div class="release-card">
+            <small>Latest release</small>
+            <h3 data-rel="tag">Stratux NX</h3>
+            <p data-rel="meta">Full SD card image, online update package and complete source code.</p>
+            <a class="btn btn-lg btn-primary" data-rel="image" href="https://github.com/lemonpot/stratux-nx/releases" target="_blank" rel="noopener"><svg><use href="#i-download"/></svg><span data-rel="imagelabel">Download SD card image</span></a>
+            <div class="release-links">
+              <a class="btn btn-sm" data-rel="page" href="https://github.com/lemonpot/stratux-nx/releases" target="_blank" rel="noopener">Release notes</a>
+              <a class="btn btn-sm" href="https://github.com/lemonpot/stratux-nx/releases" target="_blank" rel="noopener">All releases</a>
+            </div>
+          </div>
+        </aside>
+        <div class="steps">
+          <div class="step reveal">
+            <h3>Get the hardware</h3>
+            <ul>
+              <li><b>Raspberry Pi</b> 4 (recommended), 3B+ or 5, with a good 5 V / 3 A power supply</li>
+              <li><b>microSD card</b>, 16 GB or larger, from a reputable brand</li>
+              <li><b>SDR radios</b>: 1090 MHz for ADS-B traffic everywhere, plus 978 MHz for UAT traffic and FIS-B weather in the US</li>
+              <li><b>GPS receiver</b> (USB). Optional: an AHRS sensor board for attitude</li>
+            </ul>
+            <div class="tip">Already have a Stratux? Stratux NX runs on the same hardware. Keep your old card as a backup and flash a new one.</div>
+          </div>
+          <div class="step reveal">
+            <h3>Download the image</h3>
+            <p>Download the <b>SD card image (.zip)</b> from the latest release. There's no need to unzip it, the flashing tools read it directly.</p>
+            <a class="btn btn-sm" data-rel="image" href="https://github.com/lemonpot/stratux-nx/releases" target="_blank" rel="noopener"><svg><use href="#i-download"/></svg><span data-rel="imagelabel">Download SD card image</span></a>
+          </div>
+          <div class="step reveal">
+            <h3>Flash the microSD card</h3>
+            <p>With <a href="https://www.raspberrypi.com/software/" target="_blank" rel="noopener"><b>Raspberry Pi Imager</b></a> (Windows, macOS, Linux):</p>
+            <ol>
+              <li><b>Choose Device</b>: your Raspberry Pi model</li>
+              <li><b>Choose OS</b> → scroll down → <b>Use Custom</b> → select the downloaded <code>.zip</code></li>
+              <li><b>Choose Storage</b>: your microSD card</li>
+              <li>Click <b>Next</b>, answer <b>No</b> to OS customisation, then <b>Yes</b> to write</li>
+            </ol>
+            <p style="margin-top:12px">Prefer <a href="https://etcher.balena.io/" target="_blank" rel="noopener"><b>balenaEtcher</b></a>? Choose <b>Flash from file</b>, select the <code>.zip</code>, select the card, then <b>Flash!</b></p>
+            <div class="tip warn">Don't apply OS customisation (Wi-Fi, user or hostname settings) in Raspberry Pi Imager. Stratux NX configures itself.</div>
+          </div>
+          <div class="step reveal">
+            <h3>Boot and connect</h3>
+            <p>Insert the card, connect the radios and GPS, and power on. The first boot takes a couple of minutes.</p>
+            <ul>
+              <li>On your tablet or phone, join the Wi-Fi network <b>Stratux</b></li>
+              <li>Open <code>http://192.168.10.1</code> to see the Stratux NX dashboard</li>
+              <li>Open your EFB app. ForeFlight, Garmin Pilot, SkyDemon and other GDL90 apps detect Stratux automatically</li>
+            </ul>
+          </div>
+          <div class="step reveal">
+            <h3>Add Internet and your account <span style="color:var(--muted);font-weight:500">(optional)</span></h3>
+            <ul>
+              <li>In <b>Settings</b>, set <b>WiFi Mode</b> to <b>AP+Client</b> and join your Starlink, hotspot or router network (2.4 GHz)</li>
+              <li>In <b>Internet Data</b>, set your warning, per-device and session limits</li>
+              <li>In <b>Flight Log</b>, note the <b>link code</b>, then enter it at <a href="https://app.stratuxnx.com/"><b>app.stratuxnx.com</b></a> from any device with Internet</li>
+            </ul>
+            <div class="tip">Already running Stratux NX? Open <b>Settings → Software Update</b> and install the latest version online, or upload the <code>.deb</code> file if you're offline.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container">
+      <div class="oss reveal">
+        <div>
+          <span class="eyebrow">Open source</span>
+          <h2>Built on Stratux.<br><span class="gradient-text">Open to everyone.</span></h2>
+          <p>Stratux NX is an independent distribution of the community-maintained <a href="https://github.com/stratux/stratux" target="_blank" rel="noopener"><b>stratux/stratux</b></a> project, which continues the original work by Christopher Young and contributors. We follow upstream, credit it clearly and publish our own work under the BSD 3-Clause license.</p>
+          <p>Every release includes the exact corresponding source used to build it. Read the code, open an issue, or send a pull request.</p>
+        </div>
+        <div class="oss-links">
+          <a class="oss-link" href="https://github.com/lemonpot/stratux-nx" target="_blank" rel="noopener"><svg><use href="#i-github"/></svg><div><b>lemonpot/stratux-nx</b><span>Source code, issues and roadmap</span></div><svg class="arrow" width="18" height="18"><use href="#i-arrow"/></svg></a>
+          <a class="oss-link" data-rel="page" href="https://github.com/lemonpot/stratux-nx/releases" target="_blank" rel="noopener"><svg><use href="#i-download"/></svg><div><b data-rel="tagshort">Latest release</b><span>SD image, OTA package and corresponding source</span></div><svg class="arrow" width="18" height="18"><use href="#i-arrow"/></svg></a>
+          <a class="oss-link" href="https://github.com/stratux/stratux" target="_blank" rel="noopener"><svg><use href="#i-chip"/></svg><div><b>stratux/stratux</b><span>The upstream open-source project</span></div><svg class="arrow" width="18" height="18"><use href="#i-arrow"/></svg></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="faq">
+    <div class="container">
+      <div class="section-head center reveal">
+        <span class="eyebrow">FAQ</span>
+        <h2>Good questions, <span class="gradient-text">straight answers.</span></h2>
+      </div>
+      <div class="faq">
+        <details class="reveal"><summary>Is Stratux NX certified avionics?</summary><p>No. Like Stratux, it provides supplemental situational awareness only. It must never be your sole source of navigation, traffic, weather, attitude or terrain information. Adaptive AHRS v2 is a beta feature: always cross-check it with your aircraft instruments.</p></details>
+        <details class="reveal"><summary>Do I need Internet in the aircraft?</summary><p>No. Traffic, weather, the flight log and the airport database all work completely offline. Internet is only used for cloud sync, online updates and map tiles, and Stratux NX helps you control how much of it is used.</p></details>
+        <details class="reveal"><summary>Which EFB apps work with it?</summary><p>Any app that supports GDL90 over Wi-Fi, including ForeFlight, Garmin Pilot, SkyDemon, FltPlan Go and Avare. Connect your tablet to the Stratux Wi-Fi and the app finds it automatically.</p></details>
+        <details class="reveal"><summary>Who can see my flights?</summary><p>Only you. When your Stratux has Internet it uploads its flights privately to Stratux NX Cloud. They stay invisible until you link the receiver to your account with its code, and then they appear only in your account. You decide which flights to share with a link.</p></details>
+        <details class="reveal"><summary>Does it work outside the United States?</summary><p>Yes. 1090 MHz ADS-B traffic, GPS, the flight log and Starlink controls work worldwide, and the airport database is global. 978 MHz UAT and FIS-B weather are only broadcast in the United States.</p></details>
+        <details class="reveal"><summary>How much does it cost?</summary><p>Stratux NX is free and open source. You only need the hardware, which is the same as a regular Stratux build.</p></details>
+        <details class="reveal"><summary>How do I update?</summary><p>From Settings → Software Update on your Stratux. With Internet it downloads and installs the latest release in a few minutes, keeping your settings and flight history. Without Internet you can upload the update file downloaded from GitHub.</p></details>
+      </div>
+
+      <div class="final reveal">
+        <img src="/assets/img/photo-ramp.webp" alt="Small aircraft on the ramp at sunset" width="1280" height="720" loading="lazy">
+        <div class="final-content">
+          <h2>Ready for your <span class="gradient-text">next flight?</span></h2>
+          <p>Flash Stratux NX tonight. Tomorrow's flight logs itself.</p>
+          <div class="hero-cta" style="margin-top:0">
+            <a class="btn btn-lg btn-primary" data-rel="image" href="https://github.com/lemonpot/stratux-nx/releases" target="_blank" rel="noopener"><svg><use href="#i-download"/></svg>Download the latest image</a>
+            <a class="btn btn-lg" href="https://github.com/lemonpot/stratux-nx" target="_blank" rel="noopener"><svg><use href="#i-github"/></svg>Star on GitHub</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="foot">
+      <div class="about">
+        <a class="brand" href="#top"><img src="/assets/img/mark.png" alt="" width="40" height="24">Stratux <span class="nx">NX</span></a>
+        <p>A modern, independent Stratux distribution by <a href="https://lemonpot.ai/" target="_blank" rel="noopener" style="display:inline;color:var(--soft)">Lemonpot</a>.</p>
+      </div>
+      <div>
+        <h5>Product</h5>
+        <a href="#features">Features</a>
+        <a href="#starlink">Starlink data protection</a>
+        <a href="#flight-log">Flight log</a>
+        <a href="#cloud">Cloud</a>
+      </div>
+      <div>
+        <h5>Get started</h5>
+        <a href="#install">Install guide</a>
+        <a data-rel="page" href="https://github.com/lemonpot/stratux-nx/releases" target="_blank" rel="noopener">Latest release</a>
+        <a href="https://app.stratuxnx.com/">Sign in</a>
+      </div>
+      <div>
+        <h5>Open source</h5>
+        <a href="https://github.com/lemonpot/stratux-nx" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/lemonpot/stratux-nx/issues" target="_blank" rel="noopener">Report an issue</a>
+        <a href="https://github.com/stratux/stratux" target="_blank" rel="noopener">Upstream Stratux</a>
+      </div>
+    </div>
+    <div class="legal">
+      <p>Stratux NX provides supplemental situational awareness only. It is not certified avionics and must not be used as the sole source of navigation, traffic, weather, attitude, terrain or flight information.</p>
+      <p>Stratux NX is an independent distribution and is not an official upstream Stratux release. Starlink, ForeFlight, Garmin Pilot, SkyDemon, Raspberry Pi and other names are trademarks of their respective owners and are used only to describe compatibility. Some photography is illustrative.</p>
+      <p>© <span id="year">2026</span> Lemonpot. Stratux NX source is available under the BSD 3-Clause license; Stratux and third-party components remain under their own licenses.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="/assets/site.js" defer></script>
+</body>
+</html>
