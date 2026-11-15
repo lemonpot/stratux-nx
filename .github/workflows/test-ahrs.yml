@@ -1,9 +1,9 @@
 name: AHRS and Flight Log regression tests
 on:
   push:
-    paths: ['overlay/main/ahrs_v2*.go', 'overlay/main/flightlog.go', 'overlay/main/flightlog_journal*.go', 'tests/**', 'patch-ahrs-v2.py', '.github/workflows/test-ahrs.yml']
+    paths: ['overlay/main/ahrs_v2*.go', 'overlay/main/flightlog.go', 'overlay/main/flightlog_journal*.go', 'overlay/main/flightlog_weather.go', 'tests/**', 'patch-ahrs-v2.py', '.github/workflows/test-ahrs.yml']
   pull_request:
-    paths: ['overlay/main/ahrs_v2*.go', 'overlay/main/flightlog.go', 'overlay/main/flightlog_journal*.go', 'tests/**', 'patch-ahrs-v2.py', '.github/workflows/test-ahrs.yml']
+    paths: ['overlay/main/ahrs_v2*.go', 'overlay/main/flightlog.go', 'overlay/main/flightlog_journal*.go', 'overlay/main/flightlog_weather.go', 'tests/**', 'patch-ahrs-v2.py', '.github/workflows/test-ahrs.yml']
   workflow_dispatch:
 permissions:
   contents: read
