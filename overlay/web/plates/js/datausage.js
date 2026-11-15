@@ -120,6 +120,11 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
         return 'safe';
     };
 
+    $scope.selectClient = function(client) {
+        var same = client && $scope.selectedClient && deviceKey(client) === deviceKey($scope.selectedClient);
+        $scope.selectedClient = client && !same ? client : null;
+    };
+
     $scope.policyDraft = function(client) {
         var key = deviceKey(client);
         if (!devicePolicyDrafts[key]) {
@@ -253,6 +258,10 @@ appControllers.controller('DataUsageCtrl', function($scope, $http, $interval, $t
             $scope.data = d;
             $scope.data.Clients = d.Clients || [];
             $scope.data.RecentEvents = d.RecentEvents || [];
+            if ($scope.selectedClient) {
+                var selectedKey = deviceKey($scope.selectedClient);
+                $scope.selectedClient = $scope.data.Clients.filter(function(c) { return deviceKey(c) === selectedKey; })[0] || null;
+            }
             if (!settingsLoaded && d.Settings) {
                 $scope.settings = angular.copy(d.Settings);
                 settingsLoaded = true;

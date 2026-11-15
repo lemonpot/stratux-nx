@@ -134,7 +134,7 @@
     <div class="data-panel-header">
       <div>
         <h3>Connected devices</h3>
-        <div class="data-muted">Give every iPad, phone or computer its own limit. Pausing Internet never disconnects it from Stratux NX.</div>
+        <div class="data-muted">Give every iPad, phone or computer its own limit. Pausing Internet never disconnects it from Stratux NX. Tap a device to change its limit.</div>
       </div>
       <button class="btn btn-default data-secondary-action" ng-click="refresh()" ng-disabled="refreshPending">
         <i class="fa" ng-class="refreshPending ? 'fa-circle-o-notch fa-spin' : 'fa-refresh'"></i>
@@ -162,7 +162,7 @@
       <tbody>
         <tr ng-repeat="client in data.Clients | orderBy:['!Connected','-TotalBytes']"
             ng-class="{'is-blocked': client.Blocked, 'is-unlimited': client.Exempt}"
-            ng-click="selectedClient = (selectedClient === client ? null : client)">
+            ng-click="selectClient(client)">
           <td>
             <strong>{{client.Hostname || 'Unknown'}}</strong>
             <small class="data-device-ip">{{client.IP}}</small>
@@ -189,7 +189,7 @@
       <div class="data-device-detail-header">
         <strong>{{selectedClient.Hostname || 'Unknown device'}}</strong>
         <small>{{selectedClient.IP}} <span ng-if="selectedClient.MAC">· {{selectedClient.MAC}}</span></small>
-        <button class="btn btn-xs btn-default" ng-click="selectedClient = null"><i class="fa fa-times"></i></button>
+        <button class="btn btn-xs btn-default" ng-click="selectClient(null)"><i class="fa fa-times"></i></button>
       </div>
       <div class="data-device-detail-body">
         <div class="data-policy-options">
