@@ -151,5 +151,11 @@ func syncFlightWeatherLocked() {
 	if flightCurrent == nil {
 		return
 	}
-	flightCurrent.Weather = snapshotFlightWeather(flightCurrent.ID)
+	// No active capture (e.g. a flight recovered from its journal): keep what it has.
+	snapshot := snapshotFlightWeather(flightCurrent.ID)
+	if snapshot == nil {
+		return
+	}
+	flightCurrent.Weather = snapshot
+	appendFlightJournalWeatherLocked(snapshot)
 }

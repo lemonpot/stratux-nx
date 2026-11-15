@@ -21,6 +21,10 @@ import (
 const (
 	flightCloudBaseURL      = "https://api.stratuxnx.com/v1"
 	flightSyncRetryInterval = 30 * time.Second
+	flightLinkCodeAlphabet  = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	// The FAT copy is a legacy import source, so a lost ext4 identity is restored
+	// from it instead of creating a new, unlinked installation.
+	flightIdentityBackupDir = "/boot/firmware/stratux-flight-log"
 )
 
 type flightInstallationIdentity struct {
@@ -28,6 +32,7 @@ type flightInstallationIdentity struct {
 	PublicKey      string `json:"PublicKey"`
 	PrivateKey     string `json:"PrivateKey"`
 	CreatedAtUTC   string `json:"CreatedAtUTC"`
+	LinkCode       string `json:"LinkCode,omitempty"`
 }
 
 type flightSyncPublicState struct {
@@ -40,13 +45,15 @@ type flightSyncPublicState struct {
 	Linked         bool   `json:"Linked"`
 	AccountName    string `json:"AccountName,omitempty"`
 	AccountEmail   string `json:"AccountEmail,omitempty"`
-	ClaimCode      string `json:"ClaimCode,omitempty"`
-	ClaimExpiresUTC string `json:"ClaimExpiresUTC,omitempty"`
-	ClaimURL       string `json:"ClaimURL,omitempty"`
+	LinkCode       string `json:"LinkCode,omitempty"`
+	LinkURL        string `json:"LinkURL,omitempty"`
 }
 
 type flightSyncConfig struct {
-	Enabled bool `json:"Enabled"`
+	Enabled      bool   `json:"Enabled"`
+	Linked       bool   `json:"Linked,omitempty"`
+	AccountName  string `json:"AccountName,omitempty"`
+	AccountEmail string `json:"AccountEmail,omitempty"`
 }
 
 var (
@@ -58,8 +65,6 @@ var (
 	flightSyncLinked   bool
 	flightSyncAccountName string
 	flightSyncAccountEmail string
-	flightSyncClaimCode string
-	flightSyncClaimExpiry string
 	flightIdentityPath string
 	flightSyncPath     string
 	flightSyncWake     = make(chan struct{}, 1)
@@ -80,6 +85,7 @@ func flightSyncInitializeLocked() {
 	if b, err := os.ReadFile(flightIdentityPath); err == nil {
 		_ = json.Unmarshal(b, &flightIdentity)
 	}
+	changed := false
 	if flightIdentity.InstallationID == "" || flightIdentity.PublicKey == "" || flightIdentity.PrivateKey == "" {
 		publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 		if err == nil {
@@ -89,16 +95,72 @@ func flightSyncInitializeLocked() {
 				PrivateKey:     base64.RawURLEncoding.EncodeToString(privateKey),
 				CreatedAtUTC:   time.Now().UTC().Format(time.RFC3339),
 			}
-			if b, marshalErr := json.MarshalIndent(flightIdentity, "", "  "); marshalErr == nil {
-				_ = os.WriteFile(flightIdentityPath, b, 0600)
+			changed = true
+		}
+	}
+	if flightIdentity.InstallationID != "" && !validFlightLinkCode(flightIdentity.LinkCode) {
+		flightIdentity.LinkCode = newFlightLinkCode()
+		changed = true
+	}
+	if b, err := json.MarshalIndent(flightIdentity, "", "  "); err == nil && flightIdentity.InstallationID != "" {
+		if changed {
+			if writeErr := writeFlightFileAtomic(flightIdentityPath, b, 0600); writeErr != nil {
+				setFlightStorageErrorLocked("Cannot save device identity: " + writeErr.Error())
 			}
 		}
+		backupFlightIdentityLocked(b)
 	}
 
 	var cfg flightSyncConfig
 	if b, err := os.ReadFile(flightSyncPath); err == nil && json.Unmarshal(b, &cfg) == nil {
 		flightSyncEnabled = cfg.Enabled
+		flightSyncLinked = cfg.Linked
+		flightSyncAccountName = cfg.AccountName
+		flightSyncAccountEmail = cfg.AccountEmail
 	}
+}
+
+func backupFlightIdentityLocked(body []byte) {
+	if filepath.Clean(flightStorageDir) == flightIdentityBackupDir {
+		return
+	}
+	if _, err := os.Stat(filepath.Dir(flightIdentityBackupDir)); err != nil {
+		return
+	}
+	path := filepath.Join(flightIdentityBackupDir, "installation.json")
+	if existing, err := os.ReadFile(path); err == nil && bytes.Equal(existing, body) {
+		return
+	}
+	if err := os.MkdirAll(flightIdentityBackupDir, 0755); err == nil {
+		_ = writeFlightFileAtomic(path, body, 0600)
+	}
+}
+
+func newFlightLinkCode() string {
+	raw := make([]byte, 8)
+	if _, err := rand.Read(raw); err != nil {
+		return ""
+	}
+	code := make([]byte, 0, 9)
+	for i, value := range raw {
+		if i == 4 {
+			code = append(code, '-')
+		}
+		code = append(code, flightLinkCodeAlphabet[int(value)%len(flightLinkCodeAlphabet)])
+	}
+	return string(code)
+}
+
+func validFlightLinkCode(code string) bool {
+	if len(code) != 9 || code[4] != '-' {
+		return false
+	}
+	for i := 0; i < len(code); i++ {
+		if i != 4 && !strings.ContainsRune(flightLinkCodeAlphabet, rune(code[i])) {
+			return false
+		}
+	}
+	return true
 }
 
 func newFlightInstallationID() string {
@@ -118,8 +180,15 @@ func newFlightInstallationID() string {
 }
 
 func saveFlightSyncConfigLocked() {
-	b, _ := json.MarshalIndent(flightSyncConfig{Enabled: flightSyncEnabled}, "", "  ")
-	_ = os.WriteFile(flightSyncPath, b, 0600)
+	b, _ := json.MarshalIndent(flightSyncConfig{
+		Enabled:      flightSyncEnabled,
+		Linked:       flightSyncLinked,
+		AccountName:  flightSyncAccountName,
+		AccountEmail: flightSyncAccountEmail,
+	}, "", "  ")
+	if err := writeFlightFileAtomic(flightSyncPath, b, 0600); err != nil {
+		setFlightStorageErrorLocked("Cannot save cloud sync settings: " + err.Error())
+	}
 }
 
 func flightSyncCompletedStatusLocked() string {
@@ -146,13 +215,12 @@ func flightSyncPublicStateLocked() flightSyncPublicState {
 		Linked:         flightSyncLinked,
 		AccountName:    flightSyncAccountName,
 		AccountEmail:   flightSyncAccountEmail,
-		ClaimCode:      flightSyncClaimCode,
-		ClaimExpiresUTC: flightSyncClaimExpiry,
-		ClaimURL:       flightClaimURL(flightSyncClaimCode),
+		LinkCode:       flightIdentity.LinkCode,
+		LinkURL:        flightLinkURL(flightIdentity.LinkCode),
 	}
 }
 
-func flightClaimURL(code string) string {
+func flightLinkURL(code string) string {
 	if code == "" {
 		return ""
 	}
@@ -268,6 +336,7 @@ func registerFlightInstallation(identity flightInstallationIdentity) error {
 		"public_key":      identity.PublicKey,
 		"created_at_utc":  identity.CreatedAtUTC,
 		"software_version": stratuxVersion,
+		"link_code":       identity.LinkCode,
 	}
 	body, _ := json.Marshal(payload)
 	resp, err := flightCloudRequest(http.MethodPost, flightCloudBaseURL+"/installations/register", identity, body)
@@ -288,13 +357,14 @@ func registerFlightInstallation(identity flightInstallationIdentity) error {
 	if json.NewDecoder(resp.Body).Decode(&result) != nil {
 		return fmt.Errorf("cloud returned an invalid installation response")
 	}
+	name := strings.TrimSpace(result.Account.Name)
+	email := strings.TrimSpace(result.Account.Email)
 	flightLogMu.Lock()
-	flightSyncLinked = result.Account.Linked
-	flightSyncAccountName = strings.TrimSpace(result.Account.Name)
-	flightSyncAccountEmail = strings.TrimSpace(result.Account.Email)
-	if flightSyncLinked {
-		flightSyncClaimCode = ""
-		flightSyncClaimExpiry = ""
+	if flightSyncLinked != result.Account.Linked || flightSyncAccountName != name || flightSyncAccountEmail != email {
+		flightSyncLinked = result.Account.Linked
+		flightSyncAccountName = name
+		flightSyncAccountEmail = email
+		saveFlightSyncConfigLocked()
 	}
 	flightLogMu.Unlock()
 	return nil
@@ -316,26 +386,6 @@ func uploadFlightRecord(identity flightInstallationIdentity, record []byte) (str
 		return "", fmt.Errorf("cloud returned an invalid flight response")
 	}
 	return result.FlightID, nil
-}
-
-func requestFlightClaimCode(identity flightInstallationIdentity) (string, string, error) {
-	body := []byte("{}")
-	resp, err := flightCloudRequest(http.MethodPost, flightCloudBaseURL+"/installations/claim-code", identity, body)
-	if err != nil {
-		return "", "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", "", flightCloudHTTPError(resp)
-	}
-	var result struct {
-		Code       string `json:"code"`
-		ExpiresUTC string `json:"expires_utc"`
-	}
-	if json.NewDecoder(resp.Body).Decode(&result) != nil || result.Code == "" {
-		return "", "", fmt.Errorf("cloud returned an invalid claim code")
-	}
-	return result.Code, result.ExpiresUTC, nil
 }
 
 func flightCloudRequest(method, url string, identity flightInstallationIdentity, body []byte) (*http.Response, error) {
@@ -418,34 +468,6 @@ func handleFlightLogSync(w http.ResponseWriter, r *http.Request) {
 	}
 	if json.NewDecoder(r.Body).Decode(&request) != nil {
 		http.Error(w, "invalid JSON", http.StatusBadRequest)
-		return
-	}
-	if request.Action == "claim-code" {
-		flightLogMu.Lock()
-		identity := flightIdentity
-		enabled := flightSyncEnabled
-		flightLogMu.Unlock()
-		if !enabled {
-			http.Error(w, "enable cloud sync first", http.StatusBadRequest)
-			return
-		}
-		if err := registerFlightInstallation(identity); err != nil {
-			http.Error(w, compactFlightSyncError(err), http.StatusBadGateway)
-			return
-		}
-		code, expires, err := requestFlightClaimCode(identity)
-		if err != nil {
-			http.Error(w, compactFlightSyncError(err), http.StatusBadGateway)
-			return
-		}
-		flightLogMu.Lock()
-		flightSyncClaimCode = code
-		flightSyncClaimExpiry = expires
-		state := flightSyncPublicStateLocked()
-		flightLogMu.Unlock()
-		w.Header().Set("Content-Type", "application/json")
-		w.Header().Set("Cache-Control", "no-store")
-		_ = json.NewEncoder(w).Encode(state)
 		return
 	}
 	flightLogMu.Lock()

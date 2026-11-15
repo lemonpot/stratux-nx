@@ -279,6 +279,55 @@ func TestLatestInAirJournalWaitsForGPSThenClosesIncomplete(t *testing.T) {
 	}
 }
 
+func TestWeatherAndContextSurvivePowerLoss(t *testing.T) {
+	setupFlightRecoveryStorage(t)
+	start := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
+	id := "20261114T120000Z"
+	flightCurrent = &flightRecord{
+		ID: id, Phase: flightPhaseAirborne, OffBlockUTC: start.Format(time.RFC3339),
+		TakeoffUTC: start.Add(10 * time.Second).Format(time.RFC3339), LastUpdateUTC: start.Format(time.RFC3339),
+		Track: []flightTrackPoint{{TimeUTC: start.Format(time.RFC3339), Latitude: 45, Longitude: -73, GroundSpeedKt: 95}},
+	}
+	beginFlightJournalLocked(flightCurrent)
+	startFlightWeatherCapture(id, nil)
+	for i := 1; i < 60; i++ {
+		p := flightTrackPoint{TimeUTC: start.Add(time.Duration(i) * time.Second).Format(time.RFC3339), Latitude: 45 + float64(i)/100000, Longitude: -73, GroundSpeedKt: 95}
+		flightCurrent.Track = append(flightCurrent.Track, p)
+		flightCurrent.LastUpdateUTC = p.TimeUTC
+		appendFlightJournalPointLocked(p)
+	}
+
+	captureFlightWeatherText(WeatherMessage{Type: "METAR", Location: "CYUL", Time: "141200Z", Data: "CYUL 141200Z 27010KT"})
+	captureFlightNEXRADFrame(63, 4)
+	syncFlightWeatherLocked()
+	written := flightJournalSegment*flightJournalEntriesPerSegment + flightJournalSegmentEntries
+	syncFlightWeatherLocked()
+	if flightJournalSegment*flightJournalEntriesPerSegment+flightJournalSegmentEntries != written {
+		t.Fatal("unchanged weather must not be written again")
+	}
+	captureFlightWeatherText(WeatherMessage{Type: "TAF", Location: "CYUL", Time: "141130Z", Data: "TAF CYUL 141130Z"})
+	syncFlightWeatherLocked()
+	appendFlightContextLocked(flightContextSnapshot{TimeUTC: start.Add(30 * time.Second).Format(time.RFC3339), Phase: flightPhaseAirborne})
+	checkpointFlightJournalLocked()
+
+	// Power loss: memory is gone, only the journal remains.
+	stopFlightWeatherCapture(id)
+	flightCurrent = nil
+	recoverFlightJournalsLocked()
+	if flightCurrent == nil || flightCurrent.Weather == nil || len(flightCurrent.Weather.TextReports) != 2 ||
+		flightCurrent.Weather.Summary["METAR"] != 1 || flightCurrent.Weather.Summary["NEXRAD"] != 1 ||
+		len(flightCurrent.Weather.NEXRADSnapshots) != 1 || len(flightCurrent.Context) != 1 {
+		t.Fatalf("weather/context not recovered from journal: %#v", flightCurrent)
+	}
+	if !closeRecoveredFlightLocked() {
+		t.Fatal("recovered flight could not be closed")
+	}
+	record := readCompletedFlight(t, id)
+	if record.Weather == nil || len(record.Weather.TextReports) != 2 || len(record.Context) != 1 || record.Context[0].Phase != flightPhaseAirborne {
+		t.Fatalf("completed flight lost recovered weather/context: %#v", record)
+	}
+}
+
 func TestReconcileFlightIndexListsEveryCompletedFile(t *testing.T) {
 	setupFlightRecoveryStorage(t)
 	record := flightRecord{ID: "20261027T090000Z", Phase: flightPhaseParked, LastUpdateUTC: "2026-10-27T10:00:00Z"}
