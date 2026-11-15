@@ -15,7 +15,7 @@ import shutil
 import sys
 from pathlib import Path
 
-SITE = "https://stratuxnx.com"
+SITE = "https://www.stratuxnx.com"
 ROOT = Path(__file__).resolve().parent
 
 
