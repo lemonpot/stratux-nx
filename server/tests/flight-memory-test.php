@@ -66,6 +66,13 @@ expect($landing['approach']['path_angle_deg'] >= 3.5 && $landing['approach']['pa
 expect($landing['approach']['speed_gain_kt'] === 0, 'slowing down on final must not count as speed gained');
 expect($landing['rollout']['seconds'] === 50, 'rollout must end at taxi speed');
 expect(array_column($landing['checks'], 'verdict', 'label')['Speed on short final'] === 'good', 'a decelerating final is stable');
+expect($landing['summary']['title'] === 'Stable approach' && $landing['summary']['tips'] === [], 'a stable landing has nothing to improve');
+$slowerBefore = ['touchdown' => ['groundspeed_kt' => $landing['touchdown']['groundspeed_kt'] - 10], 'rollout' => ['seconds' => 20]];
+$compared = nx_landing_with_history($landing, [$slowerBefore]);
+$comparedVerdicts = array_column($compared['checks'], 'verdict', 'label');
+expect($comparedVerdicts['Touchdown'] === 'check' && $comparedVerdicts['Rollout'] === 'check', 'a faster touchdown and longer rollout than usual must be flagged');
+expect(count($compared['summary']['tips']) === 1 && str_contains($compared['summary']['story'], '10 kt faster than usual'),
+    'a long rollout caused by a fast touchdown must give one tip, not two');
 
 $earlyFlag = $landingPayload;
 $earlyFlag['LandingUTC'] = gmdate('c', $landingAt - 5);

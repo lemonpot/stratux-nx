@@ -243,11 +243,13 @@ function nx_landing_analysis(array $payload): array {
     $speeds = [];
     $speedGain = 0.0;
     $gainSeconds = null;
+    $gainFrom = null;
     foreach ($segment as $point) {
         if ($point['SecondsToTouchdown'] < $speedStart || $point['SecondsToTouchdown'] > -3) continue;
         if ($speeds && $point['GroundSpeedKt'] - min($speeds) > $speedGain) {
             $speedGain = $point['GroundSpeedKt'] - min($speeds);
             $gainSeconds = $point['SecondsToTouchdown'];
+            $gainFrom = min($speeds);
         }
         $speeds[] = $point['GroundSpeedKt'];
     }
@@ -265,23 +267,35 @@ function nx_landing_analysis(array $payload): array {
     $checks = [];
     if ($linedUp) {
         $good = $linedUpHeight >= 500;
+        $where = sprintf('%s ft, %s (%.1f NM) from the runway', number_format(max(0, $linedUpHeight)), nx_duration_words(-$linedUpSeconds), $finalDistance / 6076.12);
         $checks[] = [
             'label' => 'Final approach',
             'verdict' => $good ? 'good' : 'check',
             'value' => sprintf('Lined up at %s ft', number_format(max(0, $linedUpHeight))),
-            'detail' => sprintf('%s and %.1f NM before touchdown. ', nx_duration_words(-$linedUpSeconds), $finalDistance / 6076.12) .
-                ($good ? 'You had time to settle the approach.' : 'A short final leaves little time to stabilize; a common guideline is to be lined up and stable by 500 ft.'),
+            'detail' => $good
+                ? "You rolled out on final at $where. That gave you time to settle speed and descent before the flare."
+                : "You rolled out on final at only $where. That is a short final: speed, descent and alignment all have to be fixed in very little time, so any correction happens close to the ground.",
+            'tip' => $good ? null : 'Extend downwind a little or start the base turn later, so you are lined up by 500 ft, about 1.5 NM out on a normal approach.',
         ];
     }
     if ($pathAngle !== null) {
-        $good = $pathAngle >= 2.5 && $pathAngle <= 5.0;
-        $checks[] = [
-            'label' => 'Approach path',
-            'verdict' => $good ? 'good' : 'check',
-            'value' => sprintf('%.1f° slope', $pathAngle),
-            'detail' => sprintf('About %s fpm average descent. ', number_format($averageDescent, 0)) .
-                ($good ? 'A normal visual approach is around 3°.' : ($pathAngle < 2.5 ? 'Low and flat: you were dragged in under a normal 3° path.' : 'Steeper than a normal 3° path.')),
-        ];
+        $path = sprintf('%.1f° (about %s fpm)', $pathAngle, number_format($averageDescent, 0));
+        if ($pathAngle < 2.5) {
+            $verdict = 'check';
+            $detail = "You came down at only $path, flatter than the normal 3°. A low, dragged-in approach keeps you near obstacles with power on and leaves few options if the engine quits.";
+            $tip = 'Reduce power a little earlier and keep your aim point steady in the windshield: if it moves up, you are getting low. A PAPI should show two white and two red.';
+        } elseif ($pathAngle > 5.0) {
+            $verdict = 'check';
+            $detail = "You came down at $path, steeper than the normal 3°. A steep path means a high sink rate near the ground, which makes the flare harder to time and can end in a firm landing.";
+            $tip = 'Start the descent a little earlier and keep your aim point fixed in the windshield. If the runway has a PAPI, aim for two white and two red.';
+        } else {
+            $verdict = 'good';
+            $detail = $pathAngle <= 3.7
+                ? "You came down at $path, close to the normal 3° of a visual approach. A steady path like this makes the flare easier to judge."
+                : "You came down at $path, a bit steeper than the usual 3° but still normal for a light aircraft.";
+            $tip = null;
+        }
+        $checks[] = ['label' => 'Approach path', 'verdict' => $verdict, 'value' => sprintf('%.1f° slope', $pathAngle), 'detail' => $detail, 'tip' => $tip];
     }
     if (count($speeds) >= 2) {
         $good = $speedGain < 8;
@@ -290,33 +304,43 @@ function nx_landing_analysis(array $payload): array {
             'verdict' => $good ? 'good' : 'check',
             'value' => sprintf('%d–%d kt', (int)round(min($speeds)), (int)round(max($speeds))),
             'detail' => $good
-                ? 'Groundspeed held steady or decreased toward the runway.'
-                : sprintf('Groundspeed rose %d kt, peaking %s before touchdown. A gust can do this; otherwise the approach was not stable.', (int)round($speedGain), nx_duration_words(-$gainSeconds)),
+                ? sprintf('Your groundspeed held steady or came down on short final (%d–%d kt). That is what a stable approach looks like.', (int)round(min($speeds)), (int)round(max($speeds)))
+                : sprintf('Your groundspeed rose from %d to %d kt on short final, peaking %s before touchdown. If the wind did not change, the nose probably dropped or power came in. Extra speed this close to the runway usually means floating in the flare and a longer landing.',
+                    (int)round($gainFrom), (int)round($gainFrom + $speedGain), nx_duration_words(-$gainSeconds)),
+            'tip' => $good ? null : 'Set your approach speed and trim for it as soon as you are on final, then make small, early corrections. In gusty wind, plan any extra speed before final, not on it.',
         ];
     }
     $checks[] = [
         'label' => 'Touchdown',
         'verdict' => 'info',
         'value' => sprintf('%d kt groundspeed', (int)round($touchdown['GroundSpeedKt'])),
-        'detail' => 'Compare it with your other landings here. GPS altitude is too coarse to measure how firm the touchdown was.',
+        'detail' => sprintf('You touched down at %d kt groundspeed.', (int)round($touchdown['GroundSpeedKt'])),
+        'tip' => null,
     ];
     $checks[] = [
         'label' => 'Rollout',
         'verdict' => 'info',
         'value' => $rolloutSeconds === null ? 'Not recorded' : sprintf('%d s · %s ft', $rolloutSeconds, number_format(round($rolloutDistance, -1))),
-        'detail' => 'Time and distance from touchdown to taxi speed (15 kt).',
+        'detail' => $rolloutSeconds === null
+            ? 'The recording ends before the aircraft slowed to taxi speed.'
+            : sprintf('It took %d seconds and about %s ft to slow to taxi speed (15 kt).', $rolloutSeconds, number_format(round($rolloutDistance, -1))),
+        'tip' => null,
     ];
 
-    $review = array_values(array_filter($checks, static fn(array $check): bool => $check['verdict'] === 'check'));
-    $summary = [
-        'title' => $review
-            ? count($review) . (count($review) === 1 ? ' thing' : ' things') . ' to review'
-            : 'Stable approach',
-        'detail' => $review
-            ? 'Worth reviewing: ' . strtolower(implode(', ', array_column($review, 'label'))) . '.'
-            : 'Nothing to flag in the recorded approach.',
-    ];
-    if ($confidence === 'low') $summary['detail'] .= ' GPS data was limited, so treat these as rough estimates.';
+    $story = '';
+    if ($linedUp) {
+        $story = sprintf('You rolled out on final at %s ft, %s from the runway', number_format(max(0, $linedUpHeight)), nx_duration_words(-$linedUpSeconds)) .
+            ($pathAngle === null ? '. ' : sprintf(', and came down on a %.1f° path. ', $pathAngle));
+    }
+    if (count($speeds) >= 2) {
+        $story .= $speedGain >= 8
+            ? sprintf('Your groundspeed rose from %d to %d kt on short final, then you', (int)round($gainFrom), (int)round($gainFrom + $speedGain))
+            : 'Your speed held steady on short final, then you';
+    } else {
+        $story .= 'You';
+    }
+    $story .= sprintf(' touched down at %d kt', (int)round($touchdown['GroundSpeedKt'])) .
+        ($rolloutSeconds === null ? '.' : sprintf(' and slowed to taxi speed in %d seconds.', $rolloutSeconds));
 
     return [
         'available' => true,
@@ -343,7 +367,7 @@ function nx_landing_analysis(array $payload): array {
             'seconds' => $rolloutSeconds,
             'distance_ft' => $rolloutSeconds === null ? null : (int)round($rolloutDistance, -1),
         ],
-        'summary' => $summary,
+        'summary' => nx_landing_summary($checks, $story, $confidence),
         'checks' => $checks,
         'segment' => nx_downsample_track($segment, 180),
     ];
@@ -351,8 +375,77 @@ function nx_landing_analysis(array $payload): array {
 
 function nx_duration_words(float $seconds): string {
     $seconds = (int)round(max(0, $seconds));
-    if ($seconds < 60) return $seconds . ' s';
-    return sprintf('%d:%02d min', intdiv($seconds, 60), $seconds % 60);
+    if ($seconds < 60) return $seconds . ' seconds';
+    return intdiv($seconds, 60) . ' min ' . ($seconds % 60) . ' s';
+}
+
+function nx_landing_summary(array $checks, string $story, string $confidence): array {
+    $tips = array_values(array_filter(array_column($checks, 'tip')));
+    return [
+        'title' => $tips ? count($tips) . (count($tips) === 1 ? ' thing' : ' things') . ' to improve' : 'Stable approach',
+        'story' => $story,
+        'tips' => $tips,
+        'note' => $confidence === 'low' ? 'GPS data was limited on this landing, so treat these as rough estimates.' : '',
+    ];
+}
+
+// Adds how this touchdown and rollout compare with previous landings at the same airport.
+function nx_landing_with_history(array $landing, array $previous): array {
+    if (!($landing['available'] ?? false) || !$previous) return $landing;
+    $count = count($previous);
+    $here = $count === 1 ? 'your previous landing here' : "your last $count landings here";
+    $verdicts = array_column($landing['checks'], 'verdict', 'label');
+    $gainedSpeed = ($verdicts['Speed on short final'] ?? '') === 'check';
+    $story = $landing['summary']['story'];
+
+    $usualSpeed = array_sum(array_map(static fn(array $p): float => (float)$p['touchdown']['groundspeed_kt'], $previous)) / $count;
+    $speedDifference = (int)round($landing['touchdown']['groundspeed_kt'] - $usualSpeed);
+    $fastTouchdown = $speedDifference >= 6;
+    $rollouts = array_values(array_filter(array_map(static fn(array $p): ?int => $p['rollout']['seconds'] ?? null, $previous), static fn(?int $s): bool => $s !== null));
+    $usualRollout = $rollouts ? array_sum($rollouts) / count($rollouts) : null;
+    $rolloutDifference = $usualRollout === null || $landing['rollout']['seconds'] === null ? null : (int)round($landing['rollout']['seconds'] - $usualRollout);
+
+    foreach ($landing['checks'] as &$check) {
+        if ($check['label'] === 'Touchdown') {
+            if (abs($speedDifference) < 4) {
+                $check['detail'] .= sprintf(' That is about the same as %s (%d kt).', $here, (int)round($usualSpeed));
+            } else {
+                $check['detail'] .= sprintf(' That is %d kt %s than %s (%d kt). Wind changes groundspeed, so compare days with similar wind.',
+                    abs($speedDifference), $speedDifference > 0 ? 'faster' : 'slower', $here, (int)round($usualSpeed));
+            }
+            if ($fastTouchdown) {
+                $check['verdict'] = 'check';
+                if ($gainedSpeed) {
+                    $check['detail'] .= ' The speed you gained on short final probably carried into the touchdown.';
+                } else {
+                    $check['tip'] = 'If the wind was similar, you arrived fast or flared early. Cross the threshold at your usual approach speed and let the speed bleed off in the flare.';
+                }
+            }
+        }
+        if ($check['label'] === 'Rollout' && $rolloutDifference !== null) {
+            $check['detail'] .= abs($rolloutDifference) < 10
+                ? sprintf(' About the same as usual here (%d s).', (int)round($usualRollout))
+                : sprintf(' That is %d seconds %s than usual here (%d s).', abs($rolloutDifference), $rolloutDifference > 0 ? 'longer' : 'shorter', (int)round($usualRollout));
+            if ($rolloutDifference >= 20) {
+                $check['verdict'] = 'check';
+                if ($fastTouchdown) {
+                    $check['detail'] .= ' A faster touchdown takes longer to stop, so this follows from the extra speed.';
+                } else {
+                    $check['tip'] = 'A long rollout usually follows a faster touchdown or later braking. If you did not mean to let it roll, start braking once the nosewheel is down.';
+                }
+            }
+        }
+    }
+    unset($check);
+
+    if ($fastTouchdown) {
+        $story .= sprintf(' That touchdown was %d kt faster than usual here', $speedDifference) .
+            ($rolloutDifference !== null && $rolloutDifference >= 20 ? sprintf(' and the rollout %d seconds longer.', $rolloutDifference) : '.');
+    } elseif (abs($speedDifference) < 4 && $rolloutDifference !== null && abs($rolloutDifference) < 10) {
+        $story .= ' Touchdown speed and rollout were in line with your usual landings here.';
+    }
+    $landing['summary'] = nx_landing_summary($landing['checks'], $story, $landing['confidence']);
+    return $landing;
 }
 
 function nx_comparable_landings(array $currentFlight, string $userId, int $maximum = 3): array {

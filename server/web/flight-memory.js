@@ -443,14 +443,19 @@
     landingSection.hidden = false;
     var confidence = document.getElementById('landing-confidence');
     var title = document.getElementById('landing-summary-title');
-    var detail = document.getElementById('landing-summary-detail');
+    var story = document.getElementById('landing-summary-story');
+    var next = document.getElementById('landing-summary-next');
+    var tips = document.getElementById('landing-summary-tips');
+    var note = document.getElementById('landing-summary-note');
     var checks = document.getElementById('landing-checks');
 
     if (!landingData.available) {
       confidence.textContent = 'Not enough data';
       confidence.className = 'landing-confidence is-low';
       title.textContent = 'This landing could not be reviewed';
-      detail.textContent = landingData.reason || 'The GPS track does not cover the landing.';
+      story.textContent = landingData.reason || 'The GPS track does not cover the landing.';
+      next.hidden = true;
+      note.textContent = '';
       checks.hidden = true;
       document.querySelector('.landing-chart-wrap').hidden = true;
       return;
@@ -458,8 +463,22 @@
 
     confidence.textContent = landingConfidenceLabels[landingData.confidence] || 'GPS data';
     confidence.className = 'landing-confidence is-' + landingData.confidence;
-    title.textContent = landingData.summary.title;
-    detail.textContent = landingData.summary.detail;
+    var summary = landingData.summary || {};
+    title.textContent = summary.title;
+    story.textContent = summary.story;
+    tips.textContent = '';
+    (summary.tips || []).forEach(function (text) {
+      var item = document.createElement('li');
+      item.textContent = text;
+      tips.appendChild(item);
+    });
+    if (!tips.children.length) {
+      var keep = document.createElement('li');
+      keep.textContent = 'Nothing to change. Keep flying it this way.';
+      tips.appendChild(keep);
+    }
+    next.hidden = false;
+    note.textContent = summary.note || '';
     checks.textContent = '';
     (landingData.checks || []).forEach(function (check) {
       checks.appendChild(landingCheckRow(check));

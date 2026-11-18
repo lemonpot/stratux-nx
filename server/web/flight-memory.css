@@ -751,7 +751,12 @@
 .landing-summary strong,
 .landing-summary span { display: block; }
 .landing-summary strong { font-size: 17px; }
-.landing-summary span { margin-top: 2px; color: var(--muted); font-size: 13px; }
+.landing-summary p { margin: 6px 0 0; font-size: 14px; line-height: 1.5; }
+.landing-summary b { display: block; margin-top: 10px; font-size: 13px; }
+.landing-summary ul { margin: 4px 0 0; padding-left: 20px; font-size: 13px; line-height: 1.5; }
+.landing-summary li + li { margin-top: 4px; }
+.landing-summary span { margin-top: 8px; color: var(--muted); font-size: 12px; }
+.landing-summary span:empty { display: none; }
 
 .landing-checks {
   margin-bottom: 14px;
@@ -791,7 +796,6 @@
 .landing-check-head strong { font-size: 13px; }
 .landing-check-head span { font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .landing-check p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
-
 .ghost-empty {
   padding: 26px;
   border: 1px dashed var(--border);

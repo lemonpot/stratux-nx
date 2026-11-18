@@ -51,10 +51,11 @@ if ($action === 'flight-json' || $action === 'flight-export') {
         $flightData['Track'] = nx_downsample_track($validTrack, 5000);
         $isShared = $shareParam !== '';
         $ownerId = $isShared ? '' : (string)$apiUser['id'];
+        $previousLandings = $isShared ? [] : nx_comparable_landings($flightRow, $ownerId);
         nx_json([
             'flight' => $flightData,
-            'landing' => nx_landing_analysis($flightData),
-            'ghost_landings' => $isShared ? [] : nx_comparable_landings($flightRow, $ownerId),
+            'landing' => nx_landing_with_history(nx_landing_analysis($flightData), $previousLandings),
+            'ghost_landings' => $previousLandings,
             'memory' => $isShared ? ['flight_number' => 0, 'cumulative_air_time_seconds' => 0, 'milestones' => []] : nx_flight_milestones($flightRow, $ownerId),
             'meta' => [
                 'id' => $flightRow['id'],
@@ -623,13 +624,18 @@ function aircraft_label(array $row): string {
       <div class="body">
         <div class="landing-summary">
           <strong id="landing-summary-title">—</strong>
-          <span id="landing-summary-detail"></span>
+          <p id="landing-summary-story"></p>
+          <div id="landing-summary-next" hidden>
+            <b>Next time</b>
+            <ul id="landing-summary-tips"></ul>
+          </div>
+          <span id="landing-summary-note"></span>
         </div>
         <div id="landing-checks" class="landing-checks"></div>
         <div class="landing-chart-wrap">
           <canvas id="landing-signature-canvas" role="img" aria-label="Height above the runway and groundspeed on the final approach"></canvas>
         </div>
-        <p class="profile-note">From GPS only: groundspeed is not airspeed and wind is not included. Use it to spot trends, not as a flight instrument.</p>
+        <p class="profile-note">From GPS only: groundspeed is not airspeed, wind is not included and GPS altitude cannot tell how firm a touchdown was. Use it to spot trends, not as a flight instrument.</p>
       </div>
     </section>
 
