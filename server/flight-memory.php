@@ -100,6 +100,18 @@ function nx_median(array $values): float {
     return ((float)$values[$middle - 1] + (float)$values[$middle]) / 2;
 }
 
+function nx_distance_ft(array $from, array $to): float {
+    $lat1 = deg2rad($from['Latitude']);
+    $lat2 = deg2rad($to['Latitude']);
+    $h = sin(($lat2 - $lat1) / 2) ** 2 +
+        cos($lat1) * cos($lat2) * sin(deg2rad($to['Longitude'] - $from['Longitude']) / 2) ** 2;
+    return 2 * 20902231.0 * asin(min(1.0, sqrt($h)));
+}
+
+function nx_course_difference(float $a, float $b): float {
+    return abs(fmod($a - $b + 540.0, 360.0) - 180.0);
+}
+
 function nx_landing_analysis(array $payload): array {
     $track = nx_flight_track($payload);
     usort($track, static fn(array $a, array $b): int =>
@@ -112,97 +124,235 @@ function nx_landing_analysis(array $payload): array {
         return ['available' => false, 'reason' => 'Not enough GPS data to reconstruct this landing'];
     }
 
-    $arrivalAirport = is_array($payload['ArrivalAirport'] ?? null) ? $payload['ArrivalAirport'] : [];
-    $hasAirportElevation = array_key_exists('ElevationFt', $arrivalAirport) &&
-        is_numeric($arrivalAirport['ElevationFt']) && is_finite((float)$arrivalAirport['ElevationFt']);
-    $airportElevation = $hasAirportElevation ? (float)$arrivalAirport['ElevationFt'] : 0.0;
-    $segment = [];
-    $finalMinute = [];
-    $touchdown = null;
-    $touchdownDistance = PHP_INT_MAX;
+    $window = [];
     foreach ($track as $point) {
-        $timestamp = strtotime($point['TimeUTC']);
-        if ($timestamp === false) continue;
-        $seconds = $timestamp - $landingAt;
-        if ($seconds >= -300 && $seconds <= 90) {
+        $seconds = strtotime($point['TimeUTC']) - $landingAt;
+        if ($seconds >= -330 && $seconds <= 120) {
             $point['SecondsToTouchdown'] = $seconds;
-            if ($hasAirportElevation) $point['HeightAboveAirportFt'] = $point['AltitudeFt'] - $airportElevation;
-            $segment[] = $point;
-        }
-        if ($seconds >= -60 && $seconds <= -5) $finalMinute[] = $point;
-        if (abs($seconds) < $touchdownDistance) {
-            $touchdownDistance = abs($seconds);
-            $touchdown = $point;
+            $window[] = $point;
         }
     }
-    if (count($segment) < 2 || !$touchdown) {
+    if (count($window) < 2) {
         return ['available' => false, 'reason' => 'The recorded track does not cover the landing'];
     }
 
-    $gaps = [];
-    for ($index = 1; $index < count($segment); $index++) {
-        $previous = strtotime($segment[$index - 1]['TimeUTC']);
-        $current = strtotime($segment[$index]['TimeUTC']);
-        if ($previous !== false && $current !== false && $current > $previous) $gaps[] = $current - $previous;
+    // Heights are measured from the altitude GPS reported on the rollout, so a GPS
+    // offset from the published field elevation cancels out.
+    $rollout = [];
+    foreach ($window as $point) {
+        if ($point['SecondsToTouchdown'] >= 15 && $point['SecondsToTouchdown'] <= 45 && $point['GroundSpeedKt'] > 3) {
+            $rollout[] = $point['AltitudeFt'];
+        }
     }
-    $maximumGap = $gaps ? max($gaps) : 0;
-    $medianGap = nx_median($gaps);
+    if (!$rollout) {
+        foreach ($window as $point) if ($point['SecondsToTouchdown'] >= 0) $rollout[] = $point['AltitudeFt'];
+    }
+    $runwayAltitude = $rollout ? nx_median($rollout) : $window[count($window) - 1]['AltitudeFt'];
+
+    // The receiver flags a landing below 60 kt near field elevation, which can be
+    // several seconds before the wheels touch. Use the first sample near the runway.
+    $offset = 0;
+    foreach ($window as $point) {
+        if ($point['SecondsToTouchdown'] >= -30 && $point['SecondsToTouchdown'] <= 20 &&
+            $point['AltitudeFt'] - $runwayAltitude <= 12) {
+            $offset = $point['SecondsToTouchdown'];
+            break;
+        }
+    }
+    $touchdownAt = $landingAt + $offset;
+
+    $segment = [];
+    $touchdownIndex = null;
+    $touchdownDistance = PHP_INT_MAX;
+    $finalMinuteSamples = 0;
+    foreach ($window as $point) {
+        $seconds = $point['SecondsToTouchdown'] - $offset;
+        if ($seconds < -300 || $seconds > 90) continue;
+        $point['SecondsToTouchdown'] = $seconds;
+        $point['HeightAboveRunwayFt'] = round($point['AltitudeFt'] - $runwayAltitude, 1);
+        $segment[] = $point;
+        if ($seconds >= -60 && $seconds <= -5) $finalMinuteSamples++;
+        if (abs($seconds) < $touchdownDistance) {
+            $touchdownDistance = abs($seconds);
+            $touchdownIndex = count($segment) - 1;
+        }
+    }
+    if (count($segment) < 2 || $touchdownIndex === null) {
+        return ['available' => false, 'reason' => 'The recorded track does not cover the landing'];
+    }
+    $touchdown = $segment[$touchdownIndex];
+    if (abs($touchdown['HeightAboveRunwayFt']) > 30) {
+        return ['available' => false, 'reason' => 'The touchdown could not be identified in the GPS track'];
+    }
+    $approachHeight = max(array_column(array_slice($segment, 0, $touchdownIndex + 1), 'HeightAboveRunwayFt'));
+    if ($approachHeight < 100) {
+        return ['available' => false, 'reason' => 'No approach was recorded before this landing'];
+    }
+
+    $maximumGap = 0;
+    for ($index = 1; $index < count($segment); $index++) {
+        $maximumGap = max($maximumGap, $segment[$index]['SecondsToTouchdown'] - $segment[$index - 1]['SecondsToTouchdown']);
+    }
     $confidence = 'low';
-    if ($hasDetectedLanding && count($finalMinute) >= 8 && $maximumGap <= 15 && $touchdownDistance <= 10) {
+    if ($hasDetectedLanding && $finalMinuteSamples >= 8 && $maximumGap <= 15 && $touchdownDistance <= 10) {
         $confidence = 'high';
-    } elseif ($hasDetectedLanding && count($finalMinute) >= 4 && $maximumGap <= 30 && $touchdownDistance <= 20) {
+    } elseif ($hasDetectedLanding && $finalMinuteSamples >= 4 && $maximumGap <= 30 && $touchdownDistance <= 20) {
         $confidence = 'medium';
     }
 
-    $speeds = array_column($finalMinute, 'GroundSpeedKt');
-    $verticalFpm = array_map(static fn(array $point): float => $point['VerticalSpeedFps'] * 60, $finalMinute);
-    $speedRange = $speeds ? max($speeds) - min($speeds) : 0.0;
-    $verticalRange = $verticalFpm ? max($verticalFpm) - min($verticalFpm) : 0.0;
-    $averageDescent = $verticalFpm ? array_sum($verticalFpm) / count($verticalFpm) : 0.0;
-
-    $observations = [];
-    $observations[] = sprintf(
-        'Final-minute groundspeed ranged from %d to %d kt.',
-        (int)round($speeds ? min($speeds) : $touchdown['GroundSpeedKt']),
-        (int)round($speeds ? max($speeds) : $touchdown['GroundSpeedKt'])
-    );
-    $observations[] = sprintf(
-        'Recorded vertical speed varied by approximately %d fpm in the final minute.',
-        (int)round(abs($verticalRange))
-    );
-    if ($medianGap > 0) {
-        $observations[] = sprintf('GPS samples were typically %.0f seconds apart.', $medianGap);
+    // Final approach: the straight segment ending at touchdown, on the touchdown course.
+    $x = 0.0;
+    $y = 0.0;
+    foreach ($segment as $point) {
+        if ($point['SecondsToTouchdown'] >= -10 && $point['SecondsToTouchdown'] <= 0 && $point['GroundSpeedKt'] > 30) {
+            $x += cos(deg2rad($point['CourseDeg']));
+            $y += sin(deg2rad($point['CourseDeg']));
+        }
     }
+    $linedUpIndex = null;
+    if ($x != 0.0 || $y != 0.0) {
+        $finalCourse = fmod(rad2deg(atan2($y, $x)) + 360.0, 360.0);
+        for ($index = $touchdownIndex; $index >= 0; $index--) {
+            $point = $segment[$index];
+            if ($point['GroundSpeedKt'] < 30 || nx_course_difference($point['CourseDeg'], $finalCourse) > 12) break;
+            if ($index < $touchdownIndex &&
+                $segment[$index + 1]['SecondsToTouchdown'] - $point['SecondsToTouchdown'] > 15) break;
+            $linedUpIndex = $index;
+        }
+    }
+    $linedUp = $linedUpIndex !== null && $linedUpIndex < $touchdownIndex ? $segment[$linedUpIndex] : null;
+    $linedUpSeconds = $linedUp ? $linedUp['SecondsToTouchdown'] : null;
+    $linedUpHeight = $linedUp ? $linedUp['HeightAboveRunwayFt'] : null;
+    $finalDistance = 0.0;
+    if ($linedUp) {
+        for ($index = $linedUpIndex; $index < $touchdownIndex; $index++) {
+            $finalDistance += nx_distance_ft($segment[$index], $segment[$index + 1]);
+        }
+    }
+    $pathAngle = null;
+    $averageDescent = null;
+    if ($linedUp && $linedUpHeight - $touchdown['HeightAboveRunwayFt'] >= 100 && $finalDistance >= 500) {
+        $drop = $linedUpHeight - $touchdown['HeightAboveRunwayFt'];
+        $pathAngle = rad2deg(atan2($drop, $finalDistance));
+        $averageDescent = $drop / ($touchdown['SecondsToTouchdown'] - $linedUpSeconds) * 60;
+    }
+
+    // Slowing down on final is normal; speed gained on short final is what matters.
+    // Turns change groundspeed with the wind, so only the straight final is used.
+    $speedStart = $linedUp ? max($linedUpSeconds, -45) : -30;
+    $speeds = [];
+    $speedGain = 0.0;
+    $gainSeconds = null;
+    foreach ($segment as $point) {
+        if ($point['SecondsToTouchdown'] < $speedStart || $point['SecondsToTouchdown'] > -3) continue;
+        if ($speeds && $point['GroundSpeedKt'] - min($speeds) > $speedGain) {
+            $speedGain = $point['GroundSpeedKt'] - min($speeds);
+            $gainSeconds = $point['SecondsToTouchdown'];
+        }
+        $speeds[] = $point['GroundSpeedKt'];
+    }
+
+    $rolloutSeconds = null;
+    $rolloutDistance = 0.0;
+    for ($index = $touchdownIndex; $index < count($segment) - 1; $index++) {
+        if ($segment[$index]['GroundSpeedKt'] <= 15) break;
+        $rolloutDistance += nx_distance_ft($segment[$index], $segment[$index + 1]);
+    }
+    if ($index > $touchdownIndex && $segment[$index]['GroundSpeedKt'] <= 15) {
+        $rolloutSeconds = $segment[$index]['SecondsToTouchdown'];
+    }
+
+    $checks = [];
+    if ($linedUp) {
+        $good = $linedUpHeight >= 500;
+        $checks[] = [
+            'label' => 'Final approach',
+            'verdict' => $good ? 'good' : 'check',
+            'value' => sprintf('Lined up at %s ft', number_format(max(0, $linedUpHeight))),
+            'detail' => sprintf('%s and %.1f NM before touchdown. ', nx_duration_words(-$linedUpSeconds), $finalDistance / 6076.12) .
+                ($good ? 'You had time to settle the approach.' : 'A short final leaves little time to stabilize; a common guideline is to be lined up and stable by 500 ft.'),
+        ];
+    }
+    if ($pathAngle !== null) {
+        $good = $pathAngle >= 2.5 && $pathAngle <= 5.0;
+        $checks[] = [
+            'label' => 'Approach path',
+            'verdict' => $good ? 'good' : 'check',
+            'value' => sprintf('%.1f° slope', $pathAngle),
+            'detail' => sprintf('About %s fpm average descent. ', number_format($averageDescent, 0)) .
+                ($good ? 'A normal visual approach is around 3°.' : ($pathAngle < 2.5 ? 'Low and flat: you were dragged in under a normal 3° path.' : 'Steeper than a normal 3° path.')),
+        ];
+    }
+    if (count($speeds) >= 2) {
+        $good = $speedGain < 8;
+        $checks[] = [
+            'label' => 'Speed on short final',
+            'verdict' => $good ? 'good' : 'check',
+            'value' => sprintf('%d–%d kt', (int)round(min($speeds)), (int)round(max($speeds))),
+            'detail' => $good
+                ? 'Groundspeed held steady or decreased toward the runway.'
+                : sprintf('Groundspeed rose %d kt, peaking %s before touchdown. A gust can do this; otherwise the approach was not stable.', (int)round($speedGain), nx_duration_words(-$gainSeconds)),
+        ];
+    }
+    $checks[] = [
+        'label' => 'Touchdown',
+        'verdict' => 'info',
+        'value' => sprintf('%d kt groundspeed', (int)round($touchdown['GroundSpeedKt'])),
+        'detail' => 'Compare it with your other landings here. GPS altitude is too coarse to measure how firm the touchdown was.',
+    ];
+    $checks[] = [
+        'label' => 'Rollout',
+        'verdict' => 'info',
+        'value' => $rolloutSeconds === null ? 'Not recorded' : sprintf('%d s · %s ft', $rolloutSeconds, number_format(round($rolloutDistance, -1))),
+        'detail' => 'Time and distance from touchdown to taxi speed (15 kt).',
+    ];
+
+    $review = array_values(array_filter($checks, static fn(array $check): bool => $check['verdict'] === 'check'));
+    $summary = [
+        'title' => $review
+            ? count($review) . (count($review) === 1 ? ' thing' : ' things') . ' to review'
+            : 'Stable approach',
+        'detail' => $review
+            ? 'Worth reviewing: ' . strtolower(implode(', ', array_column($review, 'label'))) . '.'
+            : 'Nothing to flag in the recorded approach.',
+    ];
+    if ($confidence === 'low') $summary['detail'] .= ' GPS data was limited, so treat these as rough estimates.';
 
     return [
         'available' => true,
         'confidence' => $confidence,
-        'height_reference' => $hasAirportElevation ? 'airport_elevation' : 'gps_msl',
         'confidence_reasons' => [
             'detected_landing_time' => $hasDetectedLanding,
-            'final_minute_samples' => count($finalMinute),
+            'final_minute_samples' => $finalMinuteSamples,
             'maximum_sample_gap_seconds' => $maximumGap,
             'touchdown_sample_offset_seconds' => $touchdownDistance,
         ],
         'touchdown' => [
-            'time_utc' => gmdate('c', $landingAt),
+            'time_utc' => gmdate('c', $touchdownAt),
             'groundspeed_kt' => round($touchdown['GroundSpeedKt'], 1),
-            'vertical_speed_fpm' => (int)round($touchdown['VerticalSpeedFps'] * 60),
-            'altitude_ft' => round($touchdown['AltitudeFt'], 1),
-            'height_above_airport_ft' => $hasAirportElevation ? round($touchdown['AltitudeFt'] - $airportElevation, 1) : null,
         ],
-        'final_minute' => [
-            'average_vertical_speed_fpm' => (int)round($averageDescent),
-            'groundspeed_range_kt' => round($speedRange, 1),
-            'vertical_speed_range_fpm' => (int)round(abs($verticalRange)),
+        'approach' => [
+            'lined_up_seconds' => $linedUpSeconds,
+            'lined_up_height_ft' => $linedUpHeight === null ? null : (int)round(max(0, $linedUpHeight)),
+            'path_angle_deg' => $pathAngle === null ? null : round($pathAngle, 1),
+            'speed_min_kt' => $speeds ? (int)round(min($speeds)) : null,
+            'speed_max_kt' => $speeds ? (int)round(max($speeds)) : null,
+            'speed_gain_kt' => (int)round($speedGain),
         ],
+        'rollout' => [
+            'seconds' => $rolloutSeconds,
+            'distance_ft' => $rolloutSeconds === null ? null : (int)round($rolloutDistance, -1),
+        ],
+        'summary' => $summary,
+        'checks' => $checks,
         'segment' => nx_downsample_track($segment, 180),
-        'observations' => $observations,
-        'limitations' => [
-            'Touchdown timing and vertical speed are GPS-derived estimates, not certified flight-instrument measurements.',
-            'Runway alignment and crosswind are not shown until runway and time-matched weather data are available.',
-        ],
     ];
+}
+
+function nx_duration_words(float $seconds): string {
+    $seconds = (int)round(max(0, $seconds));
+    if ($seconds < 60) return $seconds . ' s';
+    return sprintf('%d:%02d min', intdiv($seconds, 60), $seconds % 60);
 }
 
 function nx_comparable_landings(array $currentFlight, string $userId, int $maximum = 3): array {
@@ -241,9 +391,9 @@ function nx_comparable_landings(array $currentFlight, string $userId, int $maxim
                 'date_utc' => $row['off_block_utc'],
                 'route' => ($row['departure_code'] ?: '---') . ' → ' . ($row['arrival_code'] ?: '---'),
                 'confidence' => $landing['confidence'],
-                'height_reference' => $landing['height_reference'],
                 'touchdown' => $landing['touchdown'],
-                'final_minute' => $landing['final_minute'],
+                'approach' => $landing['approach'],
+                'rollout' => $landing['rollout'],
                 'segment' => $landing['segment'],
             ];
         } catch (Throwable $e) {

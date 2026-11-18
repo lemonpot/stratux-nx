@@ -617,45 +617,40 @@ function aircraft_label(array $row): string {
 
     <section id="landing-signature" class="card landing-card" hidden>
       <div class="head memory-viewer-head">
-        <div><h2>Landing Signature</h2><span class="muted">A GPS-derived view of the final approach and touchdown.</span></div>
-        <span id="landing-confidence" class="landing-confidence">Confidence unavailable</span>
+        <div><h2>How was your landing?</h2><span class="muted">What the GPS recorded on your final approach at <?=h($arrival)?>.</span></div>
+        <span id="landing-confidence" class="landing-confidence">Checking data</span>
       </div>
       <div class="body">
-        <div class="landing-metrics">
-          <div><span>Estimated touchdown</span><strong id="landing-touchdown-time">—</strong></div>
-          <div><span>Vertical speed</span><strong id="landing-touchdown-vs">—</strong></div>
-          <div><span>Groundspeed</span><strong id="landing-touchdown-speed">—</strong></div>
-          <div><span>Final-minute average</span><strong id="landing-average-vs">—</strong></div>
+        <div class="landing-summary">
+          <strong id="landing-summary-title">—</strong>
+          <span id="landing-summary-detail"></span>
         </div>
+        <div id="landing-checks" class="landing-checks"></div>
         <div class="landing-chart-wrap">
-          <canvas id="landing-signature-canvas" role="img" aria-label="Final approach altitude and groundspeed profile"></canvas>
+          <canvas id="landing-signature-canvas" role="img" aria-label="Height above the runway and groundspeed on the final approach"></canvas>
         </div>
-        <div class="landing-detail-grid">
-          <div>
-            <h3>What the receiver observed</h3>
-            <ul id="landing-observations" class="landing-observations"></ul>
-          </div>
-          <div class="landing-caution">
-            <h3>Interpret with care</h3>
-            <ul id="landing-limitations" class="landing-observations"></ul>
-          </div>
-        </div>
+        <p class="profile-note">From GPS only: groundspeed is not airspeed and wind is not included. Use it to spot trends, not as a flight instrument.</p>
       </div>
     </section>
 
     <section id="ghost-landing" class="card ghost-card" hidden>
       <div class="head">
-        <h2>Ghost Landing</h2>
-        <span class="muted">Compare this approach with your previous arrivals at <?=h($arrival)?> from the same device.</span>
+        <h2>Your landings at <?=h($arrival)?></h2>
+        <span class="muted">This approach next to your previous arrivals here.</span>
       </div>
       <div class="body">
-        <div id="ghost-empty" class="ghost-empty" hidden>Your next arrival here will unlock a private comparison.</div>
+        <div id="ghost-empty" class="ghost-empty" hidden>Land here again and this approach will be compared with the next one.</div>
         <div id="ghost-content" hidden>
           <div class="ghost-chart-wrap">
-            <canvas id="ghost-landing-canvas" role="img" aria-label="Comparison of current and previous approach profiles"></canvas>
+            <canvas id="ghost-landing-canvas" role="img" aria-label="Height above the runway on this and previous approaches"></canvas>
           </div>
-          <div id="ghost-comparisons" class="ghost-comparisons"></div>
-          <p class="profile-note">Compared by time to estimated touchdown. Same airport does not guarantee the same runway or conditions.</p>
+          <div class="account-table-wrap ghost-table-wrap">
+            <table class="account-table">
+              <thead><tr><th>Landing</th><th>Lined up</th><th>Slope</th><th>Short final</th><th>Touchdown</th><th>Rollout</th></tr></thead>
+              <tbody id="ghost-comparisons"></tbody>
+            </table>
+          </div>
+          <p class="profile-note">Same airport does not always mean the same runway or wind.</p>
         </div>
       </div>
     </section>

@@ -93,6 +93,16 @@
       return index === 0 || point.time > normalized[index - 1].time;
     });
 
+    // Stratux NX tracks carry no GPS vertical speed; derive it from altitude over about 10 s.
+    if (!normalized.some(function (point) { return point.verticalSpeedFps !== 0; })) {
+      normalized.forEach(function (point, index) {
+        var before = normalized[Math.max(0, index - 5)];
+        var after = normalized[Math.min(normalized.length - 1, index + 5)];
+        var seconds = (after.time - before.time) / 1000;
+        point.verticalSpeedFps = seconds > 0 && seconds <= 30 ? (after.altitudeFt - before.altitudeFt) / seconds : 0;
+      });
+    }
+
     if (normalized.length <= 5000) return normalized;
     var thinned = [];
     var step = (normalized.length - 1) / 4999;
@@ -210,13 +220,6 @@
     ctx.fillText(endLabel, size.width - padding.right - endWidth, size.height - 7 * size.scale);
   }
 
-  function verticalSpeedText(value) {
-    var rounded = Math.round(number(value));
-    if (rounded < 0) return Math.abs(rounded).toLocaleString() + ' fpm down';
-    if (rounded > 0) return rounded.toLocaleString() + ' fpm up';
-    return '0 fpm';
-  }
-
   function drawLandingLine(ctx, segment, xFor, yFor, color, width) {
     ctx.beginPath();
     segment.forEach(function (point, index) {
@@ -230,29 +233,49 @@
     ctx.stroke();
   }
 
+  function landingWindow(segment) {
+    return (segment || []).filter(function (point) {
+      var seconds = number(point.SecondsToTouchdown);
+      return seconds >= -180 && seconds <= 75;
+    });
+  }
+
+  function drawLandingMarker(ctx, x, top, bottom, label, labelY, color, size) {
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, bottom);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = size.scale;
+    ctx.setLineDash([4 * size.scale, 4 * size.scale]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    var labelWidth = ctx.measureText(label).width;
+    ctx.fillStyle = color;
+    ctx.fillText(label, Math.max(0, Math.min(size.width - labelWidth, x - labelWidth / 2)), labelY);
+  }
+
   function drawLandingChart() {
     if (!landingCanvas || !landingData || !landingData.available) return;
-    var segment = landingData.segment || [];
+    var segment = landingWindow(landingData.segment);
     if (segment.length < 2) return;
     var size = fitCanvas(landingCanvas);
     var ctx = landingCanvas.getContext('2d');
     var scale = size.scale;
-    var padding = {left: 54 * scale, right: 48 * scale, top: 30 * scale, bottom: 30 * scale};
+    var padding = {left: 54 * scale, right: 48 * scale, top: 44 * scale, bottom: 30 * scale};
     var width = size.width - padding.left - padding.right;
     var height = size.height - padding.top - padding.bottom;
-    var heightField = landingData.height_reference === 'airport_elevation' ? 'HeightAboveAirportFt' : 'AltitudeFt';
-    var minSeconds = Math.min.apply(null, segment.map(function (point) { return number(point.SecondsToTouchdown); }));
-    var maxSeconds = Math.max.apply(null, segment.map(function (point) { return number(point.SecondsToTouchdown); }));
-    var maximumHeight = Math.max(500, Math.ceil(Math.max.apply(null, segment.map(function (point) {
-      return Math.max(0, number(point[heightField]));
-    })) / 500) * 500);
+    var minSeconds = number(segment[0].SecondsToTouchdown);
+    var maxSeconds = number(segment[segment.length - 1].SecondsToTouchdown);
+    var maximumHeight = Math.max(400, Math.ceil(Math.max.apply(null, segment.map(function (point) {
+      return Math.max(0, number(point.HeightAboveRunwayFt));
+    })) / 400) * 400);
     var maximumSpeed = Math.max(40, Math.ceil(Math.max.apply(null, segment.map(function (point) {
       return Math.max(0, number(point.GroundSpeedKt));
     })) / 20) * 20);
     var secondsRange = Math.max(1, maxSeconds - minSeconds);
     var xFor = function (seconds) { return padding.left + (seconds - minSeconds) / secondsRange * width; };
-    var altitudeY = function (point) {
-      return padding.top + height * (1 - Math.max(0, number(point[heightField])) / maximumHeight);
+    var heightY = function (point) {
+      return padding.top + height * (1 - Math.max(0, number(point.HeightAboveRunwayFt)) / maximumHeight);
     };
     var speedY = function (point) {
       return padding.top + height * (1 - Math.max(0, number(point.GroundSpeedKt)) / maximumSpeed);
@@ -270,47 +293,47 @@
       ctx.stroke();
       ctx.fillStyle = cssColor('--muted', '#697386');
       ctx.fillText(Math.round(maximumHeight * (1 - line / 4)).toLocaleString() + ' ft', 4 * scale, y + 4 * scale);
-      var speedLabel = Math.round(maximumSpeed * (1 - line / 4)) + ' kt';
-      ctx.fillText(speedLabel, size.width - padding.right + 6 * scale, y + 4 * scale);
+      ctx.fillText(Math.round(maximumSpeed * (1 - line / 4)) + ' kt', size.width - padding.right + 6 * scale, y + 4 * scale);
     }
 
-    var touchdownX = xFor(0);
-    ctx.beginPath();
-    ctx.moveTo(touchdownX, padding.top);
-    ctx.lineTo(touchdownX, padding.top + height);
-    ctx.strokeStyle = cssColor('--danger', '#b4234d');
-    ctx.setLineDash([4 * scale, 4 * scale]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    var muted = cssColor('--muted', '#697386');
+    var markerTop = padding.top - 4 * scale;
+    var markerBottom = padding.top + height;
+    var linedUp = landingData.approach && landingData.approach.lined_up_seconds;
+    if (linedUp !== null && linedUp !== undefined && linedUp >= minSeconds) {
+      drawLandingMarker(ctx, xFor(linedUp), markerTop, markerBottom, 'LINED UP', padding.top - 8 * scale, muted, size);
+    }
+    var taxi = landingData.rollout && landingData.rollout.seconds;
+    if (taxi !== null && taxi !== undefined && taxi <= maxSeconds) {
+      drawLandingMarker(ctx, xFor(taxi), markerTop, markerBottom, 'TAXI SPEED', padding.top - 8 * scale, muted, size);
+    }
+    drawLandingMarker(ctx, xFor(0), markerTop, markerBottom, 'TOUCHDOWN', size.height - 7 * scale, cssColor('--danger', '#b4234d'), size);
 
-    drawLandingLine(ctx, segment, xFor, altitudeY, cssColor('--primary', '#635bff'), 2.5 * scale);
-    drawLandingLine(ctx, segment, xFor, speedY, cssColor('--accent', '#00a4ef'), 2 * scale);
+    ctx.globalAlpha = 0.7;
+    drawLandingLine(ctx, segment, xFor, speedY, cssColor('--accent', '#00a4ef'), 1.5 * scale);
+    ctx.globalAlpha = 1;
+    drawLandingLine(ctx, segment, xFor, heightY, cssColor('--primary', '#635bff'), 3 * scale);
 
     ctx.fillStyle = cssColor('--primary', '#635bff');
-    ctx.fillText(heightField === 'HeightAboveAirportFt' ? 'HEIGHT ABOVE AIRPORT' : 'GPS ALTITUDE MSL', padding.left, 15 * scale);
+    var legend = 'HEIGHT ABOVE RUNWAY';
+    ctx.fillText(legend, padding.left, 14 * scale);
     ctx.fillStyle = cssColor('--accent', '#00a4ef');
-    ctx.fillText('GROUNDSPEED', padding.left + 150 * scale, 15 * scale);
-    ctx.fillStyle = cssColor('--muted', '#697386');
+    ctx.fillText('GROUNDSPEED', padding.left + ctx.measureText(legend).width + 18 * scale, 14 * scale);
+    ctx.fillStyle = muted;
     ctx.fillText(Math.round(Math.abs(minSeconds) / 60) + ' min before', padding.left, size.height - 7 * scale);
-    var touchdownLabel = 'TOUCHDOWN';
-    var touchdownWidth = ctx.measureText(touchdownLabel).width;
-    ctx.fillText(touchdownLabel, Math.min(size.width - padding.right - touchdownWidth, touchdownX - touchdownWidth / 2), size.height - 7 * scale);
   }
 
   function drawGhostChart() {
     if (!ghostCanvas || !landingData || !landingData.available || !ghostLandings.length) return;
-    var current = (landingData.segment || []).filter(function (point) {
-      return number(point.SecondsToTouchdown) >= -180 && number(point.SecondsToTouchdown) <= 15;
+    var current = landingWindow(landingData.segment).filter(function (point) {
+      return number(point.SecondsToTouchdown) <= 15;
     });
     var histories = ghostLandings.map(function (ghost) {
-      return (ghost.segment || []).filter(function (point) {
-        return number(point.SecondsToTouchdown) >= -180 && number(point.SecondsToTouchdown) <= 15;
+      return landingWindow(ghost.segment).filter(function (point) {
+        return number(point.SecondsToTouchdown) <= 15;
       });
     }).filter(function (segment) { return segment.length > 1; });
     if (current.length < 2 || !histories.length) return;
-    var useAirportHeight = landingData.height_reference === 'airport_elevation' &&
-      ghostLandings.every(function (ghost) { return ghost.height_reference === 'airport_elevation'; });
-    var heightField = useAirportHeight ? 'HeightAboveAirportFt' : 'AltitudeFt';
 
     var size = fitCanvas(ghostCanvas);
     var ctx = ghostCanvas.getContext('2d');
@@ -319,12 +342,12 @@
     var width = size.width - padding.left - padding.right;
     var height = size.height - padding.top - padding.bottom;
     var allPoints = current.concat.apply(current, histories);
-    var maximumHeight = Math.max(500, Math.ceil(Math.max.apply(null, allPoints.map(function (point) {
-      return Math.max(0, number(point[heightField]));
-    })) / 500) * 500);
+    var maximumHeight = Math.max(600, Math.ceil(Math.max.apply(null, allPoints.map(function (point) {
+      return Math.max(0, number(point.HeightAboveRunwayFt));
+    })) / 300) * 300);
     var xFor = function (seconds) { return padding.left + (seconds + 180) / 195 * width; };
     var yFor = function (point) {
-      return padding.top + height * (1 - Math.max(0, number(point[heightField])) / maximumHeight);
+      return padding.top + height * (1 - Math.max(0, number(point.HeightAboveRunwayFt)) / maximumHeight);
     };
 
     ctx.clearRect(0, 0, size.width, size.height);
@@ -348,51 +371,99 @@
     drawLandingLine(ctx, current, xFor, yFor, cssColor('--primary', '#635bff'), 3 * scale);
 
     ctx.fillStyle = cssColor('--primary', '#635bff');
-    ctx.fillText('CURRENT LANDING', padding.left, 14 * scale);
+    ctx.fillText('THIS LANDING', padding.left, 14 * scale);
     ctx.fillStyle = cssColor('--muted', '#697386');
-    ctx.fillText('PREVIOUS LANDINGS', padding.left + 130 * scale, 14 * scale);
+    ctx.fillText('PREVIOUS LANDINGS', padding.left + 110 * scale, 14 * scale);
     ctx.fillText('3 min before', padding.left, size.height - 7 * scale);
     var touchdownLabel = 'TOUCHDOWN';
     var touchdownWidth = ctx.measureText(touchdownLabel).width;
     ctx.fillText(touchdownLabel, size.width - padding.right - touchdownWidth, size.height - 7 * scale);
   }
 
-  function fillList(elementId, values) {
-    var list = document.getElementById(elementId);
-    list.textContent = '';
-    (values || []).forEach(function (value) {
-      var item = document.createElement('li');
-      item.textContent = value;
-      list.appendChild(item);
-    });
+  function landingCheckRow(check) {
+    var row = document.createElement('div');
+    row.className = 'landing-check is-' + check.verdict;
+    var icon = document.createElement('span');
+    icon.className = 'landing-check-icon';
+    icon.textContent = check.verdict === 'good' ? '✓' : (check.verdict === 'check' ? '!' : 'i');
+    var text = document.createElement('div');
+    var head = document.createElement('div');
+    head.className = 'landing-check-head';
+    var label = document.createElement('strong');
+    label.textContent = check.label;
+    var value = document.createElement('span');
+    value.textContent = check.value;
+    var detail = document.createElement('p');
+    detail.textContent = check.detail;
+    head.appendChild(label);
+    head.appendChild(value);
+    text.appendChild(head);
+    text.appendChild(detail);
+    row.appendChild(icon);
+    row.appendChild(text);
+    return row;
   }
+
+  function ghostTableRow(title, landing, isCurrent) {
+    var approach = landing.approach || {};
+    var rollout = landing.rollout || {};
+    var speed = approach.speed_min_kt === null || approach.speed_min_kt === undefined ? '—' :
+      approach.speed_min_kt + '–' + approach.speed_max_kt + ' kt' + (approach.speed_gain_kt >= 8 ? ' (+' + approach.speed_gain_kt + ')' : '');
+    var cells = [
+      title,
+      approach.lined_up_height_ft === null || approach.lined_up_height_ft === undefined ? '—' : approach.lined_up_height_ft.toLocaleString() + ' ft',
+      approach.path_angle_deg === null || approach.path_angle_deg === undefined ? '—' : approach.path_angle_deg.toFixed(1) + '°',
+      speed,
+      Math.round(number(landing.touchdown && landing.touchdown.groundspeed_kt)) + ' kt',
+      rollout.seconds === null || rollout.seconds === undefined ? '—' : rollout.seconds + ' s · ' + number(rollout.distance_ft).toLocaleString() + ' ft'
+    ];
+    var labels = ['Landing', 'Lined up', 'Slope', 'Short final', 'Touchdown', 'Rollout'];
+    var row = document.createElement('tr');
+    if (isCurrent) row.className = 'is-current';
+    cells.forEach(function (value, index) {
+      var cell = document.createElement('td');
+      cell.setAttribute('data-label', labels[index]);
+      if (index === 0) {
+        var strong = document.createElement('strong');
+        strong.textContent = value;
+        cell.appendChild(strong);
+      } else {
+        cell.textContent = value;
+      }
+      row.appendChild(cell);
+    });
+    return row;
+  }
+
+  var landingConfidenceLabels = {high: 'Good GPS data', medium: 'Fair GPS data', low: 'Limited GPS data'};
 
   function renderLanding(analysis, ghosts) {
     landingData = analysis || {available: false};
     ghostLandings = Array.isArray(ghosts) ? ghosts : [];
     landingSection.hidden = false;
     var confidence = document.getElementById('landing-confidence');
+    var title = document.getElementById('landing-summary-title');
+    var detail = document.getElementById('landing-summary-detail');
+    var checks = document.getElementById('landing-checks');
 
     if (!landingData.available) {
       confidence.textContent = 'Not enough data';
       confidence.className = 'landing-confidence is-low';
-      fillList('landing-observations', [landingData.reason || 'This landing could not be reconstructed.']);
-      fillList('landing-limitations', ['No landing metrics are estimated when the track is incomplete.']);
-      document.querySelector('.landing-metrics').hidden = true;
+      title.textContent = 'This landing could not be reviewed';
+      detail.textContent = landingData.reason || 'The GPS track does not cover the landing.';
+      checks.hidden = true;
       document.querySelector('.landing-chart-wrap').hidden = true;
-      ghostSection.hidden = false;
-      document.getElementById('ghost-empty').hidden = false;
       return;
     }
 
-    confidence.textContent = landingData.confidence.charAt(0).toUpperCase() + landingData.confidence.slice(1) + ' data confidence';
+    confidence.textContent = landingConfidenceLabels[landingData.confidence] || 'GPS data';
     confidence.className = 'landing-confidence is-' + landingData.confidence;
-    document.getElementById('landing-touchdown-time').textContent = formatTime(Date.parse(landingData.touchdown.time_utc));
-    document.getElementById('landing-touchdown-vs').textContent = verticalSpeedText(landingData.touchdown.vertical_speed_fpm);
-    document.getElementById('landing-touchdown-speed').textContent = Math.round(landingData.touchdown.groundspeed_kt) + ' kt';
-    document.getElementById('landing-average-vs').textContent = verticalSpeedText(landingData.final_minute.average_vertical_speed_fpm);
-    fillList('landing-observations', landingData.observations);
-    fillList('landing-limitations', landingData.limitations);
+    title.textContent = landingData.summary.title;
+    detail.textContent = landingData.summary.detail;
+    checks.textContent = '';
+    (landingData.checks || []).forEach(function (check) {
+      checks.appendChild(landingCheckRow(check));
+    });
     drawLandingChart();
 
     ghostSection.hidden = false;
@@ -402,17 +473,9 @@
     if (hasGhosts) {
       var comparisons = document.getElementById('ghost-comparisons');
       comparisons.textContent = '';
+      comparisons.appendChild(ghostTableRow('This landing', landingData, true));
       ghostLandings.forEach(function (ghost) {
-        var card = document.createElement('div');
-        card.className = 'ghost-comparison';
-        var title = document.createElement('strong');
-        title.textContent = new Date(ghost.date_utc).toLocaleDateString() + ' · ' + ghost.route;
-        var metrics = document.createElement('span');
-        metrics.textContent = verticalSpeedText(ghost.touchdown.vertical_speed_fpm) + ' · ' +
-          Math.round(ghost.touchdown.groundspeed_kt) + ' kt · ' + ghost.confidence + ' confidence';
-        card.appendChild(title);
-        card.appendChild(metrics);
-        comparisons.appendChild(card);
+        comparisons.appendChild(ghostTableRow(new Date(ghost.date_utc).toLocaleDateString(), ghost, false));
       });
       drawGhostChart();
     }

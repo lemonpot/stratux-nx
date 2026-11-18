@@ -43,11 +43,11 @@ $landingTrack = [];
 for ($seconds = -120; $seconds <= 60; $seconds += 5) {
     $landingTrack[] = [
         'TimeUTC' => gmdate('c', $landingAt + $seconds),
-        'Latitude' => 46.78 + $seconds / 100000,
+        'Latitude' => 46.78 + $seconds * 0.0003,
         'Longitude' => -71.39,
         'AltitudeFt' => 250 + max(0, -$seconds) * 8,
-        'GroundSpeedKt' => max(8, 68 + $seconds / 4),
-        'VerticalSpeedFps' => $seconds <= 0 ? -7.0 : 0.0,
+        'GroundSpeedKt' => $seconds <= 0 ? 65 - $seconds / 20 : max(8, 65 - $seconds),
+        'VerticalSpeedFps' => 0.0,
     ];
 }
 $landingPayload = [
@@ -60,13 +60,20 @@ $landingPayload = [
 $landing = nx_landing_analysis($landingPayload);
 expect($landing['available'] === true, 'landing analysis must be available with a valid segment');
 expect($landing['confidence'] === 'high', 'dense GPS landing data must report high confidence');
-expect($landing['touchdown']['vertical_speed_fpm'] === -420, 'touchdown vertical speed must use the nearest sample');
 expect(count($landing['segment']) === 37, 'landing segment must include approach and rollout samples');
-$landingWithoutElevation = $landingPayload;
-unset($landingWithoutElevation['ArrivalAirport']['ElevationFt']);
-$mslLanding = nx_landing_analysis($landingWithoutElevation);
-expect($mslLanding['height_reference'] === 'gps_msl', 'missing airport elevation must never be presented as height above airport');
-expect(!array_key_exists('HeightAboveAirportFt', $mslLanding['segment'][0]), 'AGL points require a known airport elevation');
+expect($landing['approach']['lined_up_height_ft'] === 960, 'a straight final must be found from the start of the approach');
+expect($landing['approach']['path_angle_deg'] >= 3.5 && $landing['approach']['path_angle_deg'] <= 5.0, 'approach slope must follow height over distance');
+expect($landing['approach']['speed_gain_kt'] === 0, 'slowing down on final must not count as speed gained');
+expect($landing['rollout']['seconds'] === 50, 'rollout must end at taxi speed');
+expect(array_column($landing['checks'], 'verdict', 'label')['Speed on short final'] === 'good', 'a decelerating final is stable');
+
+$earlyFlag = $landingPayload;
+$earlyFlag['LandingUTC'] = gmdate('c', $landingAt - 5);
+$earlyFlag['ArrivalAirport']['ElevationFt'] = 230;
+$refined = nx_landing_analysis($earlyFlag);
+expect($refined['touchdown']['time_utc'] === gmdate('c', $landingAt), 'touchdown must be refined to the first sample on the runway');
+expect($refined['segment'][24]['SecondsToTouchdown'] === 0 && $refined['segment'][24]['HeightAboveRunwayFt'] === 0.0,
+    'heights must be measured from the recorded runway altitude, not the published elevation');
 
 $db = nx_db();
 $db->prepare('INSERT INTO users(id,email,name,created_at) VALUES(?,?,?,?)')
@@ -123,7 +130,7 @@ expect(count(array_filter($memory['milestones'], static fn(array $item): bool =>
 $db->prepare('INSERT INTO flight_logbook(flight_id,user_id,aircraft_id,role,notes,confirmed,updated_at) VALUES(?,?,?,?,?,?,?)')
     ->execute([$owned['id'], 'user-a', 'aircraft-a', 'PIC', 'Private postflight note', 1, gmdate(DATE_RFC3339)]);
 expect((int)$db->query("SELECT confirmed FROM flight_logbook WHERE flight_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'")->fetchColumn() === 1, 'confirmed logbook draft must persist privately');
-expect((int)$db->query("SELECT value FROM schema_meta WHERE key='version'")->fetchColumn() === 3, 'database migration must commit its schema version');
+expect((int)$db->query("SELECT value FROM schema_meta WHERE key='version'")->fetchColumn() === 5, 'database migration must commit its schema version');
 
 unset($db);
 foreach (glob($testDir . '/*') ?: [] as $file) unlink($file);
